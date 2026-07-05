@@ -1,0 +1,22 @@
+title: ctrlOprPayload
+x-stoplight:
+  id: p5pvffwkuqqm1
+type: object
+description: Defines the control operation to be performed on the device, including the control type and the operation to start or stop.
+properties:
+  controlType:
+    type: string
+    description: Specifies whether the control is for RFID or Scanner operations.
+    enum:
+      - RFID
+      - SCANNER
+    example: RFID
+  operation:
+    type: string
+    description: Indicates the operation to be performed such as start or stop the inventory.
+    enum:
+      - START
+      - STOP
+required:
+  - controlType
+  - operation

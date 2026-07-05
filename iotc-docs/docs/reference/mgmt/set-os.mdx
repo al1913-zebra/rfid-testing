@@ -1,0 +1,222 @@
+---
+id: set-os
+title: set_os
+sidebar_label: "set_os"
+description: "MQTT reference for set_os: initiate an over-the-air firmware update on the reader from a .DAT image URL, over the management endpoint. Asynchronous and session-severing — verify completion with get_version."
+sidebar_custom_props: { emoji: "⬆️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'set_os', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'OSUpdateDetails', type: 'object', required: false, desc: 'The firmware update source and authentication. Required in practice — you must include it to update anything; the command-level schema lists only `command`/`requestId` in `required`, but `OSUpdateDetails` itself requires `url` and `authenticationType`.',
+    children: [
+      { field: 'url', type: 'string', required: true, enumUnits: 'uri', example: 'https://fwserver.example.com/firmware/PAAFKS00-013-R02E0.DAT', desc: 'URL of the firmware `.DAT` image to download and flash. Required. Bad/unreachable URL → code `9`.' },
+      { field: 'authenticationType', type: 'enum', required: true, enumUnits: ['NONE', 'CERTIFICATE'], example: 'NONE', desc: 'Authentication to the firmware source. `NONE` = no auth; `CERTIFICATE` = inline or pre-installed CA certificate. Required.' },
+      { field: 'verificationType', type: 'enum', required: false, enumUnits: ['NONE', 'VERIFY_PEER', 'VERIFY_HOST', 'VERIFY_HOST_PEER'], example: 'NONE', desc: 'TLS verification of the download server. Optional (no default). See the transport-security note in Notes.' },
+      { field: 'caCertificateFile', type: 'string', required: false, example: 'filestore_ca_cert', desc: 'Reference to a CA certificate already installed via `install_certificate` (for `CERTIFICATE` auth). One of `caCertificateFile` / `caCertificateFileContent`.' },
+      { field: 'caCertificateFileContent', type: 'string', required: false, example: '-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----', desc: 'Inline CA certificate (PEM) used to authenticate the HTTPS download (for `CERTIFICATE` auth). If empty, an already-installed filestore certificate is used. Public — not a secret.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'set_os',
+  requestId: 'abc123',
+  OSUpdateDetails: {
+    url: 'https://fwserver.example.com/firmware/PAAFKS00-013-R02E0.DAT',
+    authenticationType: 'NONE',
+  },
+};
+
+export const CERT_REF_JSON = {
+  command: 'set_os',
+  requestId: 'abc124',
+  OSUpdateDetails: {
+    url: 'https://fwserver.example.com/firmware/PAAFKS00-013-R01E0.DAT',
+    authenticationType: 'CERTIFICATE',
+    verificationType: 'VERIFY_PEER',
+    caCertificateFile: 'filestore_ca_cert',
+  },
+};
+
+export const CERT_INLINE_JSON = {
+  command: 'set_os',
+  requestId: 'abc125',
+  OSUpdateDetails: {
+    url: 'https://fwserver.example.com/firmware/PAAFKS00-012-R02E0.DAT',
+    authenticationType: 'CERTIFICATE',
+    verificationType: 'VERIFY_HOST_PEER',
+    caCertificateFileContent: '-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----',
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'set_os', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.21'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: false, desc: 'Accept/status envelope. Always present in practice, though the response schema lists only `command`/`requestId`/`apiVersion` in `required`. This is an accept, not a terminal result (see the lifecycle below).',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '1', desc: '`1` = the payload was accepted (the accept code for this command — not `0`). See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Command payload is accepted', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'set_os',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 1, description: 'Command payload is accepted' },
+};
+
+export const LOCK_JSON = {
+  command: 'get_endpoint_config',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 4, description: 'Firmware update in progress' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** initiate an over-the-air firmware update on the reader
+
+## Overview
+
+`set_os` **initiates an over-the-air (OTA) firmware update** — it points the reader at a firmware `.DAT` image at a URL and triggers the download-and-flash cycle. It is a state-changing command on the device-management (MGMT) endpoint, and it is both **asynchronous** and **session-severing**: the device accepts the payload, downloads and flashes the firmware, and **reboots** — dropping off the network for the duration. The only way to confirm the outcome is an out-of-band [`get_version`](/reference/mgmt/get-version) read-back.
+
+:::danger
+`set_os` **reboots and reflashes the reader.** Plan for the device to be unreachable during the update and to re-attach its MQTT session afterward. The reply is **`response.code 1` ("Command payload is accepted")** — an accept, **not** confirmation that the firmware updated (the same `code 1` is returned for both success and failure). And while the update runs, the device rejects **every other command** with **`code 4`** ("Firmware update in progress"). Confirm the result with [`get_version`](/reference/mgmt/get-version); do **not** gate success on `code == 0`, and do **not** retry-storm during the update.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Asynchronous Request → Accept → Reboot → Verify (completion confirmed out-of-band) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_version`](/reference/mgmt/get-version), [`install_certificate`](/reference/mgmt/install-certificate), [`reboot`](/reference/mgmt/reboot), [`get_status`](/reference/mgmt/get-status) |
+| **Required Request Fields** | `command`, `requestId` (plus `OSUpdateDetails` with `url` + `authenticationType`) |
+| **Authentication** | `NONE` · `CERTIFICATE` (inline `caCertificateFileContent` or installed `caCertificateFile`) |
+| **State Change** | STATE-CHANGING (downloads and flashes firmware; reboots the reader) |
+| **Reversibility** | Not a single-step undo — roll back by flashing a prior build with another `set_os` |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `set_os` to **update the reader's firmware** — during commissioning, a fleet migration, or a security/feature rollout.
+
+- **Host the image** — place the firmware `.DAT` at a URL the reader can reach.
+- **Choose authentication** — `NONE` for an open/internal server, or `CERTIFICATE` (with a CA reference or inline PEM) plus a `verificationType` for a secured HTTPS download.
+- **Check preconditions** — ensure adequate battery and flash first (low battery → code `14`, insufficient flash → code `8`).
+- **Verify afterward** — always confirm the new build with [`get_version`](/reference/mgmt/get-version).
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response — accept & lock (subscribe by app) | `zebra/MGMT/clients/resp/{serial}` | The `code 1` accept, and the `code 4` lock returned to *other* commands during the install. |
+| Events — progress (subscribe by app) | `zebra/MGMT/clients/event/{serial}` | The `FIRMWARE_UPDATE` alert (start/progress). See [Event schemas](/reference/events/alerts-event). |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Key Fields
+
+- **`OSUpdateDetails.url`** — the firmware `.DAT` download URL (a bad/unreachable URL → code `9`).
+- **`OSUpdateDetails.authenticationType`** — `NONE` or `CERTIFICATE`; for `CERTIFICATE`, supply `caCertificateFile` (installed reference) or `caCertificateFileContent` (inline PEM).
+- **`OSUpdateDetails.verificationType`** — TLS verification of the download server; omit at your peril over HTTPS (see Notes).
+- **`response.code`** — `1` means *accepted*, not *updated*; confirm with [`get_version`](/reference/mgmt/get-version). See [Response Codes](#response-codes).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `OSUpdateDetails` payload (`url` + `authenticationType`). Use the **Schema** tab for the full field reference and the **Example** tab for an unauthenticated (`NONE`) update.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="authenticationType NONE" />
+
+For a secured download, use `authenticationType: CERTIFICATE` with a **pre-installed** CA reference:
+
+<JsonBlock title="Request — CERTIFICATE (installed CA reference)" data={CERT_REF_JSON} />
+
+…or with an **inline** CA certificate:
+
+<JsonBlock title="Request — CERTIFICATE (inline CA content)" data={CERT_INLINE_JSON} />
+
+## Firmware update lifecycle
+
+`set_os` is an accept-then-verify cycle, not a single request/response:
+
+1. **Accept** — the device replies `response.code 1` ("Command payload is accepted") on the response topic. This confirms receipt only, and is **identical for success and failure**.
+2. **Start event** — a `FIRMWARE_UPDATE` alert appears on the event topic as the download/flash begins:
+
+<JsonBlock title="Event — FIRMWARE_UPDATE (start)" data={{ type: 'NOTIFICATION', timestamp: '2026-06-18T11:30:50.387Z', state: 'ONESHOT', id: 'FIRMWARE_UPDATE', priority: 'HIGH', alertDetails: { fwUpdateStatus: { updateStatus: 'Starting FW update' } } }} />
+
+3. **Device-wide lock** — while the update runs, **every other command** is rejected on the response topic with **`code 4`** ("Firmware update in progress"), echoing the blocked command's name:
+
+<JsonBlock title="Response — another command blocked during the update (code 4)" data={LOCK_JSON} />
+
+4. **Reboot** — the reader reflashes and reboots, and is briefly off the network.
+5. **Verify** — run [`get_version`](/reference/mgmt/get-version) and compare `readerVersion.firmwareVersion` against the target build (see the version note below). A failed update leaves the prior version in place; terminal failure surfaces via the `FIRMWARE_UPDATE` event and code `13`, not the `set_os` accept.
+
+## Response payload
+
+The immediate reply is an **accept** — `command`, `requestId`, `apiVersion`, and `response` with **`code 1`**. It confirms receipt, not a completed update.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" exampleCaption="accept" />
+
+## Response Codes
+
+`set_os` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `1` | Command payload is accepted (`IOT_STATUS_CMD_PAYLOAD_ACCEPTED`) — **the accept code for this command.** The update proceeds asynchronously; verify with `get_version`. |
+| `0` | Success — terminal success; in practice `set_os` acks with `1`, and completion is confirmed via the `get_version` read-back. |
+| `4` | Firmware update in progress (`IOT_STATUS_FW_UPDATE_IN_PROGRESS`) — returned to **other** commands while an update is running (the device-wide lock). Pause orchestration until the device returns. |
+| `8` | Insufficient flash size (`IOT_ERROR_LOW_FLASH_SIZE`) — not enough free flash to download the firmware. Free space or use a smaller package. |
+| `9` | File not found (`IOT_STATUS_FILE_NOT_FOUND`) — the firmware `url` is wrong or unreachable. |
+| `13` | Firmware update Failed (`IOT_ERROR_FW_UPDATE_FAIL`) — the download or install failed. Surfaced via the `FIRMWARE_UPDATE` event, not the `set_os` accept. |
+| `14` | Battery is low, Cannot update firmware (`IOT_ERROR_FW_UPDATE_FAIL_LOW_BATTERY`) — charge or connect external power, then retry. |
+| `101` | Default error — generic catch-all. |
+
+:::note
+An invalid `authenticationType` / `verificationType` enum value is rejected with code `23` ("Invalid enum value"). Gate success strictly on the `get_version` read-back, not on the `set_os` response code.
+:::
+
+## Examples
+
+Publish `set_os`; the device acks with the `code 1` envelope under [Response payload](#response-payload), then runs the [firmware update lifecycle](#firmware-update-lifecycle). The `CERTIFICATE` variants are shown under [Request payload](#request-payload); the `FIRMWARE_UPDATE` start event and the `code 4` lock are shown under the lifecycle above.
+
+## Notes & Caveats
+
+:::danger
+**`code 1` is an accept, not a completed update.** The `set_os` reply is `code 1` for **both** success and failure, and there is no terminal `0`/`13` on the response topic. Confirm the outcome by running [`get_version`](/reference/mgmt/get-version) and comparing the firmware version. A consumer that treats `code == 0` as "updated" will misread every `set_os` reply.
+:::
+
+:::warning
+**Device-wide lock during the update.** While `set_os` runs, **every** other command returns `code 4` ("Firmware update in progress"), echoing the blocked command's name. Do not retry-storm — pause orchestration until the device re-attaches and `get_version` succeeds. Expect the reader to be unreachable across the reboot.
+:::
+
+:::note
+**Preconditions.** Ensure the device is ready before issuing: low battery → code `14`; insufficient flash → code `8`; a bad or unreachable `url` → code `9`. `OSUpdateDetails` is required in practice (a request without it validates against the command schema but cannot update).
+:::
+
+:::note
+**Authentication & transport security.** For `authenticationType: CERTIFICATE`, supply the CA either as an installed reference (`caCertificateFile`, pre-installed via [`install_certificate`](/reference/mgmt/install-certificate)) or inline (`caCertificateFileContent`). `authenticationType: NONE` over an `https://` URL is accepted but **does not verify the server certificate** — for production, use `CERTIFICATE` and/or a `verificationType` (`VERIFY_PEER` / `VERIFY_HOST` / `VERIFY_HOST_PEER`).
+:::
+
+:::note
+**Confirm by full version string.** `readerVersion.firmwareVersion` is a free-form string. Compare the **whole** value against the target build — the build-variant prefix can change (e.g. `PAAFKS00-013-R02` → `SAAFKS00-013-R02`), so match the full string rather than a substring. See [`get_version`](/reference/mgmt/get-version).
+:::
+
+:::note
+**`apiVersion` is per-handler.** `set_os` reports `apiVersion` `V1.1` (its response enum is `V1.0` / `V1.1` / `V1.21`), while on the same firmware [`get_version`](/reference/mgmt/get-version) reports `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Sequence a firmware rollout as: pre-check with [`get_status`](/reference/mgmt/get-status) (power/battery) → `set_os` → wait out the reboot (expect `code 4` on other commands) → confirm with [`get_version`](/reference/mgmt/get-version). For the concept-level view, see [System operations](/infrastructure/system-operations).
+:::
+
+**Related:** 📘 [System operations](/infrastructure/system-operations) · 📕 [`get_version`](/reference/mgmt/get-version) · 📕 [`install_certificate`](/reference/mgmt/install-certificate) · 📕 [`reboot`](/reference/mgmt/reboot) · 📕 [Error codes](/reference/errors/codes)

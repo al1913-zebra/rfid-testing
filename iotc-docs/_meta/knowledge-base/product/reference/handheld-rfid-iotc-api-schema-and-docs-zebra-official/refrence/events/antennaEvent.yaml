@@ -1,0 +1,25 @@
+title: antennaEvent
+x-stoplight:
+  id: aqw5xmnoocpk6
+type: array
+description: Antenna events reporting status changes for device antennas.
+examples: []
+items:
+  type: object
+  description: Antenna event data for a single antenna port.
+  properties:
+    antenna:
+      type: object
+      description: Status and port details for the antenna.
+      properties:
+        status:
+          type: string
+          enum:
+            - connected
+            - disconnected
+          example: connected
+          description: Indicates whether the antenna is connected or disconnected.
+        port:
+          type: number
+          example: 3
+          description: Specifies the port number where the antenna is connected.

@@ -1,0 +1,100 @@
+/* Swizzled DocItem Footer — compact "Was this helpful?" thumbs widget.
+ *
+ * Shows only:
+ *   - Label  "Was this helpful?"
+ *   - 👍 button + 👎 button
+ *
+ * Clicking a thumb opens the PushFeedback modal (handled by the
+ * <feedback-button> web component) for the user to type a message,
+ * email, optionally attach a screenshot, and submit.
+ */
+
+.feedbackFooter {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] .feedbackFooter {
+  border-top-color: var(--ifm-color-emphasis-300);
+}
+
+.feedbackWidget {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--ifm-heading-color);
+  letter-spacing: 0.005em;
+}
+
+.thumbsRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.thumbBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 4px;
+  border: 1.5px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-700);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.thumbBtn:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.thumbBtn:active {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.thumbBtn:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 1px;
+}
+
+[data-theme='dark'] .thumbBtn {
+  border-color: var(--ifm-color-emphasis-400);
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-700);
+}
+
+[data-theme='dark'] .thumbBtn:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  background: var(--ifm-color-emphasis-200);
+}
+
+.thumbBtn svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+/* PushFeedback's CSS sets `feedback-button, feedback-modal { visibility: hidden }`
+ * until its Stencil runtime hydrates the component. On this site that
+ * hydration sometimes lags (or doesn't complete at all in certain
+ * environments), which would leave our slotted thumb buttons invisible
+ * along with the host. Override the visibility so the trigger buttons
+ * remain visible regardless of Stencil's bootstrap state — clicking
+ * still works because the click handler lives on the host element. */
+.feedbackWidget feedback-button {
+  visibility: visible !important;
+  display: inline-block;
+}

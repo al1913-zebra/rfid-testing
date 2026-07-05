@@ -1,0 +1,157 @@
+{
+  "title": "alert",
+  "x-stoplight": {
+    "id": "8nsxjhzgto2vp"
+  },
+  "type": "object",
+  "description": "Represents a system-generated alert or notification event. Note: Currently event types such as antenna, temperature, exceptions, CPU usage, GPI, and user app info are not supported.",
+  "examples": [
+  {
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:34.279Z",
+  "state": "ONESHOT",
+  "id": "BATTERY",
+  "priority": "LOW",
+  "alertDetails": {
+    "batteryAlert": {
+      "status": "CHARGING",
+      "stateOfHealth": "GOOD",
+      "chargePercentage": 100
+    }
+  }
+},
+{
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:34.290Z",
+  "state": "ONESHOT",
+  "id": "POWER",
+  "priority": "HIGH",
+  "alertDetails": {
+    "powerEvent": {
+      "powerSource": "BATTERY",
+      "powerMode": "ACTIVE"
+    }
+  }
+},
+{
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:34.300Z",
+  "state": "ONESHOT",
+  "id": "NETWORK_EVENT",
+  "priority": "HIGH",
+  "alertDetails": {
+    "networkInfo": {
+      "networkInterface": {
+        "wifiStatus": [
+          {
+            "interface": "wlan0",
+            "status": "CONNECTED",
+            "ssid": "IOT_TESTAP",
+            "ipV4Address": "192.168.0.107"
+          }
+        ]
+      }
+    }
+  }
+},
+{
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:57.757Z",
+  "state": "ONESHOT",
+  "id": "NETWORK_EVENT",
+  "priority": "HIGH",
+  "alertDetails": {
+    "networkInfo": {
+      "networkInterface": {
+        "ethStatus": [
+          {
+            "interface": "eth0",
+            "status": "CONNECTED",
+            "linkStatus": "UP",
+            "ipV4Address": "192.168.0.111"
+          }
+        ]
+      }
+    }
+  }
+},
+{
+  "type": "ALERT",
+  "timestamp": "2026-04-29T12:33:57.757Z",
+  "state": "SET",
+  "id": "FIRMWARE_UPDATE",
+  "priority": "CRITICAL",
+  "alertDetails": {
+    "fwUpdateStatus": {
+    "updateStatus": "updating",
+    "overallProgress": 20,
+    "stage": "updating scanner fw"
+    }
+  }
+}
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "EVENT",
+        "NOTIFICATION",
+        "ALERT"
+      ],
+      "description": "Specifies the type of alert or message being generated, such as an event, notification, exception, or alert."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "time",
+      "example": "22:54:25",
+      "description": "Indicates the time at which the alert was generated, formatted as a time string."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "SET",
+        "CLEAR",
+        "ONESHOT"
+      ],
+      "description": "Represents the state of the alert. 'SET' indicates an active alert, 'CLEAR' indicates the alert has been resolved, and 'ONESHOT' is a one-time alert."
+    },
+    "id": {
+      "type": "string",
+      "enum": [
+        "BATTERY",
+        "FIRMWARE_UPDATE",
+        "NETWORK_EVENT",
+        "TEMPERATURE",
+        "POWER"
+      ],
+      "example": "BATTERY",
+      "description": "A unique identifier for the alert type, such as a low battery warning or a temperature event."
+    },
+    "priority": {
+      "type": "string",
+      "example": "CRITICAL",
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW"
+      ],
+      "description": "Defines the priority level of the alert, ranging from critical to low."
+    },
+    "alertDetails": {
+      "anyOf": [
+        {
+          "$ref": "../refrence/response/alertDetails.yaml"
+        }
+      ],
+      "description": "Contains additional details about the alert, which may vary depending on the specific alert type."
+    }
+  },
+  "required": [
+    "type",
+    "timestamp",
+    "state",
+    "id",
+    "priority"
+  ]
+}

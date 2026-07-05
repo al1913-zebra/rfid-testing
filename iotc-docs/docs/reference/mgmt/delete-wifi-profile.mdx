@@ -1,0 +1,177 @@
+---
+id: delete-wifi-profile
+title: delete_wifi_profile
+sidebar_label: "delete_wifi_profile"
+description: "MQTT reference for delete_wifi_profile: permanently remove a saved Wi-Fi profile from the reader by ESSID over the management endpoint. The active (connected) profile is firmware-protected."
+sidebar_custom_props: { emoji: "🗑️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'delete_wifi_profile', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response so you can pair reply to request.' },
+  {
+    field: 'wifiProfileInfo', type: 'object', required: false, desc: 'Identifies the saved Wi-Fi profile to delete. Required in practice — you must include it (with `essid`) to delete anything — though the command-level schema does not list it in `required` (see Notes).',
+    children: [
+      { field: 'essid', type: 'string', required: true, example: 'TestAP2', desc: 'The network name (ESSID) of the saved profile to remove. Case-sensitive; must exactly match a saved profile. Required within `wifiProfileInfo`.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'delete_wifi_profile',
+  requestId: 'abc123',
+  wifiProfileInfo: {
+    essid: 'TestAP2',
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'delete_wifi_profile', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: false, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by the device (`V1.1`). Emitted on-device but not declared in the response schema, so it is not part of the response `required` set (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — delete_wifi_profile echoes no profile data.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'delete_wifi_profile',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const ACTIVE_SSID_JSON = {
+  command: 'delete_wifi_profile',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 16, description: 'WIFI Error - Cannot delete active SSID' },
+};
+
+export const NOT_FOUND_JSON = {
+  command: 'delete_wifi_profile',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 15, description: 'WIFI Error - SSID not found' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** permanently remove a saved Wi-Fi profile from the reader by ESSID
+
+## Overview
+
+`delete_wifi_profile` **permanently removes a single saved Wi-Fi profile** from the reader's profile store. The profile is identified by its `essid` inside `wifiProfileInfo`; on success the matching saved profile — including any stored credentials — is deleted, and the command returns a status-only envelope (no profile echo). It is a state-changing command on the device-management (MGMT) endpoint. Confirm the result with [`get_wifi`](/reference/mgmt/get-wifi).
+
+:::warning
+`delete_wifi_profile` is **state-changing and irreversible** — there is no "undelete." The saved profile and its stored credentials are gone; to restore it you must re-provision with [`set_wifi`](/reference/mgmt/set-wifi) and re-enter the credentials. However, the deletion itself is **safe for the control session**: the reader **refuses to delete the active (currently-connected) profile** and returns code `16` instead of dropping its own network (see the notes below).
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_wifi`](/reference/mgmt/get-wifi), [`set_wifi`](/reference/mgmt/set-wifi), [`delete_certificate`](/reference/mgmt/delete-certificate) |
+| **Required Request Fields** | `command`, `requestId` (plus `wifiProfileInfo.essid` to identify the profile) |
+| **Supported Identifier** | `essid` (the saved profile's network name; case-sensitive) |
+| **State Change** | STATE-CHANGING (removes a saved profile and its stored credentials) |
+| **Reversibility** | IRREVERSIBLE — there is no undo; re-provision with `set_wifi` to restore a deleted profile |
+
+## When to Use
+
+Use `delete_wifi_profile` to **clean up the reader's saved Wi-Fi profiles** — one profile per call, matched by `essid`.
+
+- **Remove an obsolete or incorrect profile** — e.g. a network that no longer exists, or one saved with the wrong credentials.
+- **Make room before adding a profile** — the device enforces a maximum number of saved profiles; if [`set_wifi`](/reference/mgmt/set-wifi) `CREATE` returns code `19` (SSID count overflow), delete an unused profile first.
+- **Tidy fallback sets** — prune stale entries so the reader only carries the profiles you intend it to roam across.
+
+Delete only a **non-active** profile. To retire the network the reader is currently connected to, first connect it elsewhere (with `set_wifi` `connect: true`) — the device will not delete the profile carrying its live connection (code `16`).
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`, where `<topic>` is configured per endpoint. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block, and `delete_wifi_profile` carries **no credential field** — there is nothing to mask. Credentials are presented once at CONNECT. The `requestId` you send is echoed in the response so you can match reply to request. QoS and retain are governed by the endpoint's `mqttParams`, not by this command.
+:::
+
+## Key Fields
+
+- **`wifiProfileInfo.essid`** — the network name of the saved profile to delete. Case-sensitive; must exactly match a saved profile (verify the exact name with [`get_wifi`](/reference/mgmt/get-wifi)). Not the active profile, or the delete fails with code `16`.
+- **`response.code`** — read this to determine success vs failure: `0` (deleted), `15` (no such saved profile), `16` (that profile is the active connection), `17` (no `essid` supplied). See [Response Codes](#response-codes).
+
+## Request payload
+
+The request envelope is `command`, `requestId`, and the `wifiProfileInfo` object naming the profile to delete. Use the **Schema** tab for the full field reference and the **Example** tab for a ready-to-send request.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response payload
+
+`delete_wifi_profile` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. There is no profile echo; to confirm the deletion, follow up with [`get_wifi`](/reference/mgmt/get-wifi) and check that the `essid` is gone.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Codes
+
+`delete_wifi_profile` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the matching profile was removed. |
+| `2` | Invalid payload (`IOT_ERROR_INVALID_PAYLOAD`) — the JSON is malformed or has invalid field values. Validate against the schema and correct. |
+| `15` | WIFI Error - SSID not found (`IOT_ERROR_SSID_NOT_FOUND`) — the `essid` is not a saved profile. Verify the exact name (case-sensitive) with `get_wifi`. |
+| `16` | WIFI Error - Cannot delete active SSID (`IOT_ERROR_DELETE_ACTIVE_SSID`) — the target `essid` is the currently-connected profile; the reader protects it. Connect elsewhere first, then delete. |
+| `17` | WIFI Error - SSID missed (`IOT_ERROR_SSID_MISSED`) — no `essid` was supplied in `wifiProfileInfo`. Include the `essid` field. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish a `delete_wifi_profile` request naming the `essid` to remove; the device replies with the status-only envelope. The **Example** tab of the Request payload shows the request, and the [Response payload](#response-payload) shows a successful (`code 0`) reply. The two error replies below are the ones most relevant to deletion — code `16` is **unique to `delete_wifi_profile`**, while code `15` is shared with [`set_wifi`](/reference/mgmt/set-wifi).
+
+Attempting to delete the **active (connected) profile** is refused with **code `16`** — the reader will not drop its own connection:
+
+<JsonBlock title="Response — Cannot delete active SSID (code 16)" data={ACTIVE_SSID_JSON} />
+
+Targeting an `essid` that is **not a saved profile** returns **code `15`**:
+
+<JsonBlock title="Response — SSID not found (code 15)" data={NOT_FOUND_JSON} />
+
+## Notes & Caveats
+
+:::tip
+**The active profile is firmware-protected.** Unlike [`set_wifi`](/reference/mgmt/set-wifi) with `connect: true` — which can switch networks and sever the control session — `delete_wifi_profile` **cannot** strand the reader: if you target the currently-connected `essid`, the device refuses with code `16` ("Cannot delete active SSID") rather than dropping its own connection. To retire the network the reader manages itself over, first move it to another profile (`set_wifi` `connect: true`), then delete the now-inactive profile.
+:::
+
+:::warning
+**Deletion is permanent.** There is no undo. The saved profile and its stored credentials are removed; restoring it means re-provisioning with [`set_wifi`](/reference/mgmt/set-wifi) and re-entering the credentials. Double-check the `essid` before sending — the match is **case-sensitive** and exact.
+:::
+
+:::note
+**One profile per call, matched by `essid`.** `delete_wifi_profile` removes a single saved profile identified by its network name. A `code 15` means the `essid` is not saved (typo or wrong case); confirm the exact stored name with [`get_wifi`](/reference/mgmt/get-wifi) first. A `code 17` means the request reached the device with no `essid` at all.
+:::
+
+:::note
+**`wifiProfileInfo` is required in practice, not in the schema.** The command-level schema lists only `command` and `requestId` as `required`, so a request omitting `wifiProfileInfo` would technically pass schema validation — but it names no profile and deletes nothing. Always send `wifiProfileInfo` with a valid `essid` (which **is** required within `wifiProfileInfo`).
+:::
+
+:::note
+**`apiVersion` is device-emitted and per-handler.** The device returns `apiVersion` `V1.1` on this command, but the response schema does not declare the property (it is accepted, unvalidated). Its practical enum is `V1.0` / `V1.1`. On the same firmware other commands (e.g. [`get_version`](/reference/mgmt/get-version)) report `V1.21`, so do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Because the response is status-only, **verify the result with [`get_wifi`](/reference/mgmt/get-wifi)** — confirm the deleted `essid` no longer appears in the saved profiles and the connected profile is unchanged. For the concept-level view, see [Wi-Fi networking](/infrastructure/network/wifi).
+:::
+
+**Related:** 📘 [Wi-Fi networking](/infrastructure/network/wifi) · 📕 [`get_wifi`](/reference/mgmt/get-wifi) · 📕 [`set_wifi`](/reference/mgmt/set-wifi) · 📕 [Certificates — `delete_certificate`](/reference/mgmt/delete-certificate) · 📕 [Error codes](/reference/errors/codes)

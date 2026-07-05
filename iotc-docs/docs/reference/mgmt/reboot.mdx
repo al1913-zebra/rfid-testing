@@ -1,0 +1,164 @@
+---
+id: reboot
+title: reboot
+sidebar_label: "reboot"
+description: "MQTT reference for reboot: perform a warm reset of the reader over the management endpoint. Asynchronous accept (code 1), session-severing, auto-reconnects; refused during an active inventory (code 5)."
+sidebar_custom_props: { emoji: "🔁" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'reboot', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: '123abcd', desc: 'A unique identifier for the request; echoed back in the response. There is no other payload.' },
+];
+
+export const REQUEST_JSON = {
+  command: 'reboot',
+  requestId: '123abcd',
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'reboot', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: '123abcd', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Accept/status envelope. This is an accept returned before the reset — not a "reboot complete" result (see below).',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '1', desc: '`1` = the payload was accepted (the reboot success-ack — not `0`). See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Command payload is accepted', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'reboot',
+  requestId: '123abcd',
+  apiVersion: 'V1.1',
+  response: { code: 1, description: 'Command payload is accepted' },
+};
+
+export const INVENTORY_JSON = {
+  command: 'reboot',
+  requestId: '123abcd',
+  apiVersion: 'V1.1',
+  response: { code: 5, description: "Can't reboot device, inventory in progress" },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** perform a warm reset of the reader
+
+## Overview
+
+`reboot` performs a **warm reset** of the reader. It takes no payload beyond `command` and `requestId`. The device **accepts** the request (`response.code 1`), reboots, and then **re-initiates its connection to the previously-connected server on its own** — no manual reconnect needed. It is a state-changing command on the device-management (MGMT) endpoint.
+
+:::danger
+`reboot` is **session-severing**. The warm reset drops the MQTT control session for the duration of the reboot (observed **~30 s to ~2 min**, and it **varies** run-to-run). The reply is **`response.code 1` ("Command payload is accepted")**, returned **before** the reset — there is **no later "reboot complete" response**. Treat `reboot` as a deliberate, confirmed action: send it **once**, **never auto-retry**, and do not gate success on `code == 0`.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Asynchronous Request → Accept → Warm reset → Auto-reconnect |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`set_os`](/reference/mgmt/set-os), [`get_version`](/reference/mgmt/get-version), [`get_status`](/reference/mgmt/get-status), [`control_operation`](/reference/ctrl/control-operation) |
+| **Required Request Fields** | `command`, `requestId` (no other payload) |
+| **State Change** | STATE-CHANGING (warm reset; clears volatile state — see below) |
+| **Recovery** | Auto-reconnects to the previously-connected server; downtime ~30 s–2 min (varies) |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `reboot` to **warm-reset the reader**:
+
+- **Recover from a bad state** — clear a transient fault when a targeted command won't.
+- **Apply/settle changes** that take effect on restart.
+- **Clear the operating mode** — a reboot resets the operating mode to default (see the volatility note below).
+
+Do **not** reboot during an active RFID inventory — the device refuses with **code `5`**. Stop the inventory first with [`control_operation`](/reference/ctrl/control-operation).
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | The `code 1` accept, returned before the reset. Correlated by the in-payload `requestId`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`, where `<topic>` is configured per endpoint. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block, and `reboot` carries **no credential field** — there is nothing to mask. The `requestId` you send is echoed in the accept so you can match reply to request.
+:::
+
+## Key Fields
+
+- **`command`** / **`requestId`** — the entire request; there is no reboot payload.
+- **`response.code`** — `1` means *accepted* (the reset then proceeds); `5` means the reboot was refused because an inventory is running. See [Response Codes](#response-codes).
+
+## Request payload
+
+The request is a minimal envelope — just `command` and `requestId`.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response payload
+
+The reply is an **accept** — `command`, `requestId`, `apiVersion`, and `response` with **`code 1`**, returned *before* the reset begins.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" exampleCaption="accept" />
+
+## Reboot behavior
+
+A single `reboot` drives the device through a clean warm-reset cycle:
+
+1. **Accept** — the device replies `response.code 1` ("Command payload is accepted"), *before* it resets. This is the success-ack — there is no later "reboot complete" message.
+2. **Down** — the reader drops its MQTT connections and warm-resets. It is unreachable for the duration.
+3. **Auto-reconnect** — the device re-attaches to the **previously-connected server on its own**, with no manual intervention. Recovery time **varies** (observed ~44 s and ~110 s across two runs — roughly ~30 s to ~2 min); don't hard-code a fixed wait.
+4. **State after reset:**
+   - **Endpoint configuration persists** — saved and active endpoints are restored/re-activated across the reset.
+   - **Operating mode is volatile** — the reboot resets the operating mode to default (e.g. `BALANCED_PERFORMANCE`, any armed `accessOperations` cleared). See [`operating mode`](/reference/ctrl/set-operating-mode); this is the documented "on reboot the set configuration is lost" behavior.
+
+## Response Codes
+
+`reboot` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `1` | Command payload is accepted (`IOT_STATUS_CMD_PAYLOAD_ACCEPTED`) — **the reboot success-ack**, returned before the reset. The device then reboots and auto-reconnects. |
+| `0` | Success — the generic success code; in practice `reboot` acks with `1`, not `0`. |
+| `5` | Can't reboot device, inventory in progress (`IOT_ERROR_IN_REBOOT_INVENTORY_IN_PROGRESS`) — **unique to `reboot`**; the reset is refused while an RFID inventory is running. Stop the inventory with [`control_operation`](/reference/ctrl/control-operation), then retry. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish `reboot`; the device replies with the `code 1` accept under [Response payload](#response-payload), then runs the [reboot cycle](#reboot-behavior). If an inventory is active, the reset is refused with **code `5`**:
+
+<JsonBlock title="Response — refused during inventory (code 5)" data={INVENTORY_JSON} />
+
+## Notes & Caveats
+
+:::danger
+**Session-severing — send once, confirm first.** The warm reset drops the control session; the device auto-reconnects to the previously-connected server, but recovery time **varies** (~30 s–2 min observed). Because a reboot cannot be un-done and interrupts service, issue it deliberately (ideally after operator confirmation) and **never auto-retry** it — a lost accept does not mean the reboot didn't happen.
+:::
+
+:::note
+**`code 1`, not `0`.** `reboot`'s success-ack is `code 1` ("Command payload is accepted"), returned before the reset — most other commands return `0` on success. A consumer that treats `code == 0` as the reboot success condition will misread every reboot reply. There is no terminal completion code on the response topic; confirm the device is back with [`get_version`](/reference/mgmt/get-version) or [`get_status`](/reference/mgmt/get-status) after it reconnects.
+:::
+
+:::note
+**Refused during an active inventory.** If an RFID inventory is running, `reboot` returns **code `5`** ("Can't reboot device, inventory in progress"). Stop the inventory with [`control_operation`](/reference/ctrl/control-operation) before rebooting.
+:::
+
+:::note
+**Endpoint config persists; operating mode does not.** Across the reset, saved and active MQTT endpoints are restored and re-activated, but the **operating mode reverts to default** (any tuned profile or armed `accessOperations` is cleared). Re-apply the operating mode after a reboot if you were relying on a non-default configuration — see [`operating mode`](/reference/ctrl/set-operating-mode).
+:::
+
+:::note
+**`apiVersion` is per-handler.** `reboot` reports `apiVersion` `V1.1` (its response enum is `V1.0` / `V1.1`), while on the same firmware [`get_version`](/reference/mgmt/get-version) reports `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Sequence a reboot as: (optionally) stop any inventory with [`control_operation`](/reference/ctrl/control-operation) → send `reboot` once → wait out the reconnect (poll, don't hard-code the delay) → confirm with [`get_version`](/reference/mgmt/get-version) / [`get_status`](/reference/mgmt/get-status). For the concept-level view, see [System operations](/infrastructure/system-operations) and [Connection lifecycle](/foundations/mqtt/connection-lifecycle).
+:::
+
+**Related:** 📘 [System operations](/infrastructure/system-operations) · 📕 [`set_os`](/reference/mgmt/set-os) · 📕 [`get_version`](/reference/mgmt/get-version) · 📕 [`control_operation`](/reference/ctrl/control-operation) · 📕 [Error codes](/reference/errors/codes)

@@ -1,0 +1,58 @@
+---
+id: auth-model
+title: MQTT authentication and authorization model
+sidebar_label: Authentication & authorization model
+description: "How IOTC authenticates MQTT connections: username, password, client ID, TLS client certs, and tenant ID. Per-broker variations and ACL implications."
+sidebar_custom_props: { emoji: "🔐" }
+---
+
+> 📘 **EXPLANATION** · **Audience:** Solution Builder · **Read time:** ~5 min
+
+IOTC's authentication and authorization model has three independent layers: who the client is (authentication), what subtree of the topic namespace it can touch (authorization), and how the traffic is encrypted in flight (transport security, covered in [Security model (TLS & certificates)](/infrastructure/tls-and-certificates)).
+
+### Authentication modes
+
+IOTC supports three authentication modes, configured at the broker:
+
+- **Username + password.** The simplest. Credentials issued by the Zebra developer portal. Suitable for development and small deployments.
+- **TLS client certificate.** Mutual TLS: the client presents an X.509 certificate; the broker validates it. Stronger; suitable for production fleets.
+- **Both.** Username + password layered on top of mutual TLS. Defense in depth.
+
+```d2
+shape: sequence_diagram
+C: Client (Reader / App)
+B: MQTT Broker
+C -> B: "CONNECT\nusername + password + clientId"
+B -> B: "validate credentials\n+ tenant ACL check"
+valid: credentials valid {
+  B -> C: "CONNACK\nreturnCode = 0 (accepted)"
+}
+rejected: credentials rejected {
+  B -> C: "CONNACK\nreturnCode = 4 or 5"
+}
+
+```
+
+### Tenant scoping
+
+Every IOTC credential is scoped to a tenant. The credentials grant access only to topics beginning with the credential's `tenantId`. This is enforced at the broker. There is no operation a credential for tenant A can perform on a reader belonging to tenant B, even if the application attempts to publish on tenant B's topic, the broker rejects the publish.
+
+### Topic ACLs
+
+Within a tenant, the broker enforces topic-level access control lists. Common patterns: an application service principal granted publish+subscribe on `{tenantId}/mgmt/...` and `{tenantId}/ctrl/...` but only subscribe on `{tenantId}/data1event/...`. This lets data-consumer services have minimum-necessary privileges.
+
+### Where credentials originate
+
+For Zebra-hosted brokers, credentials are issued through the Zebra developer portal, see [Obtain Credentials](/quick-start/prerequisites/credentials). For customer-hosted brokers and SOTI-managed fleets, credentials are configured at the broker and distributed through the MDM layer, see [SOTI Connect Provisioning](/fleet/provisioning/soti-connect).
+
+### Rotating broker credentials
+
+To rotate an MQTT username/password, issue [`config_endpoint`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-config-endpoint) with `operation: update` and the new `mqttParams.username` / `mqttParams.password`; the reader reconnects with the new credentials (watch `mqttConnEVT` for a clean reconnect). Stage the broker-side change so the old and new credentials overlap briefly, to avoid locking the reader out mid-rotation. TLS client-certificate rotation is covered separately in [Rotate certificates at scale](/infrastructure/certificate-rotation).
+
+### Threat model
+
+The model defends against: eavesdropping on the wire (TLS), unauthorized command publish (authentication + ACLs), and cross-tenant access (tenant scoping). It does **not** defend against: physical access to a sled (an attacker with the device can extract credentials). For deployments where these threats matter, layer hardware-level protections such as sled custody policies on top of the IOTC model.
+
+**Related:** 📘 [Security Model](/infrastructure/tls-and-certificates) · 📙 [Obtaining Credentials](/quick-start/prerequisites/credentials) · 📙 [Securing MQTT with TLS](/infrastructure/tls-setup)
+
+---

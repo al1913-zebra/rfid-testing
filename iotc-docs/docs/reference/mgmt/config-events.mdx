@@ -1,0 +1,266 @@
+---
+id: config-events
+title: config_events
+sidebar_label: "config_events"
+description: "MQTT reference for config_events: enable/disable device event streams, set the heartbeat interval and payload, and configure alert thresholds on the management (MGMT) endpoint. Stored immediately; event emission takes effect after a reboot."
+sidebar_custom_props: { emoji: "📣" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'config_events', desc: 'Command name. Note: the schema does not `enum`-constrain this field (see Notes) — send exactly `config_events`.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'eventConfiguration', type: 'object', required: false, desc: 'The event configuration to store. Required in practice — you must include it; the command-level schema lists only `command`/`requestId` in `required`. Treat it as a wholesale set — send the complete configuration you want (see Notes).',
+    children: [
+      { field: 'terminalConnection', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Terminal (cradle / USB-C) connect and disconnect events.' },
+      { field: 'firmwareUpdate', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Firmware-update progress and completion events.' },
+      { field: 'network', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Network interface state and connectivity changes.' },
+      { field: 'heartbeat', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Periodic heartbeat; shape it with `heartbeatConfiguration`.' },
+      { field: 'power', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Power-source changes (battery / external power).' },
+      { field: 'battery', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Battery-state alerts (low, critical, full).' },
+      { field: 'temperature', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Temperature alerts. (`temperatureThreshold` is not yet honored — see Notes.)' },
+      { field: 'fileDownload', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. File-download progress/completion events (firmware, certificates).' },
+      {
+        field: 'heartbeatConfiguration', type: 'object', required: false, desc: 'Heartbeat shape; set when `heartbeat: true`.',
+        children: [
+          { field: 'interval', type: 'integer', required: false, enumUnits: 'seconds', example: '100', desc: '✅ Supported. Seconds between heartbeats (lower = more telemetry, higher battery cost).' },
+          { field: 'inventoryStatus', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Include the inventory-status block (rfidStatus, tagCount, scanCount) in each heartbeat.' },
+          { field: 'batteryStatus', type: 'boolean', required: false, example: 'true', desc: '✅ Supported. Include the battery-status block in each heartbeat.' },
+          { field: 'userApps', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved — declared for future support, not functional on current V1.1 firmware.' },
+        ],
+      },
+      { field: 'antenna', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'gpi', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'exceptions', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'ntp', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1). The device may store/echo it in `get_endpoint_config`, but it has no effect yet.' },
+      { field: 'userApp', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'cpuUsage', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'flashUsage', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'ramUsage', type: 'boolean', required: false, example: 'true', desc: '⚠️ Reserved (declared for future support; not emitted on V1.1).' },
+      { field: 'cpuThreshold', type: 'integer', required: false, enumUnits: '%', example: '80', desc: '⚠️ Reserved — CPU-usage percent that would trigger a CPU alert. Not honored on V1.1.' },
+      { field: 'ramThreshold', type: 'integer', required: false, enumUnits: '%', example: '80', desc: '⚠️ Reserved — RAM-usage percent. Not honored on V1.1.' },
+      { field: 'flashThreshold', type: 'integer', required: false, enumUnits: '%', example: '80', desc: '⚠️ Reserved — flash-usage percent. Not honored on V1.1.' },
+      { field: 'temperatureThreshold', type: 'integer', required: false, example: '55', desc: '⚠️ Reserved — temperature value that would trigger the alert. Not honored on V1.1 (the `temperature` event itself is supported).' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'config_events',
+  requestId: 'abc123',
+  eventConfiguration: {
+    terminalConnection: true,
+    firmwareUpdate: true,
+    network: true,
+    heartbeat: true,
+    power: true,
+    battery: true,
+    temperature: true,
+    fileDownload: true,
+    heartbeatConfiguration: {
+      interval: 100,
+      inventoryStatus: true,
+      batteryStatus: true,
+    },
+  },
+};
+
+export const SELECTIVE_JSON = {
+  command: 'config_events',
+  requestId: 'abc123',
+  eventConfiguration: {
+    terminalConnection: true,
+    firmwareUpdate: true,
+    network: true,
+    heartbeat: false,
+    power: true,
+    battery: true,
+    fileDownload: true,
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'config_events', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — config_events echoes no configuration.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Unlike the CTRL commands, config_events includes `code` on success (see Notes). See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'config_events',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** enable/disable the reader's event streams and configure the heartbeat
+
+## Overview
+
+`config_events` **enables or disables which device-management events the reader emits**, sets the **heartbeat** interval and payload, and configures **alert thresholds**. You send a single `eventConfiguration` object of boolean flags (plus `heartbeatConfiguration` and thresholds). It is a state-changing **management-plane (MGMT) command** and carries no credentials.
+
+Two things make this command distinctive:
+
+- **Changes take effect after a reboot.** The configuration is **stored immediately** (visible via [`get_endpoint_config`](/reference/mgmt/get-endpoint-config)), but the reader only starts **emitting** the configured events after a [`reboot`](/reference/mgmt/reboot) — per the command's own schema description.
+- **Accept-but-drop.** The reader accepts the whole payload with `code 0` even if it contains flags it doesn't support. Of the declared flags, **8 are functional** today; the rest are **declared for future support but not emitted on current V1.1 firmware** — most are dropped, though some (e.g. `ntp`) are stored and echoed back yet stay inert. Always **read back** with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) to see what was stored — but note a stored *reserved* flag has still not taken functional effect.
+
+:::warning[Changes apply on reboot]
+`config_events` **stores** the configuration immediately, but the reader begins **emitting** the newly-enabled events only **after a [`reboot`](/reference/mgmt/reboot)** (the command schema states: *"To apply the changes, a device reboot is required."*). Don't assume events are live until the reader has rebooted.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | **Management (MGMT) endpoint** — routed over the MGMT/MDM plane; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) (read back what applied), [`config_endpoint`](/reference/mgmt/config-endpoint), [`reboot`](/reference/mgmt/reboot), [`get_status`](/reference/mgmt/get-status) |
+| **Required Request Fields** | `command`, `requestId` (plus `eventConfiguration` with the flags) |
+| **Payload key** | `eventConfiguration` |
+| **State Change** | STATE-CHANGING (updates the endpoint's stored event configuration) |
+| **Reversibility** | REVERSIBLE — re-send `config_events` with the desired flags to restore a prior configuration |
+| **Apply semantics** | Stored immediately; **event emission activates on reboot** |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `config_events` to **control the reader's management-event surface**:
+
+- **Turn event streams on/off** — enable `terminalConnection`, `firmwareUpdate`, `network`, `power`, `battery`, `temperature`, `fileDownload`, or `heartbeat`.
+- **Shape the heartbeat** — set `heartbeatConfiguration.interval` and choose whether each heartbeat carries inventory / battery status.
+- **Reduce noise** — disable streams you don't consume so the reader emits less telemetry.
+
+Then **[`reboot`](/reference/mgmt/reboot)** to activate emission, and **[`get_endpoint_config`](/reference/mgmt/get-endpoint-config)** to confirm the stored configuration.
+
+## Topic Mapping
+
+`config_events` is a **management-plane command** — answered on the MGMT/MDM endpoint, not the control endpoint.
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` (or `zebra/MDM/clients/cmnd/{serial}`) | On the management endpoint that carries your session. |
+| Response (subscribe by app) | `zebra/MGMT/clients/resp/{serial}` (or `zebra/MDM/clients/resp/{serial}`) | Correlated reply; the in-payload `requestId` links the twin topics. |
+| Configured events (subscribe by app) | `zebra/MGMT/clients/event/{serial}` (or `zebra/MDM/clients/event/{serial}`) | Where the enabled events flow, **after a reboot**. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. `config_events` configures the **event configuration of the management endpoint on which it is received** — other endpoints' event settings (set via [`config_endpoint`](/reference/mgmt/config-endpoint)) are left untouched. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Supported vs reserved events
+
+Every flag below is **declared** in the schema, but only a subset is functional on current V1.1 firmware. The reader **accepts** a reserved flag (returns `code 0`) but does **not** emit it — the API developer has declared these for **future support** and they should be treated as **not currently supported**.
+
+| Event flag | Status | Stream |
+| --- | --- | --- |
+| `terminalConnection` | ✅ Supported | Terminal (cradle / USB-C) connect / disconnect |
+| `firmwareUpdate` | ✅ Supported | Firmware-update progress / completion |
+| `network` | ✅ Supported | Network interface / connectivity changes |
+| `heartbeat` | ✅ Supported | Periodic heartbeat (shaped by `heartbeatConfiguration`) |
+| `power` | ✅ Supported | Power-source change (battery / external) |
+| `battery` | ✅ Supported | Battery state (low, critical, full) |
+| `temperature` | ✅ Supported | Temperature alert |
+| `fileDownload` | ✅ Supported | File-download progress / completion |
+| `antenna` | ⚠️ Reserved | Not emitted on V1.1 |
+| `gpi` | ⚠️ Reserved | Not emitted on V1.1 |
+| `exceptions` | ⚠️ Reserved | Not emitted on V1.1 |
+| `ntp` | ⚠️ Reserved | Not emitted on V1.1 (may be stored/echoed) |
+| `userApp` | ⚠️ Reserved | Not emitted on V1.1 |
+| `cpuUsage` | ⚠️ Reserved | Not emitted on V1.1 |
+| `flashUsage` | ⚠️ Reserved | Not emitted on V1.1 |
+| `ramUsage` | ⚠️ Reserved | Not emitted on V1.1 |
+
+The four **threshold** fields (`cpuThreshold`, `ramThreshold`, `flashThreshold`, `temperatureThreshold`) and `heartbeatConfiguration.userApps` are likewise **reserved** — declared but not honored on V1.1. Enabling any reserved field is harmless (it does not error) but has no effect. See [The IOTC event model](/observability/events/model).
+
+## Heartbeat configuration
+
+When `heartbeat: true`, `heartbeatConfiguration` shapes each heartbeat message:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `interval` | integer (seconds) | Seconds between heartbeats. Lower = more telemetry and higher battery cost. |
+| `inventoryStatus` | boolean | Include the inventory-status block (`rfidStatus`, `tagCount`, `scanCount`). |
+| `batteryStatus` | boolean | Include the battery-status block. |
+| `userApps` | boolean | ⚠️ Reserved — not functional on V1.1. |
+
+See [Watch your reader's pulse](/observability/heartbeat) for the heartbeat event shape.
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `eventConfiguration`. Use the **Schema** tab for the full field reference (with the supported/reserved status per field) and the **Example** tab for an enable-all-supported payload.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="enable all supported events" />
+
+## Response payload
+
+`config_events` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. There is no configuration echo; confirm the stored configuration with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config).
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+:::note
+Unlike the control-plane commands (`set_operating_mode`, `set_post_filter`, `control_operation`), which omit `response.code` on success, `config_events` is a management command and **includes `code: 0`** on success (live-verified). Both `command` and a `code`/`description` are always present.
+:::
+
+## Response Codes
+
+`error_codes.json` lists **no command-specific error codes** for `config_events` — only the universal codes apply. In practice the command is highly permissive (it accepts unsupported flags with `code 0` rather than rejecting them; see Notes), so success is by far the common outcome.
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the configuration was stored (`code` present, `description: "Success"`). Emission activates on the next reboot. |
+| `101` | Default error — generic catch-all for an unhandled failure. |
+
+A malformed request (e.g. a non-object `eventConfiguration`) could surface a generic invalid-payload error (`2`), but this command is not enumerated under any specific code in `error_codes.json` and no such error was observed in testing. For the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+## Examples
+
+Publish `config_events` over the MGMT endpoint; the device replies with the status envelope, stores the supported subset immediately, and begins emitting after a reboot.
+
+The **Example** tab of the Request payload enables all supported events with a 100 s heartbeat. A **selective** payload turns some streams off (here `heartbeat: false`, no `heartbeatConfiguration`):
+
+<JsonBlock title="Request — selective events" data={SELECTIVE_JSON} />
+
+The success reply includes `code: 0` (live-verified, verbatim):
+
+<JsonBlock title="Response — success (code present)" data={RESPONSE_JSON} />
+
+## Notes & Caveats
+
+:::note
+**Stored immediately, emitted after a reboot.** `config_events` writes the configuration right away — you can confirm it with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) before rebooting — but the reader only starts **emitting** the enabled events after a [`reboot`](/reference/mgmt/reboot). Plan a reboot into any event-configuration change.
+:::
+
+:::warning[Accept-but-drop — always read back]
+The reader accepts the full payload with `code 0` even when it contains flags/thresholds it does not support. There is no `additionalProperties: false` on the payload schema, so nothing is rejected. It honors the **supported** subset; **reserved** flags are mostly dropped, though some (notably `ntp`) are stored and echoed back in the read-back while remaining **unemitted**. Enabling a reserved flag is harmless but has no effect. **Always read back with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config)** — but remember that a *reserved* flag appearing in the read-back is stored, not functional; only the 8 supported flags take effect.
+:::
+
+:::note
+**Send the complete configuration — treat it as a wholesale set.** In testing, the stored `eventConfiguration` reflected exactly the supported fields submitted (a run that omitted `heartbeatConfiguration` and set `heartbeat: false` left **no** `heartbeatConfiguration` stored). Don't rely on omitted flags retaining their previous value — send every flag you want set, then verify with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config).
+:::
+
+:::note
+**8 supported flags; the rest are reserved.** Only `terminalConnection`, `firmwareUpdate`, `network`, `heartbeat`, `power`, `battery`, `temperature`, and `fileDownload` are emitted on current V1.1 firmware. `antenna`, `gpi`, `exceptions`, `ntp`, `userApp`, `cpuUsage`, `flashUsage`, `ramUsage`, the four `*Threshold` fields, and `heartbeatConfiguration.userApps` are **declared for future support but not functional** — see the [Supported vs reserved events](#supported-vs-reserved-events) table and [The IOTC event model](/observability/events/model).
+:::
+
+:::note
+**`command` is not enum-constrained.** The command schema declares `command` with only an example (no `enum`), so a wrong string wouldn't be caught by schema validation. Always send exactly `config_events`.
+:::
+
+:::note
+**Targets the receiving management endpoint.** `config_events` configures the `eventConfiguration` of the MGMT/MDM endpoint on which it is received; other endpoints' event settings (set via [`config_endpoint`](/reference/mgmt/config-endpoint)) are unchanged.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `config_events` reports `apiVersion` `V1.1` (its response enum is `V1.0` / `V1.1`), while on the same firmware [`get_version`](/reference/mgmt/get-version) reports `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+`config_events` carries **no credentials** — only event flags and thresholds, so there is nothing to mask. It is **reversible**: re-send with the desired flags to restore a prior configuration (followed by a reboot). For the concept-level view, see [Choose what the reader tells you](/observability/configure-events) and [Event configuration](/observability/configure-events).
+:::
+
+**Related:** 📕 [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [`reboot`](/reference/mgmt/reboot) · 📕 [Event schemas](/observability/events/catalog) · 📘 [Watch your reader's pulse](/observability/heartbeat) · 📘 [Choose what the reader tells you](/observability/configure-events) · 📕 [Error codes](/reference/errors/codes)

@@ -1,0 +1,34 @@
+# Algolia-Crawler-Verif: B9840C3026D55A3C
+
+# ---------------------------------------------------------------------------
+# Zebra IoT Connector — public developer documentation.
+# This documentation is public and open to search engines and AI/LLM crawlers.
+#
+# NOTE: this is a GitHub Pages *project* site served under
+# /zebra-handheld-rfid-iotc/. Crawlers fetch robots.txt from the origin root
+# (https://al1913-zebra.github.io/robots.txt), so the directives below are
+# authoritative only if a custom domain is attached to the site root. The
+# Sitemap line remains valid when submitted directly to a search console.
+# The _meta/ and ia-blueprints/ directories are internal and are never built
+# into the published site, so their Disallow rules are declarative.
+# ---------------------------------------------------------------------------
+
+# AI / LLM crawlers — explicitly permitted to read the public documentation.
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: PerplexityBot
+User-agent: cohere-ai
+Allow: /
+Disallow: /_meta/
+Disallow: /ia-blueprints/
+
+# All other crawlers.
+User-agent: *
+Allow: /
+Disallow: /_meta/
+Disallow: /ia-blueprints/
+
+Sitemap: https://al1913-zebra.github.io/zebra-handheld-rfid-iotc/sitemap.xml

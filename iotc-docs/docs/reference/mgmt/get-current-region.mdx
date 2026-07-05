@@ -1,0 +1,168 @@
+---
+id: get-current-region
+title: get_current_region
+sidebar_label: "get_current_region"
+description: "MQTT reference for get_current_region: a read-only query returning the reader's active regulatory region — country, regulatory standard, channel plan, transmit-power limits, LBT, and frequency hopping — over the management endpoint."
+sidebar_custom_props: { emoji: "🌐" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_current_region', desc: 'Fixed command name. Retrieves the current region configuration.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request, allowing tracking and debugging. Echoed back unchanged in the response.' },
+];
+
+export const REQUEST_JSON = {
+  command: 'get_current_region',
+  requestId: 'abc123',
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_current_region', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command. See the caveat in Notes — apiVersion is emitted per-handler, not device-wide.' },
+  {
+    field: 'currentRegion', type: 'object', required: false, desc: 'The active regulatory region configuration. Optional at the envelope level; when present, all seven members below are required.',
+    children: [
+      { field: 'frequencyHopping', type: 'boolean', required: true, example: 'true', desc: 'Whether the radio hops across the channel plan (vs a fixed channel). Mandatory in most regions.' },
+      { field: 'channelData', type: 'array', required: true, enumUnits: 'string items (kHz)', example: '["865700", …]', desc: 'Channel center frequencies the reader may transmit on, as strings in kHz (e.g. `865700` = 865.7 MHz). Count and values are region-specific.' },
+      { field: 'country', type: 'string', required: true, example: 'India', desc: 'The country the device is configured for. Free-form (device-driven) — e.g. `India`, `United States`.' },
+      { field: 'lbtEnabled', type: 'boolean', required: true, example: 'false', desc: 'Whether Listen-Before-Talk is enabled (required in some ETSI regions; affects inventory start behavior).' },
+      { field: 'maxTxPowerSupported', type: 'number', required: true, enumUnits: 'dBm', example: '30', desc: 'Maximum transmit power supported in the region. Documented in dBm — confirm the scale against your firmware if precise power matters.' },
+      { field: 'minTxPowerSupported', type: 'number', required: true, enumUnits: 'dBm', example: '0', desc: 'Minimum transmit power supported in the region (dBm).' },
+      { field: 'regulatoryStandard', type: 'string', required: true, example: 'ETSI', desc: 'The regulatory standard governing transmission rules — e.g. `FCC`, `ETSI`. Free-form (device-driven).' },
+    ],
+  },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Result wrapper.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'get_current_region',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  currentRegion: {
+    frequencyHopping: true,
+    channelData: ['865700', '866300', '866900', '867500'],
+    country: 'India',
+    lbtEnabled: false,
+    maxTxPowerSupported: 30,
+    minTxPowerSupported: 0,
+    regulatoryStandard: 'ETSI',
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** read the reader's active regulatory region
+
+## Overview
+
+`get_current_region` retrieves the reader's **active regulatory / RF region configuration** in a single round trip: the country and governing regulatory standard, the channel plan (the frequencies the radio may use), the transmit-power limits, and whether Listen-Before-Talk (LBT) and frequency hopping are engaged. It is a read-only query on the device-management (MGMT) endpoint.
+
+The region governs whether — and how — the reader is legally allowed to transmit, so this read is the **compliance gate before any radio operation**. Note that the region can only be **read** over MQTT; it is **set** with 123RFID Desktop at bootstrap (see [What your reader knows about itself](/infrastructure/device-state)).
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_status`](/reference/mgmt/get-status), [`get_version`](/reference/mgmt/get-version) |
+| **Required Request Fields** | `command`, `requestId` |
+| **Supported Operations** | Read-only query — returns the active region; no payload. Region is **set** via 123RFID Desktop, not over MQTT |
+| **State Change** | READ-ONLY |
+| **Reversibility** | n/a (read-only) |
+
+## When to Use
+
+Use `get_current_region` when you need to **confirm the reader's regulatory configuration before it transmits** — typically in provisioning verification, a pre-inventory check, or a fleet compliance audit.
+
+- **Confirm the region:** verify `country` and `regulatoryStandard` match the deployment location before starting inventory.
+- **Validate the RF envelope:** check `maxTxPowerSupported` / `minTxPowerSupported`, `channelData`, `lbtEnabled`, and `frequencyHopping` against the constraints your operation expects.
+- **Audit compliance across a fleet:** read the region on each device to confirm consistent, compliant settings.
+- **After provisioning or a region change:** run `get_current_region` to confirm the new settings took effect before relying on the radio.
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`, where `<topic>` is configured per endpoint. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block — credentials are presented once at CONNECT. The `requestId` you send is echoed in the response so you can match reply to request. QoS and retain are governed by the endpoint's `mqttParams`, not by this command.
+:::
+
+## Key Fields
+
+- **`requestId`** (request) — your correlation token; make it unique per request. The device echoes it in the response so you can pair reply to request.
+- **`currentRegion.country`** / **`regulatoryStandard`** (response) — the configured country and governing standard (e.g. `FCC`, `ETSI`); confirm they match the deployment location.
+- **`currentRegion.maxTxPowerSupported`** (response) — the power ceiling (dBm); validate transmit-power settings against it before inventory.
+- **`currentRegion.lbtEnabled`** / **`frequencyHopping`** (response) — compliance behaviors that affect how (and whether) inventory can start.
+- **`response.code`** (response) — read this to determine success vs failure (see [Response Codes](#response-codes)).
+
+## Request payload
+
+The request envelope is just `command` and `requestId` — there is no payload wrapper and no per-message `auth` block. Use the **Schema** tab for the field reference and the **Example** tab for a ready-to-send, copy-pasteable request.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response payload
+
+The response envelope is `command`, `requestId`, `apiVersion`, `response`, and a `currentRegion` object. On the **Schema** tab, expand `currentRegion` to see every field — its type, whether it is required, its enum/units, an example value, and a description; the **Example** tab shows the full JSON. `currentRegion` is optional at the envelope level, but on a successful read it is the operative payload and **all seven of its members are required**. `country` and `regulatoryStandard` are free-form (device-driven) — the schema does not constrain them to a fixed vocabulary.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Codes
+
+`get_current_region` returns `response.code` per `response.yaml` and `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — region configuration retrieved and returned (the only code observed live). |
+| `3` | Not able to retrieve information (`IOT_ERROR_INFO_NOT_AVAILABLE`) — the device could not gather the region information at this time. Retry after a short delay; if it persists, reboot the device. |
+| `101` | Default error — generic catch-all. |
+
+:::note
+An **unconfigured region** surfaces as code `6` (`IOT_STATUS_REGION_NOT_CONFIGURED`) at **connect / bootstrap time** — it is not returned by `get_current_region` itself. If a device has no region set, configure it with 123RFID Desktop before connecting.
+:::
+
+## Examples
+
+`get_current_region` is a single request/response exchange. Publish the request below; the device replies on the response topic with the correlated reply — the `requestId` you send (`abc123`) is echoed back so you can pair reply to request. The full reply, field by field, is shown under [Response payload](#response-payload) above.
+
+<JsonBlock title="Request" data={REQUEST_JSON} />
+
+The response shown throughout is a live **India / ETSI** reading (4 channels). The `channelData` list and the `country` / `regulatoryStandard` / power values are region-specific — a US / FCC device, for example, reports ~50 channels across the 902–928 MHz band.
+
+## Notes & Caveats
+
+:::warning
+**The region is read-only over MQTT.** It is **set** with 123RFID Desktop at bootstrap, not by any MQTT command — `get_current_region` only reads it. A reader **will not transmit at all until a region is set**, and a reader set to the wrong region will operate but may violate local regulations. If a freshly provisioned reader reports the wrong `country`, redo region setup in 123RFID Desktop. See [What your reader knows about itself](/infrastructure/device-state) and [Regulatory information](/reference/appendices/regulatory).
+:::
+
+:::note
+`channelData` is a list of channel **center frequencies in kHz**, as strings — e.g. `"865700"` = 865.7 MHz. The count and values depend on the configured region: US / FCC has ~50 channels across 902–928 MHz; ETSI regions typically have fewer, in the 865–868 MHz band. `country` and `regulatoryStandard` are free-form, device-driven strings (no fixed enum).
+:::
+
+:::info
+`maxTxPowerSupported` / `minTxPowerSupported` are documented in **dBm** (e.g. `30` dBm ≈ 1 W). If precise transmit power matters to your integration, confirm the scale against your firmware, as some readings may be reported in deci-dBm rather than literal dBm.
+:::
+
+:::warning
+**`apiVersion` is per-handler, not device-wide.** `get_current_region` reports `apiVersion` `V1.1` (within its documented enum `V1.0` / `V1.1`), but on the same firmware other commands (e.g. [`get_version`](/reference/mgmt/get-version), [`get_status`](/reference/mgmt/get-status)) report `V1.21`. The value is emitted by each command's handler, so do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Run `get_current_region` **after device provisioning or a region change** to confirm the regulatory settings are correct before starting inventory operations.
+:::
+
+**Related:** 📘 [What your reader knows about itself](/infrastructure/device-state) · 📕 [Device status (MGMT)](/reference/mgmt/get-status) · 📕 [`get_status`](/reference/mgmt/get-status) · 📕 [`get_version`](/reference/mgmt/get-version) · 📕 [Regulatory information](/reference/appendices/regulatory) · 📕 [Error codes](/reference/errors/codes)

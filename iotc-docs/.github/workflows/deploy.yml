@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full git history so the sitemap plugin can stamp each page's
+          # <lastmod> from its last commit date (sitemap.lastmod: 'date').
+          # The default shallow clone (depth 1) would give every page the
+          # same date.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # remark-d2 spawns the `d2` CLI for every ```d2``` fence found
+      # during the build. The CLI is a Go binary; the official install
+      # script downloads a pinned tag.
+      - name: Install d2 CLI
+        run: |
+          curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1
+          d2 --version
+
+      - name: Build Docusaurus site
+        run: npm run build
+
+      # Pre-generate the per-page and consolidated API-reference PDFs with
+      # headless Chromium (print media → both ApiBody tabs revealed, tables
+      # fully expanded) into ./build/pdf before the site is published.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate API reference PDFs
+        run: npm run pdf
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
+          # Attribute the published commit to the project owner and keep
+          # gh-pages as a single commit (recreated each deploy) so the
+          # branch never accumulates bot-authored history.
+          user_name: al1913-zebra
+          user_email: al1913-zebra@users.noreply.github.com
+          force_orphan: true

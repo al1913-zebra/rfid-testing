@@ -1,0 +1,23 @@
+docs(api-ref): rounded box + zebra striping for the schema table
+
+1. Rounded border on all four corners of the Schema table, matching the Example
+   tab's .json-block. Done WITHOUT overflow:hidden on .schema-panel (that would clip
+   the right-most header icon's tooltip at the panel edge — the Example tab is immune
+   only because its right-most control is the tooltip-less Copy button): instead the
+   header rounds the top corners and .schema-table-scroll clips its own bottom
+   corners (a sibling of the header, so the tooltip is never clipped).
+
+2. True zebra striping — odd rows emphasis-100 (darker), even rows the background,
+   alternating every rendered row (nth-child, so it stays correct across
+   expand/collapse), replacing the old parent-vs-leaf shading. Header row bumped to
+   emphasis-200 to stay distinct from the odd stripe; parent rows keep their bold
+   field name for tree structure; the example code-chip bumped to emphasis-200 so it
+   stays visible on odd rows.
+
+3. The Expand-all/Collapse-all tooltip now behaves consistently with the Example tab
+   — resolved by (1) keeping the panel/header overflow visible, so the tooltip
+   renders in full exactly as in the Example tab.
+
+Also: inset the scroll-region focus ring (outline-offset) so it isn't clipped by the
+table-scroll's new overflow:hidden, and drop the now-redundant 1px ring from the
+full-bleed box-shadow (the panel has a real border now).

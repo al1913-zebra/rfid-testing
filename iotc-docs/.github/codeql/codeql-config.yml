@@ -1,0 +1,19 @@
+name: "IOTC CodeQL config"
+
+# Scope CodeQL to first-party source only. The published site is built from
+# docs/ (Markdown — not analyzable code); the real code surface is src/,
+# scripts/, and the workflows. Everything below is vendored, generated, or
+# non-shipping and produced false-positive noise under GitHub "default setup":
+#
+#   _meta/        — non-shipping knowledge base (vendored third-party Redoc HTML,
+#                   API-schema toolchains, research library). Never built/published.
+#   node_modules/ — third-party dependencies.
+#   build/        — Docusaurus production output (generated).
+#   static/       — static assets incl. generated D2 SVGs (static/d2/).
+#   .docusaurus/  — Docusaurus build cache (generated).
+paths-ignore:
+  - '_meta'
+  - 'node_modules'
+  - 'build'
+  - 'static'
+  - '.docusaurus'

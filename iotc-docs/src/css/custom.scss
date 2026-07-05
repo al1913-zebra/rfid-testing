@@ -1,0 +1,343 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Zebra Handheld RFID Reader IOTC | Global CSS
+ *
+ * Layout, typography, and component patterns inherited from the ConfigCat
+ * Docusaurus theme. Color palette swapped to Zebra brand:
+ *   primary (light): #004C97 (Zebra navy blue)
+ *   primary (dark):  #6CB4EE (light blue for dark mode contrast)
+ *
+ * Module imports (sidebar.scss, toc.scss, cards.scss, api.scss, proxy.scss)
+ * are inherited from the ConfigCat skeleton and provide the ConfigCat aesthetic
+ * for sidebar icons, table-of-contents active indicators, and Reference page
+ * styling. They reference CSS variables defined below so the palette swap
+ * automatically cascades.
+ */
+
+@use 'proxy';
+@use 'api';
+@use 'sidebar';
+@use 'toc';
+@use 'cards';
+@use 'print';
+
+:root {
+  /* === Zebra brand primary (was ConfigCat orange #f08d2a) === */
+  --ifm-color-primary:          #004C97;
+  --ifm-color-primary-dark:     #004088;
+  --ifm-color-primary-darker:   #003A7E;
+  --ifm-color-primary-darkest:  #002E63;
+  --ifm-color-primary-light:    #1A5EAA;
+  --ifm-color-primary-lighter:  #2C6AB5;
+  --ifm-color-primary-lightest: #4E84C9;
+
+  --ifm-code-font-size: 95%;
+  --ifm-background-color: #fff;
+
+  --menu-secondary-color: var(--ifm-menu-color);
+  --docusaurus-highlighted-code-line-bg: rgba(0, 76, 151, 0.08);
+  --bordered-img-color: rgb(226, 226, 226);
+
+  /* === PushFeedback widget — light theme ===
+   * The embedded <feedback-modal> at the bottom of every doc page picks
+   * up these CSS custom properties to match the site's brand. See
+   * https://docs.pushfeedback.com/customization/styles for the full
+   * variable list. */
+  --feedback-primary-color:                       var(--ifm-color-primary);
+  --feedback-secondary-color:                     var(--ifm-color-emphasis-100);
+  --feedback-text-color:                          var(--ifm-color-emphasis-800);
+  --feedback-dark-color:                          var(--ifm-heading-color);
+  --feedback-font-family:                         var(--ifm-font-family-base);
+  --feedback-heading-font-size:                   1.1rem;
+  --feedback-text-font-size:                      0.95rem;
+  --feedback-button-border-radius:                4px;
+  --feedback-modal-content-border-radius:         6px;
+  --feedback-modal-button-border-radius:          4px;
+  --feedback-modal-button-bg-color:               var(--ifm-background-color);
+  --feedback-modal-button-border-color:           var(--ifm-color-emphasis-300);
+  --feedback-modal-button-border-color-active:    var(--ifm-color-primary);
+  --feedback-modal-button-icon-color:             var(--ifm-color-emphasis-700);
+  --feedback-modal-button-icon-color-active:      var(--ifm-color-primary);
+  --feedback-modal-button-submit-bg-color:        var(--ifm-color-primary);
+  --feedback-modal-button-submit-bg-color-active: var(--ifm-color-primary-dark);
+  --feedback-button-text-font-weight:             600;
+
+  /* Close (×) button in the modal corner. Without these the default
+   * close-button colours can render invisible against our --ifm-
+   * background-color, so set them explicitly. */
+  --feedback-modal-close-color:                   var(--ifm-color-emphasis-800);
+  --feedback-modal-close-bg-color:                transparent;
+  --feedback-modal-screenshot-close-color:        var(--ifm-color-emphasis-800);
+
+  /* Modal title (also used for the success/error confirmation title).
+   * The defaults inherit from --feedback-dark-color / --feedback-heading-
+   * font-size / weight 500. Override so titles look like a real
+   * Docusaurus h3: heading colour, slightly larger size, weight 600. */
+  --feedback-modal-header-text-color:             var(--ifm-heading-color);
+  --feedback-modal-header-font-size:              1.15rem;
+  --feedback-modal-header-font-weight:            600;
+
+  /* Modal body (the success / error message paragraph and the
+   * textarea/email/etc. on the input form). Default cascades through
+   * --feedback-text-color and --feedback-text-font-size; pin to the
+   * site's body type so all sizes match the docs. */
+  --feedback-modal-content-text-color:            var(--ifm-font-color-base);
+  --feedback-modal-content-bg-color:              var(--ifm-background-color);
+  --feedback-modal-content-border-color:          var(--ifm-color-emphasis-300);
+  --feedback-modal-message-font-size:             0.95rem;
+
+  /* "Powered by PushFeedback" footer link in the modal */
+  --feedback-modal-footer-link:                   var(--ifm-color-emphasis-700);
+}
+
+[data-theme='dark'] {
+  /* === Zebra dark-mode primary === */
+  --ifm-color-primary:          #6CB4EE;
+  --ifm-color-primary-dark:     #54A8EB;
+  --ifm-color-primary-darker:   #3A9AE7;
+  --ifm-color-primary-darkest:  #1582D5;
+  --ifm-color-primary-light:    #87C2F2;
+  --ifm-color-primary-lighter:  #9ECEF5;
+  --ifm-color-primary-lightest: #C5E4FB;
+
+  --menu-secondary-color: rgb(192, 192, 192);
+  --docusaurus-highlighted-code-line-bg: rgba(108, 180, 238, 0.12);
+  --bordered-img-color: rgb(138, 138, 138);
+
+  /* === PushFeedback widget — dark theme === */
+  --feedback-primary-color:                       var(--ifm-color-primary);
+  --feedback-secondary-color:                     var(--ifm-color-emphasis-200);
+  --feedback-text-color:                          var(--ifm-color-emphasis-700);
+  --feedback-dark-color:                          var(--ifm-heading-color);
+  --feedback-modal-button-bg-color:               var(--ifm-color-emphasis-100);
+  --feedback-modal-button-border-color:           var(--ifm-color-emphasis-400);
+  --feedback-modal-button-border-color-active:    var(--ifm-color-primary);
+  --feedback-modal-button-icon-color:             var(--ifm-color-emphasis-700);
+  --feedback-modal-button-icon-color-active:      var(--ifm-color-primary);
+  --feedback-modal-button-submit-bg-color:        var(--ifm-color-primary);
+  --feedback-modal-button-submit-bg-color-active: var(--ifm-color-primary-dark);
+
+  /* Close (×) button — dark theme */
+  --feedback-modal-close-color:                   var(--ifm-color-emphasis-700);
+  --feedback-modal-close-bg-color:                transparent;
+  --feedback-modal-screenshot-close-color:        var(--ifm-color-emphasis-700);
+
+  /* Modal title / body — dark theme.
+   * The default --feedback-modal-content-bg-color cascades to
+   * --feedback-white-color (literally #fff) which would leave a glaring
+   * white modal in the middle of a dark page. Override to the site's
+   * background and heading colours. */
+  --feedback-modal-header-text-color:             var(--ifm-heading-color);
+  --feedback-modal-content-text-color:            var(--ifm-font-color-base);
+  --feedback-modal-content-bg-color:              var(--ifm-color-emphasis-100);
+  --feedback-modal-content-border-color:          var(--ifm-color-emphasis-400);
+  --feedback-modal-footer-link:                   var(--ifm-color-emphasis-600);
+}
+
+.theme-code-block-highlighted-line {
+  display: table-row !important;
+}
+
+.youtube-container {
+  height: 0;
+  margin: 0;
+  margin-bottom: 30px;
+  overflow: hidden;
+  padding-bottom: 56.25%;
+  padding-top: 30px;
+  position: relative;
+}
+
+.youtube-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video {
+  width: 100%;
+  height: auto;
+}
+
+li > h3 {
+  font-size: 1.4rem;
+}
+
+h4 {
+  font-size: 1.2rem;
+}
+
+h5 {
+  font-size: 1.1rem;
+}
+
+.bordered-img {
+  border: 1px solid var(--bordered-img-color);
+  margin-bottom: 1rem;
+}
+
+.zoomed-in-img {
+  border: 1px solid var(--bordered-img-color);
+}
+
+/* === Tables: fit when possible, scroll when too wide ===================
+   Every Markdown table is wrapped in a `.table-wrapper` (see the swizzled
+   src/theme/MDXComponents.tsx). The wrapper is the responsive boundary:
+   it allows horizontal scrolling so a table can never overflow the
+   article column and break the page layout on narrow viewports.
+
+   The table itself still fills the column (`width: 100%`) and wraps its
+   cell content (`overflow-wrap: break-word`), so the common case shows no
+   scroll bar at all — columns auto-size and text wraps. Only a table
+   whose minimum content width genuinely exceeds the viewport (the 6-col
+   error-code catalogue, the 4-col interface table on a phone) grows past
+   the wrapper and the wrapper scrolls horizontally instead of overflowing.
+
+   Word-break strategy (subtle but important):
+   - General cell content uses `overflow-wrap: break-word`: long words
+     break only when they would not fit on a line by themselves; a short
+     word like "Level" or "QoS 0" never breaks mid-word.
+   - `<a>` (long API-reference anchor URLs in link text) uses
+     `overflow-wrap: anywhere` — those tokens have no natural break points.
+   - `hyphens` is *not* set (it was inserting soft hyphens into short
+     headers like "Lev-el", "Net-work").
+
+   Across the corpus there are ~125 tables (41 × 2-col, 62 × 3-col,
+   16 × 4-col, 3 × 5-col, 3 × 6-col).
+*/
+.table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;                 // horizontal scroll fallback for wide tables
+  -webkit-overflow-scrolling: touch; // momentum scrolling on iOS
+  margin-bottom: var(--ifm-spacing-vertical, 1rem);
+}
+
+.markdown table,
+article table {
+  table-layout: auto;
+  width: 100%;
+  display: table;
+  word-break: normal;
+  overflow-wrap: break-word;
+  border-collapse: collapse;
+  margin-bottom: 0;        // the .table-wrapper owns the bottom spacing
+}
+
+.markdown table th,
+.markdown table td,
+article table th,
+article table td {
+  vertical-align: top;     // multi-line cells in one row don't grow to match
+  word-break: normal;
+  overflow-wrap: break-word;
+
+  // Inline code (command names, enum values, payload keys) — `break-word`
+  // so short identifiers like `MGMT_EVT`, `set_wifi`, `epType` stay on
+  // one line (their full token is the min-content). Very long
+  // identifiers like `IOT_ERROR_TAG_MATCH_PATTERN_LENGTH_EXCEEDED` will
+  // still break as a last resort when the column is too narrow.
+  // The previous `anywhere` value was breaking short tokens mid-token.
+  code {
+    word-break: normal;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+
+  // Links — long API-reference anchor URLs in the link href are not
+  // visible, but a visible URL in link text would otherwise force a
+  // fixed column width. `anywhere` lets such URLs break at any point.
+  a {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+// Header row: bold, slightly emphasised by the muted background already
+// inherited from the markdown styling
+.markdown table th,
+article table th {
+  text-align: left;
+}
+
+// First column often acts as a row label; allow it to wrap freely.
+// (Previous CSS forced `white-space: nowrap` which caused 1-col-wide
+// labels to push other columns offscreen on narrow viewports.)
+table td:first-child {
+  white-space: normal;
+}
+
+.bottom-spaced {
+  margin-bottom: 1em;
+}
+
+span[class*='codeLineNumber'] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+main article img:not(.no-auto-height) {
+  height: auto;
+}
+
+/* === Content image sizing: consistent visual weight across aspect ratios
+   Phone screenshots (tall, narrow) sit alongside laptop screenshots
+   (wide, short) and diagrams. Constrain max-height so vertical screens
+   don't visually dwarf horizontal ones; preserve native aspect ratio.
+*/
+.markdown img:not(.no-auto-height):not([class*='logo']):not([class*='badge']) {
+  max-width: 100%;
+  max-height: 480px;
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
+
+/* === Meta-bar callout: muted background for the doc-type blockquote =====
+   The first blockquote on each page starts with one of the Diátaxis icons
+   (📗 / 📘 / 📕 / 📙 / 🩺). Docusaurus renders it as a blockquote with a
+   left border; we add a soft background to give it presence without
+   competing with full admonitions (`:::info`, `:::warning`, etc.).
+
+   Every blockquote in the docs gets the muted background — for pages
+   where the blockquote isn't a meta-bar, the background still reads as a
+   neutral aside, which is correct.
+*/
+.markdown blockquote {
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+}
+
+[data-theme='dark'] .markdown blockquote {
+  background-color: #1c2128;
+}
+
+ul.feature-list {
+  --ifm-list-left-padding: 1.25em;
+  -moz-padding-start: 1em;
+}
+
+[data-theme='dark'] .monochrome-image.theme-aware {
+  -webkit-filter: invert(1);
+  filter: invert(1);
+}
+
+/* === Diátaxis content-type badges (homepage card grid) ===
+   Used by src/pages/index.tsx FeatureCard component. Inside docs/ pages
+   the quadrant signal is the blockquote emoji style (> 📘/📗/📙/📕 ...). */
+.badge-explanation { background-color: #E3EEF8; color: #003A7E; }
+.badge-tutorial    { background-color: #E8F5E8; color: #1B5E20; }
+.badge-howto       { background-color: #FFF3E0; color: #E65100; }
+.badge-reference   { background-color: #FCE4EC; color: #880E4F; }
+
+[data-theme='dark'] .badge-explanation { background-color: #1A2332; color: #87C2F2; }
+[data-theme='dark'] .badge-tutorial    { background-color: #1B2D1B; color: #A5D6A7; }
+[data-theme='dark'] .badge-howto       { background-color: #2D2417; color: #FFAB91; }
+[data-theme='dark'] .badge-reference   { background-color: #2D1A22; color: #F8BBD0; }

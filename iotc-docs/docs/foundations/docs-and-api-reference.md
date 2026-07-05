@@ -1,0 +1,86 @@
+---
+id: docs-and-api-reference
+title: How these docs pair with the MQTT API Reference
+sidebar_label: Pairing the docs with the API Reference
+description: How the conceptual IOTC docs pair with the auto-generated MQTT API Reference. When to read which, how to navigate between them, what each surface owns.
+sidebar_custom_props: { emoji: "📚" }
+---
+
+> 📘 **EXPLANATION** · **Audience:** All personas · **Read time:** ~3 min
+
+These conceptual docs and the **MQTT API Reference** are two halves of one documentation system. Reading either alone misses half the picture.
+
+### Why two sites
+
+The system answers four questions, each of which has its own voice and access pattern:
+
+| Question | Site | Voice | Look up |
+|---|---|---|---|
+| Why does this work the way it does? | Conceptual docs (this site) | Explanation; discursive | Concepts, mental models, decision criteria |
+| Teach me by doing. | Conceptual docs, Part 3 | Tutorial; narrative | The Quick Start |
+| Why is this broken? | Conceptual docs, Part 8 | Diagnostic; symptom-first | Recovery playbooks, misconception list |
+| What is the exact contract of this operation? | API Reference (separate site) | Reference; atomic, tabular | Schema, command signatures, error codes |
+
+Mixing the voices produces a worst-of-both-worlds page: too verbose for lookup, too dry for understanding. We keep them apart on purpose.
+
+### The cross-walk
+
+Every concept chapter in Parts 4–6 ties to exactly one API Reference sub-tag. The mapping is mechanical:
+
+| Concept chapter | API sub-tag | Operations / Events |
+|---|---|---|
+| What your reader knows about itself | Device Status | [`get_status`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-status) · [`get_version`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-version) · [`get_current_region`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-current-region) |
+| Getting on the network (Wi-Fi & Ethernet) | Network Configuration | [`get_eth`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-eth) · [`get_wifi`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-wifi) · [`set_wifi`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-wifi) · [`delete_wifi_profile`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-delete-wifi-profile) |
+| How the MQTT plumbing fits together | MQTT Endpoint Configuration | [`get_endpoint_config`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-endpoint-config) · [`config_endpoint`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-config-endpoint) |
+| Securing the connection (TLS & certificates) | Certificate Management | [`get_installed_certificate`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-installed-certificate) · [`install_certificate`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-install-certificate) · [`delete_certificate`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-delete-certificate) |
+| Updating firmware and rebooting | System Operations | [`set_os`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-os) · [`reboot`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-reboot) |
+| Choose how the reader reads tags | Operating Mode | [`get_operating_mode`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-operating-mode) · [`set_operating_mode`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-operating-mode) |
+| Start, stop, and the trigger button | Inventory Control | [`control_operation`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-control-operation) |
+| Filter tags before vs after the read | Tag Filtering | [`get_post_filter`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-post-filter) · [`set_post_filter`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-post-filter) |
+| Choose what the reader tells you | Event Configuration | [`config_events`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-config-events) |
+| Watch your reader's pulse | Device Health | `heartbeatEVT` |
+| When the reader needs to interrupt you | Alerts | `alerts` |
+| Knowing when you're connected | MQTT Connectivity | `mqttConnEVT` |
+| Where tag reads come from | Tag Data Event | `dataEVT` |
+
+Thirteen concept chapters, thirteen API sub-tags, mapped to the documented operations and events.
+
+### One-hop pivots
+
+- Every Part 4–6 concept chapter carries a **"See in the API Reference"** callout at the top, listing every operation in the matching sub-tag with a direct link.
+- Every API Reference page carries a **"Concept: read more"** callout pointing back to the concept chapter that explains why it exists.
+
+Click through either way. The cross-walk is bidirectional and complete.
+
+### Four navigation entry points
+
+A reader of this stack typically arrives via one of four doors:
+
+- **The concept door**: *"I'm trying to understand X."* Land here, in Parts 1–7.
+- **The tutorial door**: *"Teach me by doing."* Land in Part 3.
+- **The symptom door**: *"Why is this broken?"* Land in Part 8.
+- **The API door**: *"What's the exact contract?"* Land on the API Reference site.
+
+All four doors open into the same building. Internal links never leave you stranded; the cross-walk above guarantees a one-hop path to whichever surface answers your current question.
+
+### About payload examples
+
+Every code example on this site uses the **native MQTT payload shape** — the runtime contract the sled actually accepts: a top-level `command` and `requestId`, plus a command-specific **named payload object**.
+
+```json
+{
+  "command": "set_operating_mode",
+  "requestId": "abc-123",
+  "operatingMode": {
+    "operatingModes": {
+      "profiles": "BALANCED_PERFORMANCE"
+    }
+  }
+}
+```
+
+The named payload object (`operatingMode`, `ctrlOprPayload`, `epConfig`, `eventConfiguration`, …) is real and canonical — it is part of the wire contract. What the OpenAPI rendering on the API Reference site can add — generic `params`, `payload`, or `requestBody` envelopes wrapped *around* those named objects — does **not** exist on the wire. See [The OpenAPI Illusion](/foundations/native-mqtt-vs-openapi) for why both exist and how to read each.
+
+### Where to go next
+
+For the IOTC mental model: [What the IoT Connector is](/foundations/about-iotc). For the protocol primer: [MQTT in five minutes](/foundations/mqtt-primer). For the OpenAPI disambiguation: [The OpenAPI Illusion](/foundations/native-mqtt-vs-openapi).

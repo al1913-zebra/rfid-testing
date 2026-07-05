@@ -1,0 +1,74 @@
+/* Sidebar deep-link highlight (see ./index.ts).
+   A brief, accessible "flash" that fades out, drawing the eye to the active
+   left-nav link / right-TOC entry / target heading without being permanent. */
+
+.deeplink-flash {
+  border-radius: 4px;
+  animation: deeplink-flash-fade 2.2s ease-out;
+}
+
+@keyframes deeplink-flash-fade {
+  0%,
+  18% {
+    background-color: rgba(0, 76, 151, 0.16); // Zebra navy, light mode
+    box-shadow: 0 0 0 3px rgba(0, 76, 151, 0.12);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.deeplink-flash-heading {
+  border-radius: 4px;
+  animation: deeplink-heading-fade 1.8s ease-out;
+}
+
+@keyframes deeplink-heading-fade {
+  0%,
+  12% {
+    background-color: rgba(0, 76, 151, 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+[data-theme='dark'] {
+  .deeplink-flash {
+    animation-name: deeplink-flash-fade-dark;
+  }
+  .deeplink-flash-heading {
+    animation-name: deeplink-heading-fade-dark;
+  }
+}
+
+@keyframes deeplink-flash-fade-dark {
+  0%,
+  18% {
+    background-color: rgba(108, 180, 238, 0.22); // light-blue dark-mode primary
+    box-shadow: 0 0 0 3px rgba(108, 180, 238, 0.16);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+@keyframes deeplink-heading-fade-dark {
+  0%,
+  12% {
+    background-color: rgba(108, 180, 238, 0.18);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Respect reduced-motion: skip the fade animation, just no-op. */
+@media (prefers-reduced-motion: reduce) {
+  .deeplink-flash,
+  .deeplink-flash-heading {
+    animation: none;
+  }
+}

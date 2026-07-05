@@ -1,0 +1,190 @@
+---
+id: heartbeat-event
+title: heartbeatEVT
+sidebar_label: "heartbeatEVT"
+description: "MQTT reference for the heartbeatEVT event: the reader's periodic liveness and health signal — uptime, event sequence, inventory status, and battery status — published on the management event topic when the heartbeat is enabled via config_events."
+sidebar_custom_props: { emoji: "💓" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const EVENT_ROWS = [
+  { field: 'eventName', type: 'string', required: true, example: 'heartbeat', desc: 'Names the event — the fixed value `heartbeat` for this event.' },
+  { field: 'timestamp', type: 'string', required: true, example: '2019-08-24T14:15:22Z', desc: 'ISO-8601 time the event was generated.' },
+  { field: 'eventNumber', type: 'integer', required: true, example: '120', desc: 'Monotonic sequence number / identifier for the event.' },
+  { field: 'upTime', type: 'string', required: false, example: '5 days 4hr 3min', desc: 'Device uptime when the event was generated. Free-form human-readable string (not a duration type).' },
+  {
+    field: 'data', type: 'object', required: false, desc: 'Optional health payload. `anyOf` `inventoryStatus` / `batteryAlert` — one or both sub-objects may be present. Which appear is gated by `heartbeatConfiguration` (see Enabling).',
+    children: [
+      {
+        field: 'inventoryStatus', type: 'object', required: false, desc: 'RFID inventory status. Included when `heartbeatConfiguration.inventoryStatus` is `true`.',
+        children: [
+          { field: 'rfidStatus', type: 'enum', required: false, enumUnits: ['INPROGRESS', 'STOPPED'], example: 'INPROGRESS', desc: 'Current state of the RFID scanning process.' },
+          { field: 'tagCount', type: 'integer', required: false, example: '45', desc: 'Total RFID tags scanned in the current operation.' },
+          { field: 'scanCount', type: 'integer', required: false, example: '128', desc: 'Total scan attempts made during the operation.' },
+        ],
+      },
+      {
+        field: 'batteryAlert', type: 'object', required: false, desc: 'Battery status. Included when `heartbeatConfiguration.batteryStatus` is `true`. Its own schema requires all three fields below.',
+        children: [
+          { field: 'status', type: 'enum', required: true, enumUnits: ['LOW', 'CRITICAL', 'CHARGING', 'FULL', 'HIGH'], example: 'HIGH', desc: 'Current operational state of the battery.' },
+          { field: 'stateOfHealth', type: 'enum', required: true, enumUnits: ['GOOD', 'CRITICAL', 'MODERATE'], example: 'GOOD', desc: "Long-term battery capacity / health. Note: the event schema's own example uses `FULL` here, which is outside this enum — see Notes." },
+          { field: 'chargePercentage', type: 'integer', required: true, enumUnits: '0–100', example: '85', desc: 'Current charge level as a percentage (`maximum: 100`).' },
+        ],
+      },
+    ],
+  },
+];
+
+export const EVENT_JSON = {
+  eventName: 'heartbeat',
+  timestamp: '2019-08-24T14:15:22Z',
+  eventNumber: 120,
+  upTime: '5 days 4hr 3min',
+  data: {
+    inventoryStatus: {
+      rfidStatus: 'INPROGRESS',
+      tagCount: 45,
+      scanCount: 128,
+    },
+    batteryAlert: {
+      status: 'HIGH',
+      stateOfHealth: 'GOOD',
+      chargePercentage: 85,
+    },
+  },
+};
+
+export const MINIMAL_JSON = {
+  eventName: 'heartbeat',
+  timestamp: '2019-08-24T14:15:22Z',
+  eventNumber: 121,
+};
+
+export const INVENTORY_ONLY_JSON = {
+  eventName: 'heartbeat',
+  timestamp: '2019-08-24T14:15:37Z',
+  eventNumber: 122,
+  data: {
+    inventoryStatus: {
+      rfidStatus: 'STOPPED',
+      tagCount: 45,
+      scanCount: 128,
+    },
+  },
+};
+
+export const CONFIG_JSON = {
+  command: 'config_events',
+  requestId: 'abc123',
+  eventConfiguration: {
+    heartbeat: true,
+    heartbeatConfiguration: {
+      interval: 100,
+      inventoryStatus: true,
+      batteryStatus: true,
+    },
+  },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** interpret the reader's periodic heartbeat event
+
+## Overview
+
+`heartbeatEVT` is a **device-emitted** event — the reader publishes it on its own, with **no command triggering it**, to signal that it is alive and to report basic health: uptime, an event sequence number, and optional **inventory** and **battery** sub-payloads. It is read-only telemetry and carries no credentials.
+
+You don't request a heartbeat; you **enable** it. The reader publishes `heartbeatEVT` at the interval you set in `heartbeatConfiguration` once the heartbeat is turned on with [`config_events`](/reference/mgmt/config-events) (see [Enabling the heartbeat](#enabling-the-heartbeat)).
+
+:::note[Emission is firmware-gated — a live observation]
+In testing on an RFD40, **no `heartbeatEVT` was emitted** even with `heartbeat: true` confirmed active via [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) — across intervals of 15 s and 100 s, on both USB and battery power, over ~400 s of listening. The exact condition gating emission is **not exposed by the API**. If you enable the heartbeat and receive nothing, first confirm `heartbeat: true` and `interval > 0` (and that you rebooted so the change applied); beyond that, emission may depend on firmware state the API does not surface. Because of this, the payload documented below is drawn from the **schema** (it was not captured on the wire this session).
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Event Type** | Heartbeat — periodic liveness / health |
+| **Direction** | Device → application (device-emitted; no request/response) |
+| **Applies To** | RFD40 series, RFD90 series |
+| **Trigger** | Published automatically every `heartbeatConfiguration.interval` seconds while enabled |
+| **Enabled by** | [`config_events`](/reference/mgmt/config-events) — `eventConfiguration.heartbeat: true` (+ `heartbeatConfiguration`), applied on [`reboot`](/reference/mgmt/reboot) |
+| **Related Events** | [`dataEVT`](/reference/data/tag-data-event), [`alerts`](/reference/events/alerts-event), [`mqttConnEVT`](/reference/events/mqtt-connection-event) |
+| **Credentials** | None — read-only telemetry, nothing to mask |
+
+## Topic Mapping
+
+`heartbeatEVT` is device-originated and flows on the **management event topic** — it has no `cmnd`/`resp` topics of its own because no command produces it.
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Device-emitted event (subscribe by app) | `zebra/MGMT/clients/event/{serial}` (or `zebra/MDM/clients/event/{serial}`) | Published on the management endpoint's event topic. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. The event arrives on the same management-event plane you enabled it on with [`config_events`](/reference/mgmt/config-events). See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Event payload
+
+The top-level shape is `eventName`, `timestamp`, `eventNumber` (all **required**), an optional `upTime`, and an optional `data` object carrying the inventory and/or battery sub-payloads. Use the **Schema** tab for the field reference and the **Example** tab for a full heartbeat.
+
+<ApiBody rows={EVENT_ROWS} json={EVENT_JSON} title="Event payload" exampleCaption="inventory + battery" />
+
+`data` is an **`anyOf`** of `inventoryStatus` and `batteryAlert`, so a heartbeat may carry **one, both, or neither** sub-object. Which ones appear is controlled by the `heartbeatConfiguration` inclusion flags you set when enabling the heartbeat:
+
+- **`inventoryStatus`** — RFID scan state (`rfidStatus`), plus `tagCount` and `scanCount`. Present when `heartbeatConfiguration.inventoryStatus` is `true`.
+- **`batteryAlert`** — battery `status`, `stateOfHealth`, and `chargePercentage`. Present when `heartbeatConfiguration.batteryStatus` is `true`.
+
+## Enabling the heartbeat
+
+The heartbeat is off until you enable it with [`config_events`](/reference/mgmt/config-events) under `eventConfiguration`. Two conditions must hold: `heartbeat: true`, and `heartbeatConfiguration.interval` greater than `0`.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `heartbeat` | boolean | Set `true` to enable the heartbeat stream. |
+| `heartbeatConfiguration.interval` | integer (seconds) | Seconds between heartbeats. Lower = more telemetry, higher battery cost. |
+| `heartbeatConfiguration.inventoryStatus` | boolean | Include the `data.inventoryStatus` block in each heartbeat. |
+| `heartbeatConfiguration.batteryStatus` | boolean | Include the `data.batteryAlert` block in each heartbeat. |
+
+<JsonBlock title="Enable the heartbeat via config_events" data={CONFIG_JSON} />
+
+:::warning[Changes apply on reboot]
+`config_events` **stores** the heartbeat configuration immediately (confirm it with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config)), but the reader begins **emitting** only after a [`reboot`](/reference/mgmt/reboot). Also note `heartbeatConfiguration` does **not** appear in a default `get_endpoint_config` read — it is present only after `config_events` sets it. See [`config_events`](/reference/mgmt/config-events) for the full enable workflow.
+:::
+
+## Examples
+
+A heartbeat carrying **both** sub-objects appears in the **Example** tab of the payload above. The variants below show the minimal required-only shape and an inventory-only heartbeat.
+
+The minimum a heartbeat must carry (the three required fields; `data` and `upTime` omitted):
+
+<JsonBlock title="heartbeatEVT — minimal (required fields only)" data={MINIMAL_JSON} />
+
+An **inventory-only** heartbeat (`heartbeatConfiguration.inventoryStatus: true`, `batteryStatus: false`):
+
+<JsonBlock title="heartbeatEVT — inventory status only" data={INVENTORY_ONLY_JSON} />
+
+## Notes & Caveats
+
+:::note
+**Emission is firmware-gated (live observation).** On the tested RFD40, `heartbeatEVT` did not arrive even with `heartbeat: true` confirmed via [`get_endpoint_config`](/reference/mgmt/get-endpoint-config), across intervals of 15 s and 100 s and on both USB and battery power. The gating condition is not surfaced by the API. Treat the payload here as **schema-derived**; if you don't receive heartbeats after enabling and rebooting, the configuration is likely correct and the cause lies in firmware state the API doesn't expose.
+:::
+
+:::note
+**`data` is `anyOf`, gated by `heartbeatConfiguration`.** The `data` object may contain `inventoryStatus`, `batteryAlert`, both, or neither. Inclusion is driven by the `heartbeatConfiguration.inventoryStatus` / `heartbeatConfiguration.batteryStatus` flags you set when enabling — not by the event itself.
+:::
+
+:::note
+**`stateOfHealth` enum vs the schema example.** `batteryAlert.stateOfHealth` is enumerated `GOOD` / `CRITICAL` / `MODERATE` (per `batteryAlert.yaml`). The heartbeat event schema's *own* top-level example, however, sets `stateOfHealth: "FULL"` — which is **outside** that enum (`FULL` is a valid value for `status`, not `stateOfHealth`). Trust the `batteryAlert` enum; the examples on this page use in-enum values.
+:::
+
+:::note
+**Required fields and `upTime`.** `eventName`, `timestamp`, and `eventNumber` are required; `upTime` and `data` are optional. `upTime` is a **free-form string** (e.g. `"5 days 4hr 3min"`), not a machine-parseable duration — don't parse it as a number.
+:::
+
+:::note
+**No response envelope.** `heartbeatEVT` is a device-emitted event, so it carries **no `response`/`code`** — the command response-code table does not apply. `error_codes.json` lists no codes for events.
+:::
+
+:::tip
+`heartbeatEVT` is **read-only telemetry** and carries no credentials. Use it for liveness checks (the *absence* of expected heartbeats is itself a signal), inventory progression, and routine battery monitoring. For the concept-level view, see [Watch your reader's pulse](/observability/heartbeat) and [Monitor device health](/observability/monitoring/device-health).
+:::
+
+**Related:** 📕 [`config_events`](/reference/mgmt/config-events) · 📕 [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) · 📕 [Event schemas](/observability/events/catalog) · 📕 [`dataEVT`](/reference/data/tag-data-event) · 📘 [Watch your reader's pulse](/observability/heartbeat) · 📘 [The IOTC event model](/observability/events/model)

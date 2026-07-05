@@ -1,0 +1,134 @@
+---
+id: mqtt-connection-event
+title: mqttConnEVT
+sidebar_label: "mqttConnEVT"
+description: "MQTT reference for the mqttConnEVT event: the reader's per-endpoint connection-state signal (CONNECTED / DISCONNECTED) carrying device identity and protocol-version metadata, published autonomously on the per-endpoint rfid topic as MQTT birth and Last-Will messages."
+sidebar_custom_props: { emoji: "🔗" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const EVENT_ROWS = [
+  { field: 'connectionState', type: 'enum', required: false, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Endpoint connection status. `CONNECTED` = the endpoint (re)connected (birth message); `DISCONNECTED` = the session was lost (Last-Will). See Connection semantics.' },
+  { field: 'timestamp', type: 'string', required: false, enumUnits: 'date-time', example: '2026-06-15T13:09:33.810Z', desc: 'ISO-8601 time of the transition (`format: date-time`). Present on `CONNECTED`; typically omitted on `DISCONNECTED` (see Notes).' },
+  { field: 'deviceModel', type: 'enum', required: false, enumUnits: ['RFD40', 'RFD90'], example: 'RFD40', desc: 'Device model.' },
+  { field: 'deviceSerialNo', type: 'string', required: false, example: 'RFD40-24190525100255', desc: 'Unique device serial number.' },
+  { field: 'apiVersion', type: 'number', required: false, example: '1.21', desc: 'IOTC API version, emitted as a bare JSON number (e.g. `1.21`). Note this differs from the `V1.21` string that command responses return — see Notes.' },
+  { field: 'mqttVersion', type: 'number', required: false, example: '3.1', desc: 'MQTT protocol version (~3.1), emitted as a JSON number. The device serializes it as the float `3.0999999` — a floating-point artifact of `3.1` (see Notes).' },
+];
+
+export const CONNECTED_JSON = {
+  connectionState: 'CONNECTED',
+  timestamp: '2026-06-14T12:54:51.207Z',
+  deviceModel: 'RFD40',
+  deviceSerialNo: 'RFD40-24190525100255',
+  apiVersion: 1.21,
+  mqttVersion: 3.0999999,
+};
+
+export const DISCONNECTED_JSON = {
+  connectionState: 'DISCONNECTED',
+  deviceModel: 'RFD40',
+  deviceSerialNo: 'RFD40-24190525100255',
+  apiVersion: 1.21,
+  mqttVersion: 3.0999999,
+};
+
+export const CTRL_CONNECTED_JSON = {
+  connectionState: 'CONNECTED',
+  timestamp: '2026-06-14T12:54:51.411Z',
+  deviceModel: 'RFD40',
+  deviceSerialNo: 'RFD40-24190525100255',
+  apiVersion: 1.21,
+  mqttVersion: 3.0999999,
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** track each endpoint's connect / disconnect transitions
+
+## Overview
+
+`mqttConnEVT` is a **device-emitted** event that reports an MQTT endpoint's **connection-state transition** — `CONNECTED` or `DISCONNECTED` — along with device identity (`deviceModel`, `deviceSerialNo`) and protocol-version metadata (`apiVersion`, `mqttVersion`). The reader publishes it **autonomously** on every connection-state change; **no command triggers it and no configuration enables it**. It is read-only telemetry and carries no credentials.
+
+It behaves like standard MQTT connection lifecycle messages: a **`CONNECTED`** event is a *birth* message published when an endpoint (re)connects, and a **`DISCONNECTED`** event is a *Last-Will* message the broker publishes when the device session drops. **Each active endpoint emits its own** `mqttConnEVT`.
+
+:::note[Published on the per-endpoint `rfid` topic — not the event topic]
+`mqttConnEVT` is published on each endpoint's **`{EP}/clients/rfid`** topic (e.g. `zebra/MDM/clients/rfid/{serial}`, `zebra/CTRL/clients/rfid/{serial}`) — **not** the `{EP}/clients/event` topic that carries [`alerts`](/reference/events/alerts-event) and [`heartbeatEVT`](/reference/events/heartbeat-event), and not the DATA topic that carries [`dataEVT`](/reference/data/tag-data-event). Subscribe to the `rfid` topic of each endpoint you want connection events for.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Event Type** | Connection-state transition (birth / Last-Will) |
+| **Direction** | Device → application (device-emitted; no request/response) |
+| **Applies To** | RFD40 series, RFD90 series (verified on RFD40) |
+| **Trigger** | Autonomous, on every MQTT endpoint connect / disconnect — no command, no config |
+| **Topic** | Per-endpoint `zebra/{EP}/clients/rfid/{serial}` (MDM, CTRL, …), `retain=false` |
+| **Related Events** | [`alerts`](/reference/events/alerts-event), [`heartbeatEVT`](/reference/events/heartbeat-event), [`dataEVT`](/reference/data/tag-data-event) |
+| **Credentials** | None — read-only telemetry, nothing to mask |
+
+## Topic Mapping
+
+`mqttConnEVT` is device-originated and has no `cmnd`/`resp` topics. It is published on each active endpoint's own `rfid` topic.
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Device-emitted (per endpoint) | `zebra/MDM/clients/rfid/{serial}` | The MDM/management endpoint's connection events. |
+| Device-emitted (per endpoint) | `zebra/CTRL/clients/rfid/{serial}` | The CTRL endpoint's connection events (each active endpoint emits its own). |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. On a reboot-triggered reconnect, each active endpoint (MDM, CTRL, …) publishes its own `CONNECTED` event on its own `rfid` topic. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy), the [Connection lifecycle](/foundations/mqtt/connection-lifecycle), and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Connection semantics
+
+| `connectionState` | MQTT role | When | `timestamp` |
+| --- | --- | --- | --- |
+| `CONNECTED` | Birth message | Published by the endpoint when it (re)connects to the broker. | Present (ISO-8601). |
+| `DISCONNECTED` | Last-Will (LWT) | Published by the broker when the device session drops (detected via keepalive). | Usually **omitted** — the device is gone, so it cannot stamp it. |
+
+Because `DISCONNECTED` is a broker-published Last-Will, it can arrive some seconds after the actual drop (broker keepalive detection latency — ~26 s observed on RFD40 after a reboot), and it carries no `timestamp`. `CONNECTED` events follow on reconnect, each with its own ISO-8601 `timestamp`.
+
+## Event payload
+
+Six top-level fields; the schema declares **no `required` array**, so any field may be absent (notably `timestamp` on `DISCONNECTED`). Use the **Schema** tab for the field reference and the **Example** tab for a `CONNECTED` event.
+
+<ApiBody rows={EVENT_ROWS} json={CONNECTED_JSON} title="Event payload" exampleCaption="CONNECTED (live)" />
+
+## Examples
+
+The reader's live capture (a reboot-triggered disconnect/reconnect) produced a `DISCONNECTED` (Last-Will, no `timestamp`) followed by `CONNECTED` events on each endpoint's `rfid` topic.
+
+A **`DISCONNECTED`** event (Last-Will; note the absent `timestamp`):
+
+<JsonBlock title="mqttConnEVT — DISCONNECTED (Last-Will, live)" data={DISCONNECTED_JSON} />
+
+A second **`CONNECTED`** event on the **CTRL** endpoint's `rfid` topic (per-endpoint emission — the MDM endpoint published its own moments earlier):
+
+<JsonBlock title="mqttConnEVT — CONNECTED on the CTRL endpoint (live)" data={CTRL_CONNECTED_JSON} />
+
+## Notes & Caveats
+
+:::note
+**`apiVersion` is a bare number, not the `V…` string.** `mqttConnEVT` reports `apiVersion` as a JSON **number** (e.g. `1.21`). This differs from command responses, which report `apiVersion` as a **string** with a leading `V` (e.g. [`get_version`](/reference/mgmt/get-version) returns `V1.21`). Same version family, different representation — don't compare them as equal strings.
+:::
+
+:::warning[`mqttVersion` is a float artifact of 3.1]
+The device serializes `mqttVersion` as the JSON number **`3.0999999`**, a floating-point representation artifact of **`3.1`** (MQTT 3.1). Treat any `mqttVersion` value ≈ `3.1` as protocol version 3.1; don't test it for exact equality to `3.1`. (This is a known firmware serialization quirk.)
+:::
+
+:::note
+**`timestamp` is optional and format `date-time`.** When present it is a full ISO-8601 instant (e.g. `2026-06-15T13:09:33.810Z`). It is typically **omitted on `DISCONNECTED`** (a broker Last-Will published after the device is gone), which the schema permits because there is no `required` array.
+:::
+
+:::note
+**Per-endpoint emission, `retain=false`.** Each active endpoint publishes its own `mqttConnEVT` on its own `{EP}/clients/rfid` topic, so a single reconnect yields one event per endpoint (e.g. MDM and CTRL each publish a `CONNECTED`). All are published with `retain=false`, so a late subscriber won't see the last state replayed — subscribe before the transition you want to observe.
+:::
+
+:::note
+**No response envelope; automatic.** `mqttConnEVT` is a device-emitted event, so it carries **no `response`/`code`** — the command response-code table does not apply, and `error_codes.json` lists no codes for events. It needs no `config_events` toggle; the reader always emits it on a connection-state change. (The schema file's `title` is `epConnection`, a cosmetic mismatch with the event name — the on-the-wire payload is unaffected.)
+:::
+
+:::tip
+`mqttConnEVT` is **read-only telemetry** with no credentials (`deviceSerialNo` is an identifier; `apiVersion`/`mqttVersion` are version values). Use the `rfid`-topic connection events for a reliable presence/liveness signal — the `DISCONNECTED` Last-Will tells you a device dropped even when the device itself can't. For the concept-level view, see [Knowing when you're connected](/observability/mqtt-connection) and [Connection lifecycle](/foundations/mqtt/connection-lifecycle).
+:::
+
+**Related:** 📕 [`alerts`](/reference/events/alerts-event) · 📕 [`heartbeatEVT`](/reference/events/heartbeat-event) · 📕 [`dataEVT`](/reference/data/tag-data-event) · 📕 [Event schemas](/observability/events/catalog) · 📘 [Knowing when you're connected](/observability/mqtt-connection) · 📘 [Connection lifecycle](/foundations/mqtt/connection-lifecycle)

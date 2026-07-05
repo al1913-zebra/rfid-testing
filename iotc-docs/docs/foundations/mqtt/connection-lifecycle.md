@@ -1,0 +1,72 @@
+---
+id: connection-lifecycle
+title: MQTT connection lifecycle and keep-alive
+sidebar_label: Connection lifecycle & keep-alive
+description: "The IOTC reader's MQTT connection lifecycle: CONNECT, keep-alive PING, DISCONNECT, last-will. Covers reconnect cadence and connection-state reporting."
+sidebar_custom_props: { emoji: "⏲️" }
+---
+
+> 📘 **EXPLANATION** · **Audience:** Solution Builder · **Read time:** ~5 min
+
+An MQTT client's connection to the broker is a stateful, long-lived TCP session. Its lifecycle has named stages, and understanding them is the difference between diagnosing a flaky reader in five minutes and chasing it for an afternoon.
+
+### CONNECT and CONNACK
+
+A client begins by sending a CONNECT packet containing its client identifier, credentials, optional LWT, keep-alive interval, and clean-session flag. The broker replies with CONNACK (accept or reject). From this point the connection is established.
+
+```d2
+shape: sequence_diagram
+C: Client
+B: Broker
+C -> B: "CONNECT\nclientId, keepAlive,\ncleanSession, will, auth"
+B -> C: "CONNACK\nsessionPresent, returnCode"
+keepalive: while connected {
+  C -> B: "PINGREQ (every keepAlive)"
+  B -> C: PINGRESP
+}
+C -> B: DISCONNECT (graceful)
+
+```
+
+### Keep-alive. PINGREQ and PINGRESP
+
+The client and broker agree on a keep-alive interval at CONNECT time. If no data has flowed for that interval, the client sends a PINGREQ; the broker replies with PINGRESP. If either side fails to receive expected traffic for one and a half keep-alive intervals, it considers the peer dead and closes the connection.
+
+For battery-powered handheld readers, keep-alive interval is a direct battery-vs-responsiveness trade-off. Shorter intervals detect outages faster but use more battery. The default chosen for IOTC reflects this balance.
+
+### Clean session vs persistent session
+
+A clean-session client tells the broker "do not preserve state for me" — no queued messages, no subscription persistence. A persistent-session client (`cleanSession: false`) asks the broker to retain its subscriptions and queue QoS 1 messages while it is offline. **IOTC readers default to clean sessions** (`cleanSession: true` — the schema default and the value in every canonical `config_endpoint` example). Tag data captured during a disconnect is preserved by the reader's own retention buffer, not by broker-side session state. (A persistent session is worth enabling on the *application / subscriber* side — see [What happens when the network drops](/fleet/retention-and-retry).)
+
+### Reconnection behaviour on the handheld
+
+The handheld sled's MQTT connection rides over its Wi-Fi link. When Wi-Fi drops — reader out of range, access-point handoff — the MQTT connection drops too. The reader's firmware detects this and attempts reconnection with exponential backoff (between `reconnectDelayMin` and `reconnectDelayMax`). Once Wi-Fi is reachable again, the reader re-establishes a fresh session and re-subscribes; tag reads captured during the outage are replayed from its retention buffer.
+
+```d2
+classes: {
+  good: { style: { fill: "#e6f4ea"; stroke: "#1e8e3e"; font-color: "#137333" } }
+  warn: { style: { fill: "#fef7e0"; stroke: "#f9ab00"; font-color: "#b06000" } }
+  bad:  { style: { fill: "#fce8e6"; stroke: "#d93025"; font-color: "#c5221f" } }
+}
+direction: down
+start: "" { shape: circle; style.fill: "#333333"; width: 18; height: 18 }
+Connecting
+Connected { class: good }
+Disconnected { class: bad }
+Reconnecting { class: warn }
+done: "" { shape: circle; style.fill: "#333333"; width: 18; height: 18 }
+start -> Connecting
+Connecting -> Connected: CONNACK ok
+Connected -> Disconnected: network drop / DISCONNECT
+Disconnected -> Reconnecting: after reconnectDelayMin
+Reconnecting -> Connected: CONNACK ok
+Reconnecting -> Reconnecting: "backoff (capped at\nreconnectDelayMax)"
+Connected -> done: graceful close
+
+```
+
+### Battery implications
+
+Each PINGREQ wakes the radio. A 30-second keep-alive at moderate battery draws ~3% extra per shift compared to a 120-second keep-alive. For deployments where battery is the binding constraint, increase the keep-alive interval and accept slightly slower offline-detection latency. The trade-off is operational, not protocol-level.
+
+**Related:** 📘 [Handheld Considerations](/foundations/architecture/handheld-considerations) · 📘 [MQTT Connection Events](/observability/mqtt-connection) · 📙 [Connection Quality](/observability/monitoring/connection-quality) · 📕 [mqttConnEVT](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#tag-mqttconnevt)

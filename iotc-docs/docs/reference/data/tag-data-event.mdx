@@ -1,0 +1,212 @@
+---
+id: tag-data-event
+title: dataEVT
+sidebar_label: "dataEVT"
+description: "MQTT reference for the dataEVT event: the reader's tag-read (and barcode) output during an active inventory — EPC/TID/USER memory, telemetry (RSSI, phase, channel, seen count), and access-operation results — batched on the DATA endpoint."
+sidebar_custom_props: { emoji: "🏷️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const EVENT_ROWS = [
+  { field: 'type', type: 'enum', required: false, enumUnits: ['FAST_READ', 'CYCLE_COUNT', 'DENSE_READERS', 'OPTIMAL_BATTERY', 'BALANCED_PERFORMANCE', 'ADVANCED'], example: 'BALANCED_PERFORMANCE', desc: 'The active operating-mode profile in effect for this read (echoes the profile set by set_operating_mode).' },
+  { field: 'timestamp', type: 'string', required: true, enumUnits: 'ISO-8601', example: '2026-06-16T06:03:36.894Z', desc: 'ISO-8601 time the event was generated. The only required top-level field.' },
+  {
+    field: 'data', type: 'object', required: false, desc: 'Read payload — RFID tag reads and/or barcode reads.',
+    children: [
+      {
+        field: 'tagData', type: 'array', required: false, desc: 'RFID tag reads (batched — up to ~40 per event). Which fields appear is gated by the operating mode `tagMetaDataToEnable` flags; `EPCid` is always present.',
+        children: [
+          { field: 'EPCid', type: 'string', required: false, enumUnits: 'hex', example: 'E28011B0A506007D3DD07C0F', desc: 'EPC Identifier — the always-present tag identifier, as a hex string.' },
+          { field: 'eventNum', type: 'number', required: true, example: '41', desc: 'Per-read event sequence number. The only required `tagData` field.' },
+          { field: 'EPC', type: 'string', required: false, enumUnits: 'hex', desc: 'EPC memory-bank contents (present when EPC metadata is enabled).' },
+          { field: 'TID', type: 'string', required: false, enumUnits: 'hex', desc: 'TID memory-bank contents (present when TID is enabled).' },
+          { field: 'USER', type: 'string', required: false, enumUnits: 'hex', desc: 'USER memory-bank contents (present when USER is enabled).' },
+          { field: 'RESERVED', type: 'string', required: false, enumUnits: 'hex', desc: 'RESERVED memory-bank contents (present when read via an access op). ⚠️ May contain the tag access / kill passwords — see Notes.' },
+          { field: 'PC', type: 'string', required: false, enumUnits: 'hex', desc: 'PC bits of the inventoried tag (when PC is enabled).' },
+          { field: 'CRC', type: 'string', required: false, enumUnits: 'hex', desc: 'CRC bits. Enabling CRC may not be honored by current firmware — see Notes.' },
+          { field: 'XPC', type: 'string', required: false, enumUnits: 'hex', desc: 'XPC bits, if present. Enabling XPC may not be honored by current firmware — see Notes.' },
+          { field: 'channel', type: 'number', required: false, example: '9216', desc: 'The channel the reader used when the tag was inventoried. ⚠️ Emitted as a raw channel value/index, NOT a MHz frequency despite the schema label — see Notes. Reported only when `reportFilter` duration = 0.' },
+          { field: 'peakRssi', type: 'number', required: false, enumUnits: 'dBm', example: '-73', desc: 'RSSI in dBm (when RSSI is enabled). With aggregation, the peak RSSI since the last report.' },
+          { field: 'phase', type: 'number', required: false, enumUnits: 'degrees', desc: 'Phase in degrees (when PHASE is enabled). Reported only when `reportFilter` duration = 0.' },
+          { field: 'seenCount', type: 'number', required: false, example: '256', desc: 'Times the tag was inventoried since the previous report (when SEENCOUNT is enabled); always 1 when `reportFilter` duration = 0.' },
+          { field: 'accessResults', type: 'array', required: false, desc: 'Results of the configured access operations (one string per op). Present only when access ops are configured via set_operating_mode — see Notes.' },
+          { field: 'MAC', type: 'string', required: false, example: 'AC:3F:A4:00:2B:15', desc: 'MAC address of the reader (when MAC is enabled).' },
+          { field: 'HOSTNAME', type: 'string', required: false, example: 'RFD40-211545201D0034', desc: 'Hostname of the reader (when HOSTNAME is enabled).' },
+          { field: 'userDefined', type: 'string', required: false, desc: 'A user-defined string included on every event (when configured).' },
+          { field: 'firstSeenTime', type: 'number', required: false, enumUnits: 'ms epoch', desc: 'Timestamp the tag was first seen (ms since epoch).' },
+          { field: 'lastSeenTime', type: 'number', required: false, enumUnits: 'ms epoch', desc: 'Timestamp the tag was last seen (ms since epoch).' },
+          { field: 'format', type: 'string', required: false, desc: 'Format of the tag data (`EPCid`). Declared but not required, and not observed on the wire.' },
+        ],
+      },
+      {
+        field: 'barcodeData', type: 'array', required: false, desc: 'Barcode reads (present when a barcode is scanned during the operation).',
+        children: [
+          { field: 'decodedBarcode', type: 'string', required: true, example: 'ABC-12345', desc: 'The decoded barcode string. The only required `barcodeData` field.' },
+          { field: 'symbology', type: 'enum', required: false, enumUnits: ['CODE_39'], example: 'CODE_39', desc: 'The barcode symbology.' },
+        ],
+      },
+    ],
+  },
+];
+
+export const DEFAULT_JSON = {
+  type: 'BALANCED_PERFORMANCE',
+  timestamp: '2026-06-16T06:03:36.894Z',
+  data: {
+    tagData: [
+      { EPCid: 'E28011B0A506007D3DD07C0F', eventNum: 41, peakRssi: -73, seenCount: 256 },
+      { EPCid: '311100000000000000000000', eventNum: 42, peakRssi: -50, seenCount: 256 },
+      { EPCid: '11113333880600890630DBEC', eventNum: 43, peakRssi: -53, seenCount: 256 },
+    ],
+  },
+};
+
+export const ENRICHED_JSON = {
+  type: 'BALANCED_PERFORMANCE',
+  timestamp: '2026-06-16T06:14:26.782Z',
+  data: {
+    tagData: [
+      {
+        EPCid: 'AAAABBBB11112222CCCCDDDD',
+        EPC: 'D98A3000AAAABBBB11112222CCCCDDDD',
+        TID: 'E2003412012DFA000FF5D1E4031D0136000D5FFBFFFFDC60',
+        channel: 9216,
+        eventNum: 91,
+        peakRssi: -62,
+        phase: 64,
+        seenCount: 1,
+        MAC: 'AC:3F:A4:00:2B:15',
+        HOSTNAME: 'RFD40-211545201D0034',
+      },
+    ],
+  },
+};
+
+export const ACCESS_JSON = {
+  type: 'BALANCED_PERFORMANCE',
+  timestamp: '2026-06-16T06:17:41.088Z',
+  data: {
+    tagData: [
+      {
+        EPCid: '11115555222233334444A9B6',
+        EPC: '111155552222',
+        TID: 'E28011C1200009B6BCB50317000000000A00',
+        RESERVED: '1111000011110000809024593A7B3000',
+        eventNum: 6,
+        peakRssi: -29,
+        seenCount: 256,
+        accessResults: ['READ-EPC-Success', 'READ-TID-Success', 'READ-RESERVED-Success'],
+      },
+    ],
+  },
+};
+
+export const BARCODE_JSON = {
+  type: 'BALANCED_PERFORMANCE',
+  timestamp: '2026-06-16T06:20:00.000Z',
+  data: {
+    barcodeData: [{ symbology: 'CODE_39', decodedBarcode: 'ABC-12345' }],
+  },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** interpret the reader's tag-read (and barcode) output
+
+## Overview
+
+`dataEVT` is the reader's **tag-data** event — the device publishes it **autonomously** while an inventory is running, carrying the RFID tag reads (and any barcode reads) it produces. It is **device-emitted** (no command is in the payload path), but it only flows once you **start an inventory** with [`control_operation`](/reference/ctrl/control-operation) `START`, using whatever the [`set_operating_mode`](/reference/ctrl/set-operating-mode) profile configured. It is read-only tag output.
+
+Each event is a small envelope — `type` (the active profile), `timestamp`, and a `data` object holding a **`tagData[]`** array (and/or a `barcodeData[]` array). Reads are **batched** (up to ~40 tags per event), and **which fields each tag carries is gated by the operating mode's `tagMetaDataToEnable` flags** — only `EPCid` and `eventNum` are effectively always present.
+
+:::note[Flows on the DATA endpoint, not the management/control planes]
+`dataEVT` is published on the **DATA endpoint's** data topic (e.g. `zebra/DATA/clients/data1event/{serial}` for `DATA1`), not the `event` topic ([`alerts`](/reference/events/alerts-event) / [`heartbeatEVT`](/reference/events/heartbeat-event)) or the `rfid` topic ([`mqttConnEVT`](/reference/events/mqtt-connection-event)). Receiving it requires an **active DATA endpoint** ([`config_endpoint`](/reference/mgmt/config-endpoint), `epType: DATA1`/`DATA2`). Two parallel channels — `DATA1` and `DATA2` — can each carry `dataEVT`.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Event Type** | Tag-data (and barcode) read output |
+| **Direction** | Device → application (device-emitted; no request/response) |
+| **Applies To** | RFD40 series, RFD90 series (verified on RFD40) |
+| **Trigger** | An active inventory — started with [`control_operation`](/reference/ctrl/control-operation) `START`; stops on `STOP` |
+| **Topic** | DATA endpoint data topic, e.g. `zebra/DATA/clients/data1event/{serial}` (`DATA1` / `DATA2`) |
+| **Shaped by** | [`set_operating_mode`](/reference/ctrl/set-operating-mode) — `tagMetaDataToEnable`, `reportFilter` duration, `accessOperations` |
+| **Related Events** | [`alerts`](/reference/events/alerts-event), [`heartbeatEVT`](/reference/events/heartbeat-event), [`mqttConnEVT`](/reference/events/mqtt-connection-event) |
+| **Credentials** | None device-side; but a `RESERVED`-bank read can expose a tag's access/kill passwords — see Notes |
+
+## Topic Mapping
+
+`dataEVT` is device-originated and has no `cmnd`/`resp` topics. It is published on the DATA endpoint's data topic.
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Device-emitted (DATA1) | `zebra/DATA/clients/data1event/{serial}` | The first data channel's tag stream (verified on-device). |
+| Device-emitted (DATA2) | `zebra/DATA/clients/data2event/{serial}` | The second data channel, when a `DATA2` endpoint is configured. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`; the exact middle segment is the DATA endpoint's configured `publishTopic`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## How reads are shaped
+
+Two operating-mode settings determine what each `dataEVT` carries:
+
+- **`tagMetaDataToEnable`** (in [`set_operating_mode`](/reference/ctrl/set-operating-mode)) gates the per-read fields: `RSSI` → `peakRssi`, `PHASE` → `phase`, `CHANNEL` → `channel`, `SEENCOUNT` → `seenCount`, `EPC`/`TID`/`USER`, `PC`, `MAC`, `HOSTNAME`. `EPCid` is always present. (`XPC`/`CRC` enable flags may not be honored — see Notes.)
+- **`reportFilter` duration** controls aggregation: at **`0`**, every individual read is reported (`channel` and `phase` are included, and `seenCount` is `1`); at **> 0**, reads are aggregated and reported at intervals, `seenCount` counts the reads since the last report, and `peakRssi` is the peak since the last report.
+
+## Event payload
+
+The envelope is `type`, `timestamp` (the only required field), and `data`. Use the **Schema** tab for the full field reference (all `tagData` / `barcodeData` fields) and the **Example** tab for a default-mode batch.
+
+<ApiBody rows={EVENT_ROWS} json={DEFAULT_JSON} title="Event payload" exampleCaption="default mode (live, abridged)" />
+
+## Examples
+
+The examples below are representative reads (abridged to a few tags per batch); which fields appear reflects the operating-mode configuration. The default and access-operation examples are live captures; the enriched example combines per-read fields into one tag for illustration.
+
+**Enriched read** — EPC/TID memory plus `channel`, `phase`, `MAC`, and `HOSTNAME` (their `tagMetaDataToEnable` flags on). With per-read reporting (`reportFilter` duration = 0), `channel`/`phase` are present and `seenCount` is `1`:
+
+<JsonBlock title="dataEVT — enriched (EPC/TID/channel/phase/MAC/HOSTNAME)" data={ENRICHED_JSON} />
+
+**Access-operation read** — a configured `READ` of the EPC/TID/RESERVED banks surfaces its outcomes in `accessResults`:
+
+<JsonBlock title="dataEVT — with access-operation results" data={ACCESS_JSON} />
+
+**Barcode read** — when a barcode is scanned during the operation, `data.barcodeData[]` is populated instead of (or alongside) `tagData` (schema-derived example — barcode was not exercised live):
+
+<JsonBlock title="dataEVT — barcode read" data={BARCODE_JSON} />
+
+## Notes & Caveats
+
+:::note
+**Field presence is gated; only `EPCid` + `eventNum` are effectively always there.** Beyond `EPCid` (always present) and the required `eventNum`, every `tagData` field appears only when its `tagMetaDataToEnable` flag is set in [`set_operating_mode`](/reference/ctrl/set-operating-mode). A default-mode read typically carries just `EPCid`, `eventNum`, `peakRssi`, and `seenCount`. Code defensively — treat all other fields as optional.
+:::
+
+:::warning[`channel` is a raw index, not MHz]
+Despite the schema describing `channel` as a value "in MHz", the device emits a **raw channel value/index** (e.g. `9216`), **not** a ~900 MHz frequency. Do not interpret `channel` as megahertz; treat it as an opaque channel index. `channel` (and `phase`) are reported only when `reportFilter` duration = 0.
+:::
+
+:::note
+**`XPC` and `CRC` enable flags may be ignored.** On current firmware, requesting `XPC` or `CRC` in `tagMetaDataToEnable` may read back as enabled-but-not-honored — they were never emitted in testing. `XPC` is reported only if physically present on the tag. Don't rely on `XPC`/`CRC` being present even when enabled.
+:::
+
+:::note
+**`accessResults` appears only for configured access operations.** `accessResults` is populated only when you configure `accessOperations` (READ/WRITE/LOCK/KILL) in [`set_operating_mode`](/reference/ctrl/set-operating-mode); each string is one op's outcome (e.g. `READ-EPC-Success`, or an error/`SUCCESS` for writes). A bank read enabled purely via `tagMetaDataToEnable` surfaces as the `EPC`/`TID`/`USER` metadata fields, not as `accessResults`.
+:::
+
+:::warning[`RESERVED`-bank reads can expose tag passwords]
+The `RESERVED` memory bank holds a tag's **access and kill passwords**. If you configure a `READ` of the RESERVED bank, those passwords appear in `dataEVT` as the `RESERVED` hex field — treat that data as sensitive. (`EPCid` and the other bank contents are physical-tag data, not device or broker credentials.)
+:::
+
+:::note
+**`STOP` is not instantaneous for buffered reads.** [`control_operation`](/reference/ctrl/control-operation) `STOP` halts the radio, but a buffered in-flight `dataEVT` batch may still be delivered a few seconds after `STOP` (≈3–5 s observed on RFD40). Don't treat a `dataEVT` arriving shortly after `STOP` as an error, and don't stop listening the instant you send `STOP`.
+:::
+
+:::note
+**Batching, `type`, and `FAST_READ`.** Reads are batched — up to ~40 tags per `dataEVT`. `type` echoes the active operating-mode profile (e.g. `BALANCED_PERFORMANCE`); the reader emits the same profile on every event of a run. Note the `FAST_READ` profile does **not** emit `dataEVT` on current firmware (see [`set_operating_mode`](/reference/ctrl/set-operating-mode)), so `type` will not appear as `FAST_READ` on a data event. `dataEVT` carries **no `response`/`code`** — the command response-code table does not apply, and `error_codes.json` lists no codes for events.
+:::
+
+:::tip
+Start the stream with [`control_operation`](/reference/ctrl/control-operation) `START` and stop it with `STOP`. Because `dataEVT` reflects the operating mode, **any armed destructive `accessOperations` (WRITE/LOCK/KILL) execute on the tags read during the run** — confirm the mode is read-only before starting (see [`set_operating_mode` § Notes](/reference/ctrl/set-operating-mode#notes--caveats)). For the concept-level view, see [Where tag reads come from](/rfid/dataevt-schema), [Two data channels](/rfid/tag-data/dual-channels), and [Interpreting tag reads](/rfid/tag-data/interpret).
+:::
+
+**Related:** 📕 [`control_operation`](/reference/ctrl/control-operation) · 📕 [`set_operating_mode`](/reference/ctrl/set-operating-mode) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [Event schemas](/observability/events/catalog) · 📘 [Where tag reads come from](/rfid/dataevt-schema) · 📘 [Two data channels](/rfid/tag-data/dual-channels)

@@ -1,0 +1,11 @@
+title: wifiProfileInfo
+x-stoplight:
+  id: g7xr6cuym4h26
+type: object
+description: Identifies the WiFi profile to be deleted from the device.
+examples: []
+properties:
+  essid:
+    type: string
+    example: JioFi
+    description: SSID of the wifi profile to be deleted

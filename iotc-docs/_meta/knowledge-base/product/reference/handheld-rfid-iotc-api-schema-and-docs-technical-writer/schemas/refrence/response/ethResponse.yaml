@@ -1,0 +1,93 @@
+title: ethResponse
+x-stoplight:
+  id: m3kxui97rkljt
+type: array
+description: Contains the ethernet interface configuration and connection status.
+examples: []
+items:
+  type: object
+  properties:
+    InterfaceDetails:
+      type: object
+      properties:
+        interfaceName:
+          type: string
+          example: eth0
+        status:
+          type: string
+          example: enabled
+          enum:
+            - enabled
+            - disabled
+        hostName:
+          type: string
+          example: RFD40AB03
+        macAddress:
+          type: string
+          example: E0-D0-45-3D-38-1D
+        linkStatus:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - Connected
+                - Disconnected
+              example: Connected
+            linkSpeed:
+              type: string
+              example: 100Mbps
+        ipv4Configuration:
+          type: object
+          properties:
+            ipAddress:
+              type: string
+              example: 192.168.1.81
+              format: ipv4
+            subnetMask:
+              type: string
+              example: 255.255.255.0
+              format: ipv4
+            gateway:
+              type: string
+              example: 192.168.1.144
+              format: ipv4
+            dhcpStatus:
+              type: string
+              enum:
+                - enabled
+                - disabled
+              example: enabled
+            dnsServer:
+              type: string
+              format: ipv4
+              example: 192.168.1.78
+            domainName:
+              type: string
+              example: test.soti.com
+        security:
+          type: object
+          properties:
+            securityStatus:
+              type: boolean
+              example: true
+            EAP802_1X:
+              type: object
+              properties:
+                authentication:
+                  type: string
+                  example: tls
+                  enum:
+                    - LEAP
+                    - PEAP
+                    - EAP-SIM
+                    - EAP-AKA
+                    - EAP-TLS
+                    - EAP-TTLS
+                    - EAP-FAST
+                innerAuthentication:
+                  type: string
+                  example: none
+                certificate:
+                  type: string
+                  example: client45

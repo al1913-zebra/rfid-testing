@@ -1,0 +1,349 @@
+---
+id: config-endpoint
+title: config_endpoint
+sidebar_label: "config_endpoint"
+description: "MQTT reference for config_endpoint: add, update, or delete an MQTT endpoint configuration on the reader — protocol, broker URL/port, TLS, topics, and credentials — over the management endpoint."
+sidebar_custom_props: { emoji: "🔧" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'config_endpoint', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'epConfig', type: 'object', required: false, desc: 'The endpoint-configuration payload. Required in practice — you must include it to configure anything; the command-level schema lists only `command`/`requestId` in `required`, but `epConfig` itself requires `operation` and `configuration`.',
+    children: [
+      { field: 'operation', type: 'enum', required: true, enumUnits: ['add', 'delete', 'update'], example: 'add', desc: '`add` a new endpoint, `update` an existing one, or `delete` one. Required within `epConfig`. See Operations.' },
+      {
+        field: 'configuration', type: 'object', required: true, desc: 'The endpoint configuration. Required within `epConfig`. The schema requires all 9 fields below (for `add`); `delete`/`update` send a partial `configuration` (see Operations).',
+        children: [
+          { field: 'endpointName', type: 'string', required: true, example: 'mgmt_tls', desc: 'The endpoint name (its identity for add/update/delete). Required.' },
+          { field: 'epType', type: 'enum', required: true, enumUnits: ['MGMT', 'MGMT_EVT', 'CTRL', 'DATA1', 'DATA2', 'SOTI', 'MDM'], example: 'MGMT', desc: 'The endpoint type (its role). Required.' },
+          { field: 'protocol', type: 'enum', required: true, enumUnits: ['MQTT', 'MQTT_TLS'], example: 'MQTT', desc: '`MQTT` (plain, typically port 1883) or `MQTT_TLS` (TLS, typically port 8883). Required.' },
+          { field: 'activate', type: 'boolean', required: true, example: 'false', desc: '`true` activates the endpoint immediately; `false` saves it without activating (activate later with `update`). Required.' },
+          { field: 'url', type: 'string', required: true, example: 'broker.ip.com', desc: 'Broker address (host or IP). Required.' },
+          { field: 'verificationType', type: 'enum', required: true, enumUnits: ['NONE', 'VERIFY_PEER', 'VERIFY_HOST', 'VERIFY_HOST_PEER'], example: 'VERIFY_HOST_PEER', desc: 'TLS verification mode. Required. (See Notes on how the value reads back via `get_endpoint_config`.)' },
+          { field: 'port', type: 'integer', required: true, example: '8883', desc: 'Broker port (1883 plain, 8883 TLS). Required.' },
+          { field: 'qosCommon', type: 'integer', required: true, example: '1', desc: 'Default QoS level for the endpoint. Required.' },
+          { field: 'tenantId', type: 'string', required: true, example: 'ZEBRA', desc: 'Tenant identifier; the first segment of every on-wire topic. Required. Overlong values return code `27`.' },
+          {
+            field: 'mqttParams', type: 'object', required: false, desc: 'MQTT connection parameters, topics, and (optional) broker credentials.',
+            children: [
+              { field: 'keepAlive', type: 'integer', required: false, enumUnits: 'seconds (≤ 65535)', example: '300', desc: 'Keep-alive interval when idle.' },
+              { field: 'cleanSession', type: 'boolean', required: false, example: 'true', desc: 'Whether to start a clean MQTT session.' },
+              { field: 'reconnectDelayMin', type: 'integer', required: false, enumUnits: 'seconds', example: '5', desc: 'Minimum reconnect back-off.' },
+              { field: 'reconnectDelayMax', type: 'integer', required: false, enumUnits: 'seconds', example: '60', desc: 'Maximum reconnect back-off.' },
+              { field: 'clientId', type: 'string', required: false, example: 'zebra-rfd40-01', desc: 'MQTT client ID (optional; the device derives one if omitted).' },
+              { field: 'username', type: 'string', required: false, example: '********', desc: '⚠️ Broker username, when the broker requires it (credential) — masked here.' },
+              { field: 'password', type: 'string', required: false, example: '********', desc: '⚠️ Broker password, when the broker requires it (credential) — masked here. See the credential warning in Notes.' },
+              {
+                field: 'publishTopics', type: 'array', required: false, enumUnits: 'max 3', desc: 'Base topics the endpoint publishes to — up to 3 (exceeding returns code `25`). Each item requires `topic`, `qos`, `retain`.',
+                children: [
+                  { field: 'topic', type: 'string', required: true, example: 'MGMT/clients/resp', desc: 'Base topic only — wrapped on-wire to `{tenantId}/{topic}/{serial}`. Do not include tenant or serial.' },
+                  { field: 'qos', type: 'integer', required: true, example: '1', desc: 'QoS for this published topic.' },
+                  { field: 'retain', type: 'boolean', required: true, example: 'false', desc: 'Whether the broker retains the last message.' },
+                ],
+              },
+              {
+                field: 'subscribeTopics', type: 'array', required: false, enumUnits: 'max 1', desc: 'Base topics the endpoint subscribes to — up to 1 (exceeding returns code `26`). Each item requires `topic`, `qos`, `retain`.',
+                children: [
+                  { field: 'topic', type: 'string', required: true, example: 'MGMT/clients/cmnd', desc: 'Base topic only — wrapped on-wire to `{tenantId}/{topic}/{serial}`.' },
+                  { field: 'qos', type: 'integer', required: true, example: '0', desc: 'QoS for this subscription.' },
+                  { field: 'retain', type: 'boolean', required: true, example: 'false', desc: 'Retain flag for this subscription.' },
+                ],
+              },
+            ],
+          },
+          {
+            field: 'securityParams', type: 'object', required: false, desc: 'TLS parameters (for `MQTT_TLS`). Required within `securityParams`: `format`. The referenced certificates must already be installed via `install_certificate`.',
+            children: [
+              { field: 'format', type: 'enum', required: true, enumUnits: ['PEM', 'PFX'], example: 'PEM', desc: 'Certificate format. Currently only `PEM` is supported. Required within `securityParams`.' },
+              { field: 'caCertificateFile', type: 'string', required: false, example: 'mqtt_ca_cert', desc: 'Installed CA certificate reference name (a name, not key material).' },
+              { field: 'clientCert', type: 'string', required: false, example: 'mqtt_client_cert', desc: 'Installed client certificate reference name.' },
+              { field: 'clientKey', type: 'string', required: false, example: 'mqtt_client_key', desc: 'Installed client key reference name.' },
+            ],
+          },
+          { field: 'eventConfiguration', type: 'object', required: false, desc: 'Optional per-endpoint event-routing toggles (which events this endpoint emits). Same shape as config_events — see the Event routing fields table on the get_endpoint_config page for the supported-vs-reserved split.' },
+        ],
+      },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  epConfig: {
+    operation: 'add',
+    configuration: {
+      endpointName: 'mgmt_tls',
+      epType: 'MGMT',
+      protocol: 'MQTT_TLS',
+      activate: false,
+      url: 'broker.ip.com',
+      port: 8883,
+      verificationType: 'VERIFY_HOST_PEER',
+      qosCommon: 1,
+      tenantId: 'ZEBRA',
+      mqttParams: {
+        keepAlive: 300,
+        cleanSession: true,
+        reconnectDelayMin: 5,
+        reconnectDelayMax: 60,
+        publishTopics: [
+          { topic: 'MGMT/clients/resp', qos: 1, retain: false },
+          { topic: 'MGMT/clients/event', qos: 1, retain: false },
+          { topic: 'MGMT/clients/rfid', qos: 0, retain: true },
+        ],
+        subscribeTopics: [
+          { topic: 'MGMT/clients/cmnd', qos: 0, retain: false },
+        ],
+      },
+      securityParams: {
+        format: 'PEM',
+        caCertificateFile: 'mqtt_ca_cert',
+        clientCert: 'mqtt_client_cert',
+        clientKey: 'mqtt_client_key',
+      },
+    },
+  },
+};
+
+export const DATA_ADD_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  epConfig: {
+    operation: 'add',
+    configuration: {
+      endpointName: 'dataEP',
+      epType: 'DATA1',
+      protocol: 'MQTT',
+      activate: true,
+      url: 'broker.example.com',
+      verificationType: 'NONE',
+      port: 1883,
+      qosCommon: 1,
+      tenantId: 'zebra',
+      mqttParams: {
+        keepAlive: 300,
+        cleanSession: true,
+        reconnectDelayMin: 50,
+        reconnectDelayMax: 500,
+        username: '********',
+        password: '********',
+        publishTopics: [
+          { topic: 'DATA/clients/data1event', qos: 1, retain: false },
+        ],
+      },
+    },
+  },
+};
+
+export const DELETE_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  epConfig: {
+    operation: 'delete',
+    configuration: {
+      endpointName: 'mgmt_tst',
+      epType: 'MGMT',
+    },
+  },
+};
+
+export const UPDATE_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  epConfig: {
+    operation: 'update',
+    configuration: {
+      endpointName: 'mgmt_tls',
+      epType: 'MGMT',
+      protocol: 'MQTT_TLS',
+      url: 'broker.updated.com',
+      tenantId: 'ZEBRA',
+    },
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'config_endpoint', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.21'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — config_endpoint echoes no configuration.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const DUP_JSON = {
+  command: 'config_endpoint',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 10, description: 'Configuration already exist' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** add, update, or delete an MQTT endpoint configuration on the reader
+
+## Overview
+
+`config_endpoint` **provisions the reader's MQTT endpoints** — it **adds**, **updates**, or **deletes** an endpoint configuration (chosen by `epConfig.operation`). One payload defines an endpoint's type, protocol, broker `url`/`port`, TLS `verificationType` and certificates, MQTT `keepAlive`/session/reconnect settings, publish/subscribe topics, optional broker credentials, and per-endpoint event routing. It is a state-changing command on the device-management (MGMT) endpoint; the response is **status-only**. Read the result back with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config).
+
+:::warning
+`config_endpoint` is **state-changing** and **can carry broker credentials** (`mqttParams.username` / `password`). Mask credentials as `********` in anything shared. Take special care when reconfiguring the endpoint that carries your **own control session** — see the activation notes below. A saved endpoint is reversible with `operation: delete`.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_endpoint_config`](/reference/mgmt/get-endpoint-config), [`config_events`](/reference/mgmt/config-events), [`install_certificate`](/reference/mgmt/install-certificate), [`reboot`](/reference/mgmt/reboot) |
+| **Required Request Fields** | `command`, `requestId` (plus `epConfig` with `operation` + `configuration`) |
+| **Supported Operations** | `add` (new) · `update` (existing) · `delete` (existing) |
+| **Endpoint Types** | `MGMT`, `MGMT_EVT`, `CTRL`, `DATA1`, `DATA2`, `SOTI`, `MDM` |
+| **Protocols** | `MQTT` (plain) · `MQTT_TLS` (TLS) |
+| **State Change** | STATE-CHANGING (writes/removes a saved endpoint; may activate it) |
+| **Reversibility** | REVERSIBLE — remove with `operation: delete`; change with `operation: update` |
+
+## When to Use
+
+Use `config_endpoint` to **provision or maintain the reader's MQTT wiring** after the initial `MDM` endpoint exists (that first endpoint is set up with 123RFID Desktop; all others are added remotely with `config_endpoint`).
+
+- **`add`** — create a new endpoint (`MGMT`, `CTRL`, `DATA1`, …). The `endpointName` must not already exist (duplicate → code `10`).
+- **`update`** — modify an existing endpoint (e.g. change `url`, or flip `activate`). The `endpointName` must already exist.
+- **`delete`** — remove an existing endpoint (only `endpointName` + `epType` needed).
+- **Pre-provision safely** — send `activate: false` to save an endpoint without activating it, then activate later with `update`.
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The `topic` values you configure inside `mqttParams` are **base** topics (e.g. `MGMT/clients/resp`). The reader constructs the full topic at runtime as `<tenantId>/<topic>/<deviceSerialNumber>` — never include the tenant or serial in `topic`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block — credentials are presented once at CONNECT (and, for a configured endpoint, via `mqttParams`). The `requestId` you send is echoed in the response so you can match reply to request.
+:::
+
+## Key Fields
+
+- **`epConfig.operation`** — `add` / `update` / `delete`; determines the action.
+- **`configuration.endpointName`** — the endpoint's identity (create target / update / delete key).
+- **`configuration.epType`** — the endpoint's role (`MGMT`, `CTRL`, `DATA1`, …).
+- **`configuration.activate`** — `true` activates immediately; `false` saves without activating.
+- **`configuration.securityParams`** — for `MQTT_TLS`; the referenced certificates must be pre-installed via [`install_certificate`](/reference/mgmt/install-certificate).
+- **`response.code`** — read this to determine success vs failure (see [Response Codes](#response-codes)).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `epConfig` payload (`operation` + `configuration`). Use the **Schema** tab for the full field reference and the **Example** tab for an `add` of a TLS `MGMT` endpoint.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="add, MQTT_TLS" />
+
+## Operations
+
+`epConfig.operation` selects the action. The schema lists all 9 `configuration` fields as required (written for the `add` case); `delete` and `update` accept a **partial** `configuration`:
+
+- **`add`** — creates a new endpoint. Supply the full `configuration` (all 9 required fields, plus optional `mqttParams` / `securityParams` / `eventConfiguration`). Fails with code `10` if the `endpointName` already exists.
+- **`update`** — modifies an existing endpoint (matched by `endpointName`). Send `endpointName` (+`epType`) plus the fields you are changing.
+- **`delete`** — removes an existing endpoint. Only `endpointName` and `epType` are needed.
+
+:::note
+`add` is **not idempotent.** If a response is lost (e.g. a timeout), the endpoint may already have been created — **read back with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) before retrying** rather than blindly re-sending, or the retry will be a duplicate `add`.
+:::
+
+## Response payload
+
+`config_endpoint` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. There is no configuration echo; confirm the change with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config).
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Codes
+
+`config_endpoint` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the endpoint was added, updated, or deleted. |
+| `10` | Configuration already exist (`IOT_ERROR_CONFIG_ALREADY_EXIST`) — an `add` used an `endpointName` that already exists. Use `update`, or delete it first. |
+| `23` | Invalid enum value (`IOT_ERROR_INVALID_ENUM`) — a field (e.g. `operation`, `epType`, `protocol`, `verificationType`, `format`) is outside its allowed set. |
+| `25` | Max 3 publish topics exceeded (`IOT_ERROR_PUBLISH_TOPICS_EXCEEDED`) — more than 3 `publishTopics`. |
+| `26` | Max 1 subscribe topic exceeded (`IOT_ERROR_SUBSCRIBE_TOPIC_EXCEEDED`) — more than 1 `subscribeTopics`. |
+| `27` | Invalid tenant ID length (`IOT_ERROR_INVALID_TENANTID_LENGTH`) — `tenantId` exceeds the allowed length. |
+| `33` | Endpoint already configured (`IOT_ERROR_ENDPOINT_ALREADY_CONFIGURED`) — an endpoint with the same configuration already exists. |
+| `101` | Default error — generic catch-all. See the duplicate-`add` note below. |
+
+:::note
+**Duplicate `add` may return the generic `101`.** The documented code for adding an `endpointName` that already exists is `10` ("Configuration already exist"), but the firmware has been observed returning the generic `101` ("Default error") for a duplicate `add` instead of `10`. Treat a `101` after a re-sent `add` as a probable duplicate and verify with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config).
+:::
+
+## Examples
+
+Publish a `config_endpoint` request; the device replies with the status-only envelope under [Response payload](#response-payload). The **Example** tab of the Request payload shows a TLS `MGMT` `add`. The variants below cover a plain-MQTT `add` with broker credentials, a `delete`, and a partial `update` (credentials masked).
+
+A **plain-MQTT `DATA1` `add`** with broker credentials (`activate: true`), a single publish topic, and no TLS:
+
+<JsonBlock title="Request — add (plain MQTT, with credentials)" data={DATA_ADD_JSON} />
+
+A **`delete`** needs only `endpointName` + `epType`:
+
+<JsonBlock title="Request — delete" data={DELETE_JSON} />
+
+A partial **`update`** changes selected fields of an existing endpoint:
+
+<JsonBlock title="Request — update" data={UPDATE_JSON} />
+
+A **duplicate `add`** returns code `10` (or, on some firmware, the generic `101` — see the note above):
+
+<JsonBlock title="Response — duplicate add (code 10)" data={DUP_JSON} />
+
+## Notes & Caveats
+
+:::warning
+**Payloads can carry broker credentials.** `mqttParams.username` / `password` are supplied in the request when the broker requires them — masked here as `********`. Redact them in logs, tickets, and screenshots, and send `config_endpoint` only over secured channels. (Certificate fields — `caCertificateFile` / `clientCert` / `clientKey` — are **reference names** of already-installed certificates, not key material.)
+:::
+
+:::danger
+**Reconfiguring the active control endpoint can disrupt your session.** Activating a *new* endpoint of a different role coexists with the endpoint carrying your control session (e.g. activating a `DATA1` endpoint does not drop the `MDM`/`MGMT` control channel). But changing the broker `url`/`port`/`protocol` of — or deleting — the endpoint that carries your **own** control session can sever it. When in doubt, save with `activate: false` and switch deliberately.
+:::
+
+:::note
+**TLS needs pre-installed certificates.** For `protocol: MQTT_TLS`, the `securityParams` `caCertificateFile` / `clientCert` / `clientKey` must reference certificates already installed via [`install_certificate`](/reference/mgmt/install-certificate). Only `format: PEM` is supported today.
+:::
+
+:::note
+**Topic limits.** `publishTopics` allows **up to 3** entries (exceeding → code `25`); `subscribeTopics` allows **up to 1** (exceeding → code `26`). Configure only the base `topic`; the reader wraps it as `<tenantId>/<topic>/<serial>`.
+:::
+
+:::note
+**`verificationType` reads back differently.** You **send** a schema enum value (`NONE`, `VERIFY_PEER`, `VERIFY_HOST`, `VERIFY_HOST_PEER`), but [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) reads back firmware-mapped tokens — e.g. `NONE` → `VERIFY_NONE`, `VERIFY_HOST_PEER` → `VERIFY_HOST_AND_PEER` — which are not in the schema enum (a known firmware/schema mismatch, pending reconciliation). Send the schema values.
+:::
+
+:::note
+**Event routing.** `configuration.eventConfiguration` uses the same shape as [`config_events`](/reference/mgmt/config-events); only 8 of its toggles are functional today (the rest are reserved). See the Event routing fields table on the [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) page for the full supported-vs-reserved split.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `config_endpoint` reports `apiVersion` `V1.1` (its response enum also allows `V1.0` / `V1.21`); on the same firmware other commands (e.g. [`get_version`](/reference/mgmt/get-version)) report `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Because the response is status-only, **verify the result with [`get_endpoint_config`](/reference/mgmt/get-endpoint-config)** — confirm the endpoint appears in `savedEndpoints.epNames[]` and (if `activate: true`) under `activeEndpoints`. For the concept-level view, see [How the MQTT plumbing fits together](/infrastructure/mqtt-endpoints).
+:::
+
+**Related:** 📘 [MQTT endpoints](/infrastructure/mqtt-endpoints) · 📕 [`get_endpoint_config`](/reference/mgmt/get-endpoint-config) · 📕 [`config_events`](/reference/mgmt/config-events) · 📕 [Certificates — `install_certificate`](/reference/mgmt/install-certificate) · 📕 [Error codes](/reference/errors/codes)

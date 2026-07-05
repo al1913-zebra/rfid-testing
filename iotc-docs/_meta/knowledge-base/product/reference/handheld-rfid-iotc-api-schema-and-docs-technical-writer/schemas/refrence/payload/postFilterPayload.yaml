@@ -1,0 +1,41 @@
+title: postFilterPayload
+x-stoplight:
+  id: y5oysu0o0kuvb
+type: object
+description: Defines the post-filter configuration to apply to scanned RFID tags, including the filter operation, data endpoint type, match pattern, pattern method, and report operation.
+properties:
+  operation:
+    type: string
+    enum:
+      - ADD
+      - DELETE
+      - MODIFY
+    description: |
+      Specifies the operation to perform on the filter such as add a new filter, remove and update an existing filter.
+  dataEpType:
+    type: string
+    description: |
+      Specifies the data endpoint to which the filter should be applied.  Two data endpoints are supported for reporting filtered tag data.
+    enum:
+      - DATA_EP1
+      - DATA_EP2
+  matchPattern:
+    type: string
+    description: |
+      Defines the value to match for the filter.  For prefix and suffix filters, only hexadecimal digits are allowed, and the number of digits must be even. When a prefix filter is used, select filters cannot be applied.
+  matchPatternMethod:
+    type: string
+    enum:
+      - PREFIX
+      - SUFFIX
+      - REGEX
+    example: REGEX
+    description: |
+      Specifies the method used to match the tag ID.  `PREFIX`: Matches the beginning of the tag ID. `SUFFIX`: Matches the end of the tag ID. `REGEX`: Matches the tag ID using a regular expression.
+  reportOperation:
+    type: string
+    enum:
+      - INCLUDE
+      - EXCLUDE
+    description: |
+      Specifies the filter operation to apply.  `INCLUDE`: Only tags matching the filter criteria will be reported. `EXCLUDE`: Tags matching the filter criteria will be excluded from reporting.

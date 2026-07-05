@@ -1,0 +1,94 @@
+.wrapper {
+  max-width: 48rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  color: var(--ifm-font-color-base);
+  background-color: var(--ifm-background-surface-color, var(--ifm-background-color));
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+}
+
+.input:focus {
+  border-color: var(--ifm-color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ifm-color-primary-lightest);
+}
+
+.hint {
+  margin-top: 1rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.hitList {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hitItem {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.hitTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.hitDesc {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.hitUrl {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--ifm-color-emphasis-500);
+  word-break: break-all;
+}
+
+.pagination {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+
+.pageButton {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  color: var(--ifm-color-primary);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+}
+
+.pageButton:hover:not(:disabled) {
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+.pageButton:disabled {
+  color: var(--ifm-color-emphasis-400);
+  cursor: not-allowed;
+}
+
+.pageStatus {
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+/* Highlight matched terms in the brand colour. */
+.hitTitle :global(mark) {
+  padding: 0;
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  background-color: transparent;
+}

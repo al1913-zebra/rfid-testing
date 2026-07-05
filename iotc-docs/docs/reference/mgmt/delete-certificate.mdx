@@ -1,0 +1,184 @@
+---
+id: delete-certificate
+title: delete_certificate
+sidebar_label: "delete_certificate"
+description: "MQTT reference for delete_certificate: remove a certificate from the reader's trust store by name and type over the management endpoint. Omitting name bulk-deletes every certificate of the type."
+sidebar_custom_props: { emoji: "🗑️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'delete_certificate', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'certificateInfo', type: 'object', required: false, desc: 'Identifies the certificate(s) to delete. Required in practice — the device rejects a request without it (code `101`) — though the command-level schema lists only `command`/`requestId` in `required`.',
+    children: [
+      { field: 'name', type: 'string', required: false, example: 'client_cert', desc: '⚠️ The certificate name to delete. If omitted, ALL certificates of the given `type` are deleted (bulk, destructive — see Notes).' },
+      { field: 'type', type: 'enum', required: true, enumUnits: ['server', 'client', 'mqtt', 'wifi', 'filestore'], example: 'mqtt', desc: 'Certificate category. Required within `certificateInfo`. Selects the certificate (with `name`) or the whole set (without `name`).' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'delete_certificate',
+  requestId: 'abc123',
+  certificateInfo: {
+    name: 'client_cert',
+    type: 'mqtt',
+  },
+};
+
+export const BULK_JSON = {
+  command: 'delete_certificate',
+  requestId: 'abc123',
+  certificateInfo: {
+    type: 'wifi',
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'delete_certificate', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — delete_certificate echoes no certificate data.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'delete_certificate',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const NOT_FOUND_JSON = {
+  command: 'delete_certificate',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 21, description: 'File not found' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** remove a certificate (or all of a type) from the reader's trust store
+
+## Overview
+
+`delete_certificate` **removes a certificate from the reader's trust store**, identified by `certificateInfo.{name, type}`. It is **synchronous** — a successful delete returns `response.code 0` and the certificate is gone immediately (confirm with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate)). It is a state-changing command on the device-management (MGMT) endpoint.
+
+:::danger
+`delete_certificate` is **destructive and irreversible** — there is no undo; to restore a certificate you must re-install it with [`install_certificate`](/reference/mgmt/install-certificate). And **omitting `certificateInfo.name` deletes _every_ certificate of the given `type`** — a bulk wipe. Always send an explicit `name` unless you intend to remove the entire type. Never delete a certificate that an **active TLS connection** depends on (it will break that connection).
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_installed_certificate`](/reference/mgmt/get-installed-certificate), [`install_certificate`](/reference/mgmt/install-certificate), [`config_endpoint`](/reference/mgmt/config-endpoint), [`set_wifi`](/reference/mgmt/set-wifi) |
+| **Required Request Fields** | `command`, `requestId` (plus `certificateInfo.type`; `name` optional) |
+| **Certificate Types** | `server`, `client`, `mqtt`, `wifi`, `filestore` |
+| **State Change** | STATE-CHANGING (removes a certificate — or all of a type) |
+| **Reversibility** | IRREVERSIBLE — no undo; re-install with `install_certificate` to restore |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `delete_certificate` to **clean up the reader's trust store**:
+
+- **Remove an obsolete or expired certificate** — e.g. before rotating in a replacement.
+- **Clear a slot before re-installing** — delete then [`install_certificate`](/reference/mgmt/install-certificate) with the same `name`.
+- **Wipe a whole type** — omit `name` to remove every certificate of a `type` (e.g. all `wifi` certificates) in one call. Use deliberately.
+
+Delete only certificates that are **not in active use**. On a TLS endpoint, deleting the broker/client certificate the reader is currently connected with will break that connection.
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`, where `<topic>` is configured per endpoint. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block, and `delete_certificate` carries **no credential field** — there is nothing to mask. The `requestId` you send is echoed in the response so you can match reply to request.
+:::
+
+## Key Fields
+
+- **`certificateInfo.type`** — the certificate category (`mqtt`, `wifi`, `filestore`, `client`, `server`); required. Confirm exact names/types with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) first.
+- **`certificateInfo.name`** — the certificate to delete. ⚠️ **Omitting it deletes every certificate of `type`** (bulk). Verify the exact name with `get_installed_certificate` (installed entries are named `{name}_{component}`).
+- **`response.code`** — read this to determine success vs failure: `0` (deleted), `21` (no such certificate). See [Response Codes](#response-codes).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `certificateInfo` object naming the certificate to delete. Use the **Schema** tab for the full field reference and the **Example** tab for a single-certificate delete.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+To delete **every certificate of a type**, omit `name` and send only `type` — a destructive bulk operation:
+
+<JsonBlock title="Request — bulk delete (all wifi certificates)" data={BULK_JSON} />
+
+## Response payload
+
+`delete_certificate` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. There is no certificate echo; confirm the removal with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate).
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Codes
+
+`delete_certificate` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the matching certificate (or all of the type) was removed. |
+| `9` | File not found (`IOT_STATUS_FILE_NOT_FOUND`) — a backing certificate file could not be found. |
+| `21` | Certificate not found (`IOT_ERROR_CERT_NOT_FOUND`) — the `name`/`type` is not a saved certificate. See the not-found note below. |
+| `101` | Default error — generic catch-all (e.g. a malformed payload; see the note below). |
+
+:::note
+Two live-observed behaviors to code against: (1) **A not-found delete returns code `21` but with the description text `"File not found"`** (the wording of code `9`) — key on the numeric `21`, not the string. (2) A **malformed payload** — a missing required `type`, or a missing `certificateInfo` — returns the generic **`101`** ("Error in processing command"), while an **invalid `type`** value returns **`23`** ("Invalid enum value"). Gate success strictly on `code == 0`.
+:::
+
+## Examples
+
+Publish `delete_certificate` naming the certificate to remove; the device replies with the status-only envelope under [Response payload](#response-payload). The bulk-delete request (omit `name`) is shown under [Request payload](#request-payload).
+
+Targeting a `name`/`type` that is **not installed** returns **code `21`** (note the `"File not found"` description):
+
+<JsonBlock title="Response — certificate not found (code 21)" data={NOT_FOUND_JSON} />
+
+## Notes & Caveats
+
+:::danger
+**Omitting `name` is a bulk wipe.** Per the payload schema, a `delete_certificate` with `certificateInfo.type` but no `name` deletes **every** certificate of that type. There is no confirmation prompt and no undo. Always include an explicit `name` unless a full type-wipe is intended, and verify the exact name first with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate).
+:::
+
+:::warning
+**Destructive and irreversible.** A successful delete removes the certificate immediately; recovery means re-installing it with [`install_certificate`](/reference/mgmt/install-certificate). Do not delete a certificate an **active TLS connection** relies on (broker or client cert in use) — doing so breaks that connection.
+:::
+
+:::note
+**`certificateInfo` is required in practice, not in the schema.** The command-level schema lists only `command` and `requestId` as `required`, but the device rejects a request with no `certificateInfo` (code `101`), and `type` is required within `certificateInfo`. Always send `certificateInfo` with at least a valid `type`.
+:::
+
+:::note
+**Type-`null` certificates cannot be deleted.** `delete_certificate` matches on `type`, so a certificate that [`install_certificate`](/reference/mgmt/install-certificate) created **without a `type`** (`type: null`, which the installer accepts) matches no `type` value and returns code `21` for every attempt — it becomes un-deletable through this command. Avoid the situation by always sending `type` to `install_certificate`; to clear an existing orphan, re-install the same `name` with an explicit `type`.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `delete_certificate` reports `apiVersion` `V1.1` (its response enum is `V1.0` / `V1.1`), while on the same firmware [`install_certificate`](/reference/mgmt/install-certificate) and [`get_version`](/reference/mgmt/get-version) report `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Because the response is status-only, **verify the result with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate)** — confirm the deleted `name`/`type` no longer appears. For the concept-level view, see [TLS & certificates](/infrastructure/tls-and-certificates) and [Certificate management](/infrastructure/certificate-management).
+:::
+
+**Related:** 📘 [TLS & certificates](/infrastructure/tls-and-certificates) · 📕 [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) · 📕 [`install_certificate`](/reference/mgmt/install-certificate) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [Error codes](/reference/errors/codes)

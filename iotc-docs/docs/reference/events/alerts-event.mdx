@@ -1,0 +1,297 @@
+---
+id: alerts-event
+title: alerts
+sidebar_label: "alerts"
+description: "MQTT reference for the alerts event: the reader's structured, device-emitted alert/notification envelope (type, state, id, priority) with per-id alertDetails branches for battery, power, network, firmware-update, file-download, and temperature conditions, on the management event topic."
+sidebar_custom_props: { emoji: "🚨" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const ENVELOPE_ROWS = [
+  { field: 'type', type: 'enum', required: true, enumUnits: ['EVENT', 'NOTIFICATION', 'ALERT'], example: 'ALERT', desc: 'Message class. `ALERT` = autonomous monitoring alert; `NOTIFICATION` = command side-effect (file download, firmware-update start); `EVENT` is reserved (not observed). See Notes.' },
+  { field: 'timestamp', type: 'string', required: true, enumUnits: 'date-time', example: '2026-06-17T10:16:34.793Z', desc: 'ISO-8601 time the alert was generated (`format: date-time`).' },
+  { field: 'state', type: 'enum', required: true, enumUnits: ['SET', 'CLEAR', 'ONESHOT'], example: 'ONESHOT', desc: '`SET` = condition active/asserted; `CLEAR` = resolved; `ONESHOT` = one-time (no matching CLEAR).' },
+  { field: 'id', type: 'enum', required: true, enumUnits: ['BATTERY', 'FILE_DOWNLOAD', 'FIRMWARE_UPDATE', 'NETWORK_EVENT', 'TEMPERATURE', 'POWER'], example: 'BATTERY', desc: 'Alert category — selects the populated `alertDetails` branch. `TEMPERATURE` is declared but not emitted on current firmware (see Notes).' },
+  { field: 'priority', type: 'enum', required: true, enumUnits: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'], example: 'HIGH', desc: 'Severity of the alert.' },
+  {
+    field: 'alertDetails', type: 'object', required: false, desc: 'Category-specific body (`anyOf` over the six branches below). Optional — not in the envelope `required` set. Exactly one branch is populated, matching `id`.',
+    children: [
+      {
+        field: 'batteryAlert', type: 'object', required: false, desc: 'Populated when `id` = `BATTERY`.',
+        children: [
+          { field: 'status', type: 'enum', required: true, enumUnits: ['LOW', 'CRITICAL', 'CHARGING', 'FULL', 'HIGH'], example: 'CHARGING', desc: 'Current operational state of the battery.' },
+          { field: 'stateOfHealth', type: 'enum', required: true, enumUnits: ['GOOD', 'CRITICAL', 'MODERATE'], example: 'GOOD', desc: 'Long-term battery capacity / health.' },
+          { field: 'chargePercentage', type: 'integer', required: true, enumUnits: '0–100', example: '100', desc: 'Current charge level as a percentage (`maximum: 100`).' },
+        ],
+      },
+      {
+        field: 'powerEvent', type: 'object', required: false, desc: 'Populated when `id` = `POWER`.',
+        children: [
+          { field: 'powerSource', type: 'enum', required: true, enumUnits: ['DC', 'POE', 'POE+', 'BATTERY', 'CRADLE'], example: 'BATTERY', desc: 'Source of power for the device.' },
+          { field: 'powerMode', type: 'enum', required: true, enumUnits: ['ACTIVE', 'LOWPOWER'], example: 'ACTIVE', desc: 'Current power mode.' },
+          { field: 'lldp', type: 'enum', required: false, enumUnits: ['success', 'failed', 'negotiating'], desc: 'LLDP negotiation status. Optional — link-type-specific; absent on battery power.' },
+        ],
+      },
+      {
+        field: 'networkInfo', type: 'object', required: false, desc: 'Populated when `id` = `NETWORK_EVENT`.',
+        children: [
+          {
+            field: 'networkInterface', type: 'object', required: true, desc: 'Per-interface status arrays.',
+            children: [
+              {
+                field: 'ethStatus', type: 'array', required: false, desc: 'Ethernet interface statuses (array of items).',
+                children: [
+                  { field: 'interface', type: 'string', required: true, example: 'eth0', desc: 'Interface name. Schema-naming caveat: the leaf schema declares this property as `interfaceName`, but the device (and the canonical `alerts.json` examples) emit `interface` — see Notes.' },
+                  { field: 'status', type: 'enum', required: true, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Connection status.' },
+                  { field: 'linkStatus', type: 'enum', required: true, enumUnits: ['UP', 'DOWN'], example: 'UP', desc: 'Physical link status (Ethernet).' },
+                  { field: 'linkSpeed', type: 'string', required: false, desc: 'Link speed. Optional — often omitted by the device.' },
+                  { field: 'ipV4Address', type: 'string', required: true, example: '192.168.0.111', desc: 'IPv4 address assigned to the interface.' },
+                  { field: 'ipV6Address', type: 'string', required: false, desc: 'IPv6 address. Optional — often omitted.' },
+                ],
+              },
+              {
+                field: 'wifiStatus', type: 'array', required: false, desc: 'Wi-Fi interface statuses (array of items).',
+                children: [
+                  { field: 'interface', type: 'string', required: true, example: 'wlan0', desc: 'Interface name (schema declares `interfaceName`; device emits `interface` — see Notes).' },
+                  { field: 'status', type: 'enum', required: true, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Connection status.' },
+                  { field: 'ssid', type: 'string', required: true, example: 'IOT_TESTAP', desc: 'SSID of the connected Wi-Fi network.' },
+                  { field: 'ipV4Address', type: 'string', required: true, example: '192.168.0.107', desc: 'IPv4 address assigned to the interface.' },
+                  { field: 'ipV6Address', type: 'string', required: false, desc: 'IPv6 address. Optional — often omitted.' },
+                ],
+              },
+            ],
+          },
+          {
+            field: 'btRemoteDevice', type: 'object', required: false, desc: 'Connected Bluetooth remote device (when present). A direct child of `networkInfo` — a sibling of `networkInterface`, not nested under it.',
+            children: [
+              { field: 'deviceName', type: 'string', required: true, desc: 'Name of the Bluetooth remote device.' },
+              { field: 'deviceMac', type: 'string', required: true, example: '00:11:22:A3:B1:D2', desc: 'MAC address of the Bluetooth remote device.' },
+            ],
+          },
+        ],
+      },
+      {
+        field: 'fwUpdateStatus', type: 'object', required: false, desc: 'Populated when `id` = `FIRMWARE_UPDATE`.',
+        children: [
+          { field: 'updateStatus', type: 'enum', required: true, enumUnits: ['Starting FW update', 'FW update success', 'updating', 'failed', 'skipping'], example: 'updating', desc: 'Current firmware-update status.' },
+          { field: 'overallProgress', type: 'number', required: false, example: '20', desc: 'Percent of the update completed.' },
+          { field: 'stage', type: 'string', required: false, example: 'updating scanner fw', desc: 'Individual image-update step / description.' },
+        ],
+      },
+      {
+        field: 'downloadInfo', type: 'object', required: false, desc: 'Populated when `id` = `FILE_DOWNLOAD`.',
+        children: [
+          { field: 'fileType', type: 'enum', required: true, enumUnits: ['FILE_TYPE_FW', 'FILE_TYPE_CERT'], example: 'FILE_TYPE_CERT', desc: 'Type of file — firmware or certificate.' },
+          { field: 'fileName', type: 'string', required: true, example: 'mqtt_ca_cert', desc: 'The internally-stored file name (the URL basename stem, not the full request name — see Notes).' },
+          { field: 'status', type: 'enum', required: true, enumUnits: ['DOWNLOAD SUCCESS', 'DOWNLOAD FAIL', 'SAVE FAIL', 'SAVE SUCCESS'], example: 'SAVE SUCCESS', desc: 'Download / save operation status.' },
+        ],
+      },
+      {
+        field: 'temperatureInfo', type: 'object', required: false, desc: 'Populated when `id` = `TEMPERATURE`. Not emitted on current firmware (see Notes).',
+        children: [
+          { field: 'nge', type: 'number', required: true, desc: 'NGE (radio) temperature. Schema description is a placeholder (see Notes).' },
+          { field: 'pa', type: 'number', required: true, desc: 'Power-amplifier temperature. Schema description is a placeholder (see Notes).' },
+          { field: 'ambient', type: 'number', required: true, desc: 'Ambient temperature.' },
+        ],
+      },
+    ],
+  },
+];
+
+export const BATTERY_JSON = {
+  type: 'ALERT',
+  timestamp: '2026-04-29T12:33:34.279Z',
+  state: 'ONESHOT',
+  id: 'BATTERY',
+  priority: 'LOW',
+  alertDetails: { batteryAlert: { status: 'CHARGING', stateOfHealth: 'GOOD', chargePercentage: 100 } },
+};
+
+export const POWER_JSON = {
+  type: 'ALERT',
+  timestamp: '2026-04-29T12:33:34.290Z',
+  state: 'ONESHOT',
+  id: 'POWER',
+  priority: 'HIGH',
+  alertDetails: { powerEvent: { powerSource: 'BATTERY', powerMode: 'ACTIVE' } },
+};
+
+export const NETWORK_WIFI_JSON = {
+  type: 'ALERT',
+  timestamp: '2026-04-29T12:33:34.300Z',
+  state: 'ONESHOT',
+  id: 'NETWORK_EVENT',
+  priority: 'HIGH',
+  alertDetails: {
+    networkInfo: {
+      networkInterface: {
+        wifiStatus: [{ interface: 'wlan0', status: 'CONNECTED', ssid: 'IOT_TESTAP', ipV4Address: '192.168.0.107' }],
+      },
+    },
+  },
+};
+
+export const NETWORK_ETH_JSON = {
+  type: 'ALERT',
+  timestamp: '2026-04-29T12:33:57.757Z',
+  state: 'ONESHOT',
+  id: 'NETWORK_EVENT',
+  priority: 'HIGH',
+  alertDetails: {
+    networkInfo: {
+      networkInterface: {
+        ethStatus: [{ interface: 'eth0', status: 'CONNECTED', linkStatus: 'UP', ipV4Address: '192.168.0.111' }],
+      },
+    },
+  },
+};
+
+export const FIRMWARE_JSON = {
+  type: 'NOTIFICATION',
+  timestamp: '2026-06-18T11:30:50.387Z',
+  state: 'ONESHOT',
+  id: 'FIRMWARE_UPDATE',
+  priority: 'HIGH',
+  alertDetails: { fwUpdateStatus: { updateStatus: 'Starting FW update' } },
+};
+
+export const FIRMWARE_PROGRESS_JSON = {
+  type: 'ALERT',
+  timestamp: '2026-04-29T12:33:57.757Z',
+  state: 'SET',
+  id: 'FIRMWARE_UPDATE',
+  priority: 'CRITICAL',
+  alertDetails: { fwUpdateStatus: { updateStatus: 'updating', overallProgress: 20, stage: 'updating scanner fw' } },
+};
+
+export const FILE_DOWNLOAD_JSON = {
+  type: 'NOTIFICATION',
+  timestamp: '2026-06-17T10:16:34.793Z',
+  state: 'ONESHOT',
+  id: 'FILE_DOWNLOAD',
+  priority: 'HIGH',
+  alertDetails: { downloadInfo: { fileType: 'FILE_TYPE_CERT', fileName: 'mqtt_ca_cert', status: 'SAVE SUCCESS' } },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** interpret the reader's structured alert / notification events
+
+## Overview
+
+`alerts` is a **device-emitted** event that delivers structured, categorized alert information — the reader publishes it **autonomously** when a monitored condition changes state or crosses a threshold; **no command triggers it**. Each event is a fixed **envelope** (`type`, `timestamp`, `state`, `id`, `priority`) plus a category-specific **`alertDetails`** body selected by `id`. It is read-only telemetry and carries no credentials.
+
+The same envelope carries two message classes, distinguished by `type`:
+
+- **`ALERT`** — an autonomous monitoring alert (battery, power, network).
+- **`NOTIFICATION`** — a command side-effect: `FILE_DOWNLOAD` (see [`install_certificate`](/reference/mgmt/install-certificate)) and the `FIRMWARE_UPDATE` start (see [`set_os`](/reference/mgmt/set-os)).
+
+This page documents the full envelope and **all six `alertDetails` branches**. Which alerts publish is governed by [`config_events`](/reference/mgmt/config-events) toggles (`battery`, `power`, `network`, `firmwareUpdate`, `fileDownload`).
+
+:::note[Supported vs not-yet-emitted]
+Five `id` categories are emitted on current V1.1 firmware: **`BATTERY`**, **`POWER`**, **`NETWORK_EVENT`**, **`FIRMWARE_UPDATE`**, and **`FILE_DOWNLOAD`** (all live-verified). **`TEMPERATURE`** is declared in the `id` enum but **not emitted** on current firmware (the schema itself notes antenna, temperature, exceptions, CPU-usage, GPI, and user-app events are not supported). See [The IOTC event model](/observability/events/model).
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Event Type** | Alert / notification — structured, categorized |
+| **Direction** | Device → application (device-emitted; no request/response) |
+| **Applies To** | RFD40 series, RFD90 series (BATTERY / POWER / NETWORK_EVENT / FIRMWARE_UPDATE / FILE_DOWNLOAD verified on RFD40) |
+| **Trigger** | Autonomous, on a monitored state change or threshold crossing |
+| **Enabled by** | [`config_events`](/reference/mgmt/config-events) `eventConfiguration` toggles (per category) |
+| **Related Events** | [`heartbeatEVT`](/reference/events/heartbeat-event), [`dataEVT`](/reference/data/tag-data-event), [`mqttConnEVT`](/reference/events/mqtt-connection-event) |
+| **Credentials** | None — read-only telemetry, nothing to mask |
+
+## Topic Mapping
+
+`alerts` is device-originated and flows on the **management event topic** — it has no `cmnd`/`resp` topics because no command produces it.
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Device-emitted event (subscribe by app) | `zebra/MDM/clients/event/{serial}` (or `zebra/MGMT/clients/event/{serial}`) | The same event topic that carries `heartbeatEVT` and `NOTIFICATION`-type events. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Event payload
+
+The envelope (`type`, `timestamp`, `state`, `id`, `priority`) is always present and **required**; `alertDetails` is optional and carries exactly one branch matching `id`. Use the **Schema** tab for the full field reference across all six branches and the **Example** tab for a battery alert.
+
+<ApiBody rows={ENVELOPE_ROWS} json={BATTERY_JSON} title="Event payload" exampleCaption="BATTERY (live)" />
+
+:::note
+`state` tells you whether a condition is active or resolved: **`SET`** = active/asserted, **`CLEAR`** = resolved, **`ONESHOT`** = a one-time event with no persistent state (it fires once and has no matching `CLEAR`). Live battery/power/network alerts are `ONESHOT`; a firmware update in progress is `SET`.
+:::
+
+## alertDetails branches
+
+`alertDetails` is an `anyOf` over `alertDetails.yaml`; the populated key is determined by `id`:
+
+| `id` | `alertDetails` key | Body fields | Emitted on V1.1 |
+| --- | --- | --- | --- |
+| `BATTERY` | `batteryAlert` | `status`, `stateOfHealth`, `chargePercentage` | ✅ |
+| `POWER` | `powerEvent` | `powerSource`, `powerMode`, (`lldp`) | ✅ |
+| `NETWORK_EVENT` | `networkInfo` | `networkInterface.{ethStatus[], wifiStatus[]}`, `btRemoteDevice` | ✅ |
+| `FIRMWARE_UPDATE` | `fwUpdateStatus` | `updateStatus`, `overallProgress`, `stage` | ✅ |
+| `FILE_DOWNLOAD` | `downloadInfo` | `fileType`, `fileName`, `status` | ✅ |
+| `TEMPERATURE` | `temperatureInfo` | `nge`, `pa`, `ambient` | ⚠️ not emitted (see Notes) |
+
+## Examples
+
+All examples below are the reader's own live captures (the `alerts.json` bundled examples are byte-for-byte the on-device output).
+
+A **`POWER`** alert (switched to battery power):
+
+<JsonBlock title="alerts — POWER (live)" data={POWER_JSON} />
+
+A **`NETWORK_EVENT`** for Wi-Fi (connected), then for Ethernet (connected):
+
+<JsonBlock title="alerts — NETWORK_EVENT, Wi-Fi (live)" data={NETWORK_WIFI_JSON} />
+
+<JsonBlock title="alerts — NETWORK_EVENT, Ethernet (live)" data={NETWORK_ETH_JSON} />
+
+A **`FIRMWARE_UPDATE`** — the `NOTIFICATION` start (from [`set_os`](/reference/mgmt/set-os)), then an in-progress `SET` alert:
+
+<JsonBlock title="alerts — FIRMWARE_UPDATE start (NOTIFICATION)" data={FIRMWARE_JSON} />
+
+<JsonBlock title="alerts — FIRMWARE_UPDATE in progress (SET)" data={FIRMWARE_PROGRESS_JSON} />
+
+A **`FILE_DOWNLOAD`** `NOTIFICATION` (from [`install_certificate`](/reference/mgmt/install-certificate)):
+
+<JsonBlock title="alerts — FILE_DOWNLOAD (NOTIFICATION)" data={FILE_DOWNLOAD_JSON} />
+
+## Notes & Caveats
+
+:::note
+**`TEMPERATURE` is declared but not emitted.** The `id` enum includes `TEMPERATURE` (routing to `temperatureInfo` → `nge`/`pa`/`ambient`), but current V1.1 firmware does not emit temperature alerts — the schema description explicitly lists temperature (with antenna, exceptions, CPU-usage, GPI, and user-app) among the unsupported categories. The `temperatureInfo` field descriptions in the schema are placeholders; the intended meanings are `nge` = NGE/radio temperature, `pa` = power-amplifier temperature, `ambient` = ambient temperature.
+:::
+
+:::warning[Network interface field name: `interface` vs `interfaceName`]
+On the wire (and in the canonical `alerts.json` examples), each `ethStatus`/`wifiStatus` item's interface name is the key **`interface`** (e.g. `"interface": "eth0"`). The leaf schema `networkEvent.yaml`, however, declares the property as **`interfaceName`** and lists it in the item `required` array. This is an internal schema inconsistency — **key on `interface`**, which is what the device emits.
+:::
+
+:::note
+**`type` distinguishes alerts from notifications.** `type: ALERT` is an autonomous monitoring alert; `type: NOTIFICATION` is a command side-effect — `FILE_DOWNLOAD` (during [`install_certificate`](/reference/mgmt/install-certificate) / firmware download) and the `FIRMWARE_UPDATE` *start* (during [`set_os`](/reference/mgmt/set-os)). `EVENT` is in the enum but was not observed. All three share this one envelope.
+:::
+
+:::note
+**`FILE_DOWNLOAD` `fileName` is the stored basename.** `downloadInfo.fileName` is the name the reader stores internally — the URL basename **stem** (e.g. a source `…/mqtt_ca_cert.pem` yields `fileName: "mqtt_ca_cert"`), not your request name. Don't expect a 1:1 match to a [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) entry name without the source URLs.
+:::
+
+:::note
+**Validate against the canonical `alerts.json`.** Three alert schemas exist in the source tree: **`events/alerts.json`** (this one — the long-form envelope the device emits; canonical), `events/alert_short.json` (the **SOTI** flat projection with granular ids like `BATTERY_LOW_SET` — out of scope here), and `refrence/events/alertEvent.yaml` (a legacy/alternate shape). Only `alerts.json` matches what the reader publishes.
+:::
+
+:::note
+**`alertDetails` is optional; envelope is required.** The envelope `required` set is `[type, timestamp, state, id, priority]`; `alertDetails` is not required. Validate the envelope strictly; the branch bodies now match firmware (the earlier over-strict `required` arrays and the missing `powerEvent` branch have been resolved), with the one `interface` naming caveat above.
+:::
+
+:::note
+**No response envelope.** `alerts` is a device-emitted event, so it carries **no `response`/`code`** — the command response-code table does not apply, and `error_codes.json` lists no codes for events.
+:::
+
+:::tip
+`alerts` is **read-only telemetry** with no credentials. Remember emission is **gated by [`config_events`](/reference/mgmt/config-events)** — a disabled category never publishes, so the *absence* of an alert is not proof of a healthy state. For the concept-level view, see [When the reader needs to interrupt you](/observability/alerts) and [Choose what the reader tells you](/observability/configure-events).
+:::
+
+**Related:** 📕 [`config_events`](/reference/mgmt/config-events) · 📕 [`set_os`](/reference/mgmt/set-os) · 📕 [`install_certificate`](/reference/mgmt/install-certificate) · 📕 [`heartbeatEVT`](/reference/events/heartbeat-event) · 📕 [Event schemas](/observability/events/catalog) · 📘 [When the reader needs to interrupt you](/observability/alerts) · 📘 [The IOTC event model](/observability/events/model)

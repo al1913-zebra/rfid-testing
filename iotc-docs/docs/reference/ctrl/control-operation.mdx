@@ -1,0 +1,241 @@
+---
+id: control-operation
+title: control_operation
+sidebar_label: "control_operation"
+description: "MQTT reference for control_operation: START or STOP the RFID radio (or the barcode scanner) on demand over the control (CTRL) endpoint — the command that drives the DATA-plane tag stream."
+sidebar_custom_props: { emoji: "▶️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'control_operation', desc: 'Fixed command name (`enum: ["control_operation"]`).' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'ctrlOprPayload', type: 'object', required: false, desc: 'The control operation to perform. Required in practice — you must include it; the command-level schema lists only `command`/`requestId` in `required` (see Notes).',
+    children: [
+      { field: 'controlType', type: 'enum', required: true, enumUnits: ['RFID', 'SCANNER'], example: 'RFID', desc: 'Which reader subsystem to control — `RFID` (the radio inventory engine) or `SCANNER` (the barcode scanner). Required within the payload.' },
+      { field: 'operation', type: 'enum', required: true, enumUnits: ['START', 'STOP'], example: 'START', desc: '`START` begins the operation for the selected subsystem; `STOP` halts it. Required within the payload.' },
+    ],
+  },
+];
+
+export const REQUEST_START_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  ctrlOprPayload: {
+    controlType: 'RFID',
+    operation: 'START',
+  },
+};
+
+export const REQUEST_STOP_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  ctrlOprPayload: {
+    controlType: 'RFID',
+    operation: 'STOP',
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'control_operation', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — control_operation echoes no configuration.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Note: on success the device omits `code` (see Notes). See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const SUCCESS_NOCODE_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { description: 'Success' },
+};
+
+export const ERROR12_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 12, description: 'No Radio Operation in Progress' },
+};
+
+export const ERROR11_JSON = {
+  command: 'control_operation',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  response: { code: 11, description: 'Inventory in progress' },
+};
+
+export const DATAEVT_JSON = {
+  type: 'BALANCED_PERFORMANCE',
+  timestamp: '2026-06-14T10:19:52.604Z',
+  data: {
+    tagData: [
+      { EPCid: 'E28011606000020E8A58E4DB', eventNum: 1, peakRssi: -26, seenCount: 1 },
+      { EPCid: 'E28011606000020E8A58E4CB', eventNum: 2, peakRssi: -28, seenCount: 1 },
+      { EPCid: 'E28011606000020E8A58E4EB', eventNum: 3, peakRssi: -36, seenCount: 1 },
+    ],
+  },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** start or stop the RFID radio (or the scanner) on demand
+
+## Overview
+
+`control_operation` **starts or stops** a reader subsystem on demand. You pick a `controlType` (`RFID` — the radio inventory engine, or `SCANNER` — the barcode scanner) and an `operation` (`START` or `STOP`). For `RFID`, `START` begins an inventory cycle **using the currently configured operating mode** and the device streams tag reads as [`dataEVT`](/reference/data/tag-data-event) events until you `STOP` (or the operating-mode stop conditions are met). It is a state-changing **control-plane (CTRL) command**, and it is **reversible** — a `START` is undone by a `STOP`.
+
+:::warning
+This is a **CTRL-endpoint command**, published on the **control** endpoint (`zebra/CTRL/clients/cmnd/{serial}`) and **not answered over the MGMT/MDM channel**. The reader must have an **active CTRL endpoint** ([`config_endpoint`](/reference/mgmt/config-endpoint), `epType: CTRL`, `activate: true`) or you get no response. To *receive* the tag stream that `START` triggers, an **active DATA endpoint** is also required (see Topic Mapping).
+:::
+
+:::danger[`START` runs any armed access operations]
+`control_operation` carries **no** tuning parameters — it acts on whatever [`set_operating_mode`](/reference/ctrl/set-operating-mode) last configured. If the operating mode has **armed destructive access operations** (`WRITE` / `LOCK` / `KILL`), a `START` executes them against every tag in range — `KILL` and `PERMANENT_LOCK` are **irreversible**. **Confirm the operating mode is read-only before you `START`.** See the [access-operation safety notes](/reference/ctrl/set-operating-mode#notes--caveats).
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | **Control (CTRL) endpoint** — requires an active CTRL endpoint; RFD40 series, RFD90 series (RFID `START`/`STOP` verified on RFD40) |
+| **Related Commands** | [`set_operating_mode`](/reference/ctrl/set-operating-mode), [`get_operating_mode`](/reference/ctrl/get-operating-mode), [`get_status`](/reference/mgmt/get-status), [`reboot`](/reference/mgmt/reboot) |
+| **Required Request Fields** | `command`, `requestId` (plus `ctrlOprPayload` with `controlType` + `operation`) |
+| **Supported Control Types** | `RFID` (radio inventory engine) · `SCANNER` (barcode scanner) |
+| **Supported Operations** | `START` · `STOP` |
+| **State Change** | STATE-CHANGING (starts / stops the radio or scanner) |
+| **Reversibility** | REVERSIBLE — a `START` is undone by a `STOP` |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `control_operation` to **drive the radio (or scanner) on demand**:
+
+- **Start an inventory** — `controlType: RFID`, `operation: START` begins reading tags with the current operating mode; the device streams [`dataEVT`](/reference/data/tag-data-event) events over the DATA endpoint.
+- **Stop an inventory** — `operation: STOP` halts the radio; the tag stream ceases.
+- **Control the scanner** — `controlType: SCANNER` starts / stops the barcode scanner instead of the radio.
+
+Configure *how* the reader reads with [`set_operating_mode`](/reference/ctrl/set-operating-mode) **first**, then `START` — `control_operation` itself has no tuning parameters. If the inventory state is uncertain, check it with [`get_status`](/reference/mgmt/get-status) before sending `START`.
+
+## Topic Mapping
+
+`control_operation` is the one command that drives **both** planes: the command travels over CTRL, while the tag events a `START` triggers are published by the device over DATA.
+
+| Plane | Direction | Topic | Note |
+| --- | --- | --- | --- |
+| CONTROL | Request (publish by app) | `zebra/CTRL/clients/cmnd/{serial}` | On the **control** endpoint. Requires an **active CTRL endpoint**. |
+| CONTROL | Response (subscribe by app) | `zebra/CTRL/clients/resp/{serial}` | Correlated reply; the in-payload `requestId` links the twin topics. |
+| DATA | Tag events (subscribe by app) | `zebra/DATA/clients/data1event/{serial}` | The `dataEVT` stream a `RFID` `START` triggers. Requires an **active DATA endpoint** to receive it. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. The command is answered **only on the CTRL endpoint**; the tag stream is published on the DATA endpoint's configured publish topic (verified on-wire: `data1event` for `DATA1_EP`). See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Key Fields
+
+- **`ctrlOprPayload.controlType`** — `RFID` (radio inventory engine) or `SCANNER` (barcode scanner).
+- **`ctrlOprPayload.operation`** — `START` (begin) or `STOP` (halt).
+- **`response.code`** — read this to determine success vs failure; note the success-path omission (see Notes). See [Response Codes](#response-codes).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `ctrlOprPayload` (`controlType` + `operation`). Use the **Schema** tab for the full field reference and the **Example** tab for an RFID `START`.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_START_JSON} title="Request payload" exampleCaption="RFID START" />
+
+## Operations
+
+`ctrlOprPayload.operation` selects the action for the chosen `controlType`:
+
+- **`START`** — begin the operation. For `RFID`, this starts an inventory cycle using the current operating mode and streams `dataEVT` events over the DATA endpoint.
+- **`STOP`** — halt the active operation. For `RFID`, the tag stream ceases (a single in-flight read may still be flushed shortly after — see Notes).
+
+A `STOP` when no operation is active returns **code `12`** ("No Radio Operation in Progress") — this is **not a failure**, the device is already idle. A `START` while an inventory is already running returns **code `11`** ("Inventory in progress").
+
+## Response payload
+
+`control_operation` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`. There is no data echo; the tag reads arrive separately as [`dataEVT`](/reference/data/tag-data-event) events on the DATA endpoint.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+:::note
+**On success the device omits `response.code`**, returning just `response: { "description": "Success" }`. An **error** carries a `code` (e.g. `12` for a STOP while idle). Treat `description: "Success"` (or an absent `code`) as success — don't gate on `code == 0`.
+:::
+
+On the wire, a successful `START` or `STOP` looks like this — `code` omitted (the schema-canonical `code: 0` above is the documented form, but the device returns just `description`; live-verified on RFD40):
+
+<JsonBlock title="Response — success as returned (code omitted)" data={SUCCESS_NOCODE_JSON} />
+
+## Response Codes
+
+`control_operation` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the radio (or scanner) started or stopped. (Conveyed as `description: "Success"` with `code` **omitted** — see above.) |
+| `11` | Inventory in progress (`IOT_ERROR_INVENTORY_IN_PROGRESS`) — a `START` was sent while an RFID inventory is already running. Stop the current inventory first; if the state is uncertain, check [`get_status`](/reference/mgmt/get-status). |
+| `12` | No Radio Operation in Progress (`IOT_ERROR_NO_RADIO_OP_IN_PROGRESS`) — a `STOP` was sent while the radio is already idle. **Not a failure — no action required.** Unique to this command. |
+| `23` | Invalid enum value (`IOT_ERROR_INVALID_ENUM`) — `controlType` or `operation` is outside its allowed set. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish `control_operation` over the CTRL endpoint; the device replies with the status envelope under [Response payload](#response-payload). The **Example** tab of the Request payload shows an RFID `START`. The variants below cover a `STOP`, the resulting tag stream, and the two common error responses.
+
+A **`STOP`** halts the radio (undoes a prior `START`):
+
+<JsonBlock title="Request — RFID STOP" data={REQUEST_STOP_JSON} />
+
+A `RFID` `START` triggers a **`dataEVT` stream** on the DATA endpoint. Each event's `type` echoes the active operating-mode profile, and which `tagData` fields appear is gated by the mode's `tagMetaDataToEnable` flags (here the default mode reports `EPCid` / `eventNum` / `peakRssi` / `seenCount` only):
+
+<JsonBlock title="DATA plane — dataEVT triggered by START (abridged; live capture)" data={DATAEVT_JSON} />
+
+A `STOP` issued while the radio is **already idle** returns **code `12`** (not a failure):
+
+<JsonBlock title="Response — STOP while idle (code 12)" data={ERROR12_JSON} />
+
+A `START` issued while an **inventory is already running** returns **code `11`**:
+
+<JsonBlock title="Response — START while inventory running (code 11)" data={ERROR11_JSON} />
+
+## Notes & Caveats
+
+:::danger[`START` acts on the current operating mode — including armed access operations]
+`control_operation` has **no** tuning parameters; a `START` runs whatever [`set_operating_mode`](/reference/ctrl/set-operating-mode) last configured. If destructive access operations (`WRITE` / `LOCK` / `KILL`) are **armed**, `START` executes them on every tag in range — `KILL` and `PERMANENT_LOCK` are **irreversible**. Confirm the operating mode is read-only (no armed `accessOperations`) before starting a production inventory. See [`set_operating_mode` § Notes & Caveats](/reference/ctrl/set-operating-mode#notes--caveats).
+:::
+
+:::note
+**`START` drives two planes; the tag stream needs a DATA endpoint.** The command round-trip is on the CTRL endpoint, but the tag reads a `RFID` `START` produces are published as [`dataEVT`](/reference/data/tag-data-event) events on the **DATA** endpoint (`zebra/DATA/clients/data1event/{serial}` for `DATA1_EP`). To receive them, a DATA endpoint must be active — activate one with [`config_endpoint`](/reference/mgmt/config-endpoint). `dataEVT.type` echoes the active operating-mode profile, and which `tagData` fields appear tracks the mode's `tagMetaDataToEnable` flags (`EPCid` is always present). See [Where tag reads come from](/reference/data/tag-data-event).
+:::
+
+:::note
+**`STOP` is immediate at the radio, but a trailing read may still flush.** A `STOP` stops the radio right away, yet a single in-flight / buffered read may still be delivered on the DATA plane a couple of seconds after the `STOP` (≈2.9 s observed on RFD40) before the stream fully ceases. Don't treat one trailing `dataEVT` after a `STOP` as continued inventory.
+:::
+
+:::note
+**Success omits `code`; errors carry one.** On success the device returns `response: { "description": "Success" }` with **no `code`** (the same behavior as the other control commands — a live firmware behavior; the repo schema itself carries `code: 0`). An error returns a `code` — e.g. `12` for a STOP while idle, `11` for a START during an active inventory. Treat an absent `code` / `description: "Success"` as success; don't gate on `code == 0`.
+:::
+
+:::note
+**Configure the mode before you `START`.** `control_operation` does not set profiles, power, triggers, `select` filters, or access operations — set those with [`set_operating_mode`](/reference/ctrl/set-operating-mode) first, then `START`. The operating mode is **volatile**: it resets to the default (`BALANCED_PERFORMANCE`, no armed access operations) on [`reboot`](/reference/mgmt/reboot), so re-apply it after a reboot before starting.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `control_operation` reports `apiVersion` `V1.1` (its response enum is `V1.0` / `V1.1`), while on the same firmware [`get_version`](/reference/mgmt/get-version) reports `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+`control_operation` is **reversible** (`START` ↔ `STOP`) and carries **no credentials** — the tag `EPCid` values in the resulting `dataEVT` stream are identifiers read off physical tags, not secrets. `SCANNER` control follows the same request/response shape as `RFID` (verified paths are RFID `START`/`STOP` on RFD40). For the concept-level view, see [Start, stop, and the trigger button](/rfid/start-stop-inventory) and [Inventory control](/rfid/start-stop-inventory).
+:::
+
+**Related:** 📕 [`set_operating_mode`](/reference/ctrl/set-operating-mode) · 📕 [`get_operating_mode`](/reference/ctrl/get-operating-mode) · 📕 [`get_status`](/reference/mgmt/get-status) · 📕 [`dataEVT`](/reference/data/tag-data-event) · 📘 [Start, stop, and the trigger button](/rfid/start-stop-inventory) · 📕 [Error codes](/reference/errors/codes)

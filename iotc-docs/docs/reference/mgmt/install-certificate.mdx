@@ -1,0 +1,275 @@
+---
+id: install-certificate
+title: install_certificate
+sidebar_label: "install_certificate"
+description: "MQTT reference for install_certificate: install a certificate or key into the reader's trust store via HTTP download or DIRECT inline content, over the management endpoint. Asynchronous accept (code 1) — verify with get_installed_certificate."
+sidebar_custom_props: { emoji: "🔐" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'install_certificate', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'certDetails', type: 'object', required: false, desc: 'The certificate to install. Required in practice — you must include it; the command-level schema lists only `command`/`requestId` in `required`, but `certDetails` itself requires `type` and `authenticationType`.',
+    children: [
+      { field: 'type', type: 'enum', required: true, enumUnits: ['client', 'server', 'mqtt', 'wifi', 'filestore'], example: 'mqtt', desc: 'Certificate category — where the certificate is used. Required (see the not-enforced note in Notes).' },
+      { field: 'name', type: 'string', required: false, example: 'testMqttCert', desc: 'Logical name for the entry. Installed entries are named `{name}_{component}` (e.g. `testMqttCert_ca_cert`).' },
+      { field: 'authenticationType', type: 'enum', required: true, enumUnits: ['NONE', 'CERTIFICATE'], example: 'CERTIFICATE', desc: 'Authentication used to reach the remote download source. `NONE` = no auth; `CERTIFICATE` = certificate-authenticated download. Required.' },
+      { field: 'certSource', type: 'enum', required: false, enumUnits: ['HTTP', 'DIRECT'], example: 'HTTP', desc: 'How content is supplied. Optional; defaults to `HTTP`. `HTTP` = download from `url`; `DIRECT` = inline `certificateBundle`.' },
+      { field: 'verificationType', type: 'enum', required: false, enumUnits: ['NONE', 'VERIFY_PEER', 'VERIFY_HOST', 'VERIFY_HOST_PEER'], example: 'VERIFY_PEER', desc: 'TLS verification mode applied when the certificate is used.' },
+      {
+        field: 'url', type: 'array', required: false, desc: 'HTTP mode — a list of `{key, value}` entries mapping each certificate component to its download URL. Required for `HTTP`; missing → code `29`.',
+        children: [
+          { field: 'key', type: 'enum', required: false, enumUnits: ['ca_cert', 'client_key', 'client_cert', 'cert_key_password'], example: 'ca_cert', desc: 'The certificate component to download. Needed per entry.' },
+          { field: 'value', type: 'string', required: false, example: 'https://192.168.0.104:8443/mqtt_ca_cert.pem', desc: 'Download URL for the component. For `cert_key_password`, this is the key password value (a secret — mask it).' },
+        ],
+      },
+      {
+        field: 'certificateBundle', type: 'object', required: false, desc: 'DIRECT mode — inline certificate content. Required for `DIRECT`; missing → code `30`. Supply content for one certificate `type`.',
+        children: [
+          { field: 'ca_cert', type: 'string', required: false, example: '-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----', desc: 'Inline CA certificate (PEM). Public — not a secret.' },
+          { field: 'client_cert', type: 'string', required: false, example: '-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----', desc: 'Inline client certificate (PEM). Public — not a secret.' },
+          { field: 'client_key', type: 'string', required: false, example: '********', desc: '⚠️ Inline client PRIVATE KEY (PEM) — a secret. Mask everywhere; the device never reads it back.' },
+          { field: 'cert_key_password', type: 'string', required: false, example: '********', desc: '⚠️ Password to decrypt an encrypted private key — a secret. Mask everywhere.' },
+        ],
+      },
+      { field: 'caCertificateFileContent', type: 'string', required: false, example: '-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----', desc: 'HTTP mode only — inline CA used to authenticate the HTTPS download (when `authenticationType` = `CERTIFICATE`). If empty, an already-installed filestore certificate is used. Not applicable for `DIRECT`.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'install_certificate',
+  requestId: 'cert-test-001',
+  certDetails: {
+    type: 'mqtt',
+    name: 'testMqttCert',
+    authenticationType: 'CERTIFICATE',
+    certSource: 'HTTP',
+    verificationType: 'VERIFY_PEER',
+    caCertificateFileContent: '-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----',
+    url: [
+      { key: 'ca_cert', value: 'https://192.168.0.104:8443/mqtt_ca_cert.pem' },
+      { key: 'client_cert', value: 'https://192.168.0.104:8443/mqtt_client_cert.pem' },
+      { key: 'client_key', value: 'https://192.168.0.104:8443/mqtt_client_key.pem' },
+    ],
+  },
+};
+
+export const DIRECT_JSON = {
+  command: 'install_certificate',
+  requestId: 'cert-test-003',
+  certDetails: {
+    type: 'mqtt',
+    name: 'testMqttCert',
+    authenticationType: 'NONE',
+    certSource: 'DIRECT',
+    verificationType: 'VERIFY_PEER',
+    certificateBundle: {
+      ca_cert: '-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----',
+      client_cert: '-----BEGIN CERTIFICATE-----\n…\n-----END CERTIFICATE-----',
+      client_key: '-----BEGIN PRIVATE KEY-----\n********\n-----END PRIVATE KEY-----',
+      cert_key_password: '********',
+    },
+  },
+};
+
+export const FILESTORE_JSON = {
+  command: 'install_certificate',
+  requestId: '19001',
+  certDetails: {
+    name: 'root_certs',
+    type: 'filestore',
+    authenticationType: 'NONE',
+    certSource: 'HTTP',
+    verificationType: 'VERIFY_HOST_PEER',
+    url: [
+      { key: 'ca_cert', value: 'http://192.168.0.107:8080/filestore_ca_cert.pem' },
+    ],
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'install_certificate', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1', 'V1.21'], example: 'V1.21', desc: 'API version reported by this command (device returns `V1.21`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Accept/status envelope. This is an asynchronous accept, not a terminal install result (see below).',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '1', desc: '`1` = accepted (the success/accept code for this command — not `0`). Non-1 = rejected. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Command payload is accepted', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'install_certificate',
+  requestId: 'abc123',
+  apiVersion: 'V1.21',
+  response: { code: 1, description: 'Command payload is accepted' },
+};
+
+export const URL_MISSING_JSON = {
+  command: 'install_certificate',
+  requestId: 'abc456',
+  apiVersion: 'V1.21',
+  response: { code: 29, description: 'Url missing for HTTP source' },
+};
+
+export const DIRECT_MISSING_JSON = {
+  command: 'install_certificate',
+  requestId: '18996',
+  apiVersion: 'V1.21',
+  response: { code: 30, description: 'Certificate content missing for direct source' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** install a certificate or key into the reader's trust store
+
+## Overview
+
+`install_certificate` **installs a certificate (or key) into the reader's trust store** — for MQTT-TLS brokers, Wi-Fi Enterprise (EAP), the file store, or client/server auth. Content is supplied one of two ways, chosen by `certDetails.certSource`:
+
+- **`HTTP`** (default) — the device **downloads** each component from the URLs in `url[]`.
+- **`DIRECT`** — you provide the content **inline** in `certificateBundle`.
+
+It is a state-changing command on the device-management (MGMT) endpoint. Installed certificates are then referenced by name from [`config_endpoint`](/reference/mgmt/config-endpoint) (`MQTT_TLS`) and [`set_wifi`](/reference/mgmt/set-wifi) (Enterprise).
+
+:::danger
+`install_certificate` is **asynchronous**. A successful reply is **`response.code 1` ("Command payload is accepted")** — an *acknowledgement that the command was received*, **not** confirmation that the certificate was installed. There is **no terminal success/failure result on the response topic**. You must confirm completion out-of-band by reading back with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) (and, for `HTTP`, by watching the `FILE_DOWNLOAD` alerts on the event topic). Do **not** gate success on `code == 0`.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Asynchronous Request / Accept (device acks with code 1; completion verified out-of-band) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_installed_certificate`](/reference/mgmt/get-installed-certificate), [`delete_certificate`](/reference/mgmt/delete-certificate), [`config_endpoint`](/reference/mgmt/config-endpoint), [`set_wifi`](/reference/mgmt/set-wifi) |
+| **Required Request Fields** | `command`, `requestId` (plus `certDetails` with `type` + `authenticationType`) |
+| **Certificate Sources** | `HTTP` (download from `url`) · `DIRECT` (inline `certificateBundle`) |
+| **Certificate Types** | `client`, `server`, `mqtt`, `wifi`, `filestore` |
+| **State Change** | STATE-CHANGING (writes to the trust store; asynchronous) |
+| **Reversibility** | REVERSIBLE — remove with `delete_certificate` |
+| **API Version** | Reports `apiVersion` `V1.21` (per-handler — see Notes) |
+
+## When to Use
+
+Use `install_certificate` to **provision the certificates other commands depend on**:
+
+- **Before `MQTT_TLS`** — install the `ca_cert` / `client_cert` / `client_key` (type `mqtt`) that [`config_endpoint`](/reference/mgmt/config-endpoint) references in `securityParams`.
+- **Before Wi-Fi Enterprise** — install `wifi`-type certificates that [`set_wifi`](/reference/mgmt/set-wifi) references in its `certificate` array.
+- **File-store trust** — install a `filestore` CA used to authenticate HTTPS downloads.
+- **Choose the source:** use **`DIRECT`** when you can embed the content (no network dependency); use **`HTTP`** when the device can reach your file server (watch the `FILE_DOWNLOAD` alerts).
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response — accept (subscribe by app) | `zebra/MGMT/clients/resp/{serial}` | The `code 1` accept. Correlated by the in-payload `requestId`. |
+| Events — progress (subscribe by app) | `zebra/MGMT/clients/event/{serial}` | For `HTTP` installs, the device emits asynchronous `FILE_DOWNLOAD` alerts (per-file download/save) here. See [Event schemas](/reference/events/alerts-event). |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+## Key Fields
+
+- **`certDetails.certSource`** — `HTTP` (use `url`) or `DIRECT` (use `certificateBundle`).
+- **`certDetails.type`** — the certificate category (`mqtt`, `wifi`, `filestore`, …); scopes where the certificate can be used.
+- **`certDetails.authenticationType`** — `NONE` or `CERTIFICATE` (certificate-authenticated download).
+- **`certificateBundle.client_key` / `cert_key_password`** — ⚠️ secrets you send inline (DIRECT); mask them. In `HTTP` mode a `url` entry with `key: cert_key_password` likewise carries a plaintext password in its `value`. See the credential warning below.
+- **`response.code`** — `1` means *accepted*, not *installed*; confirm with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate). See [Response Codes](#response-codes).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `certDetails` payload. Use the **Schema** tab for the full field reference and the **Example** tab for an `HTTP` install of an `mqtt` certificate set.
+
+:::warning
+When you use `DIRECT`, `certificateBundle.client_key` is a **private key** and `cert_key_password` is a **password** — mask both as `********` in anything shared. In `HTTP` mode, a `url` entry with `key: cert_key_password` carries the key password as a plaintext `value` — mask that too. `install_certificate` is the one command where you transmit private-key material; the device never echoes it back (and [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) never lists private keys).
+:::
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="HTTP source" />
+
+## Certificate sources
+
+- **`HTTP` (default).** Supply `url[]` with a `{key, value}` entry per component (`ca_cert`, `client_cert`, `client_key`, `cert_key_password`). The device downloads each; for `authenticationType: CERTIFICATE` over HTTPS, supply `caCertificateFileContent` (or rely on an installed filestore CA). Requires **device → file-server reachability**; missing `url` returns code `29`. The device emits `FILE_DOWNLOAD` alerts as it fetches.
+- **`DIRECT`.** Supply `certificateBundle` with inline PEM content for one `type`. No network dependency; missing `certificateBundle` returns code `30`.
+
+## Response payload
+
+The immediate reply is an **accept** — `command`, `requestId`, `apiVersion`, and `response` with **`code 1`**. It confirms receipt, not installation.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" exampleCaption="accept" />
+
+## Confirming completion
+
+Because the accept (`code 1`) is not a terminal result, confirm the install actually landed:
+
+1. **Read back with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate)** — the installed components appear in `installedCerts.certInfo[]` (named `{name}_{component}`). This is the authoritative confirmation. (Note: private keys are never listed, and serials read back truncated to 8 bytes.)
+2. **For `HTTP`, watch `FILE_DOWNLOAD` alerts** on the event topic — per-file download/save progress. These confirm download + save only, not trust-store persistence; still verify with the read-back.
+
+There is **no** terminal success/failure message on the response topic after the `code 1` accept.
+
+## Response Codes
+
+`install_certificate` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `1` | Command payload is accepted (`IOT_STATUS_CMD_PAYLOAD_ACCEPTED`) — **the success/accept code for this command.** The install proceeds asynchronously; verify with `get_installed_certificate`. |
+| `0` | Success — terminal success; in practice `install_certificate` acks with `1`, and `0` is what the `get_installed_certificate` read-back returns. |
+| `9` | File not found (`IOT_STATUS_FILE_NOT_FOUND`) — a referenced file/URL could not be found. |
+| `21` | Certificate not found (`IOT_ERROR_CERT_NOT_FOUND`) — the named certificate is absent. |
+| `23` | Invalid enum value (`IOT_ERROR_INVALID_ENUM`) — a field (e.g. `type`, `certSource`, `authenticationType`, `verificationType`) is outside its allowed set. |
+| `29` | Url missing for HTTP source (`IOT_ERROR_URL_MISSING`) — `certSource: HTTP` (or defaulted) with no/empty `url`. |
+| `30` | Certificate content missing for direct source (`IOT_ERROR_CERT_CONTENT_MISSING`) — `certSource: DIRECT` with no `certificateBundle`. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish `install_certificate`; the device acks with the `code 1` envelope under [Response payload](#response-payload). The variants below cover a `DIRECT` inline install (secrets masked), a minimal `filestore` HTTP install, and the two source-specific errors.
+
+A **`DIRECT` install** embeds the content inline — the private key and any key password are masked:
+
+<JsonBlock title="Request — DIRECT (inline, secrets masked)" data={DIRECT_JSON} />
+
+A minimal **`filestore` HTTP install** downloads a single CA:
+
+<JsonBlock title="Request — filestore (HTTP, single CA)" data={FILESTORE_JSON} />
+
+`certSource: HTTP` with no `url` is rejected with **code `29`**:
+
+<JsonBlock title="Response — URL missing (code 29)" data={URL_MISSING_JSON} />
+
+`certSource: DIRECT` with no `certificateBundle` is rejected with **code `30`**:
+
+<JsonBlock title="Response — content missing (code 30)" data={DIRECT_MISSING_JSON} />
+
+## Notes & Caveats
+
+:::danger
+**`code 1` is an async accept, not an install confirmation.** There is no terminal success/failure on the response topic. Always verify the install with [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) (and, for `HTTP`, the `FILE_DOWNLOAD` alerts). A consumer that treats `code == 0` as the success condition will misread every `install_certificate` reply.
+:::
+
+:::warning
+**You transmit private keys.** In `DIRECT` mode `certificateBundle.client_key` (private key) and `cert_key_password` (password) are secrets in the request — mask them as `********`. In `HTTP` mode, a `url` entry with `key: cert_key_password` also carries a plaintext password in its `value` — treat it the same way. Send `install_certificate` only over secured channels. The device never echoes them, and the read-back never exposes private-key material.
+:::
+
+:::note
+**`type` and `authenticationType` are required but not firmware-enforced.** The schema requires both within `certDetails`, but the device accepts a payload omitting them (still returns `code 1`) and installs a malformed entry (e.g. `type: null`). Always send both; don't rely on the device to reject their absence.
+:::
+
+:::note
+**Source rules.** `HTTP` (the default when `certSource` is omitted) requires `url` — missing → code `29`, and the device must be able to reach the file server. `DIRECT` requires `certificateBundle` — missing → code `30`. Invalid enum values (e.g. `type`, `certSource`) return code `23`. The request object has no `additionalProperties: false`, but the device rejects **unknown/extra fields** at parse time with code `2`.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `install_certificate` reports `apiVersion` `V1.21`, while on the same firmware [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) reports `V1.1`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Installing a certificate does **not** disturb the active MDM/MGMT control session. After installing, reference the certificate by its logical `name` from [`config_endpoint`](/reference/mgmt/config-endpoint) or [`set_wifi`](/reference/mgmt/set-wifi). For the concept-level view, see [TLS & certificates](/infrastructure/tls-and-certificates) and [Certificate management](/infrastructure/certificate-management).
+:::
+
+**Related:** 📘 [TLS & certificates](/infrastructure/tls-and-certificates) · 📕 [`get_installed_certificate`](/reference/mgmt/get-installed-certificate) · 📕 [`delete_certificate`](/reference/mgmt/delete-certificate) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [`set_wifi`](/reference/mgmt/set-wifi) · 📕 [Error codes](/reference/errors/codes)

@@ -1,0 +1,134 @@
+---
+id: provision-fleet
+title: "Tutorial: provision a three-reader fleet"
+sidebar_label: "Tutorial: provision a three-reader fleet"
+description: "Tutorial: provision a three-reader IOTC fleet against a cloud MQTT broker. Naming, certificate setup, MDM endpoint, bulk smoke-testing each reader."
+sidebar_custom_props: { emoji: "🎓" }
+---
+
+> 📗 **TUTORIAL** · **Audience:** Solution Builder, Fleet Operator · **Time:** ~45 min
+
+:::note[Prerequisites]
+This tutorial assumes the cloud side already exists — a reachable broker, a device identity per reader, and credentials. Set those up **first**: see [Cloud integration prerequisites](/fleet/cloud-integration/prerequisites).
+:::
+
+In this tutorial, we will provision three RFD90 sleds: bootstrap them, install certificates, configure dedicated MGMT/CTRL/DATA endpoints over the MDM channel, secure with TLS, replay a per-domain golden configuration, and build a fleet dashboard.
+
+### Step 1: Bootstrap three sleds via 123RFID Desktop
+
+Each sled bootstrapped with identical region, Wi-Fi, and SOTI MDM endpoint configuration.
+
+### Step 2: Install the broker CA certificate
+
+For each reader, over the active MDM endpoint:
+
+```json
+{
+  "command": "install_certificate",
+  "requestId": "step2-<n>",
+  "certDetails": {
+    "name": "broker-ca",
+    "type": "mqtt",
+    "certSource": "DIRECT",
+    "certificateBundle": {"ca_cert": "<PEM>"}
+  }
+}
+```
+
+### Step 3: Provision MGMT, CTRL, and DATA endpoints
+
+For each reader, add three dedicated endpoints (only the MGMT example shown; CTRL and DATA1 follow the same pattern with `epType: CTRL` and `epType: DATA1`):
+
+```json
+{
+  "command": "config_endpoint",
+  "requestId": "step3-mgmt-<n>",
+  "epConfig": {
+    "operation": "add",
+    "configuration": {
+      "endpointName": "fleet-mgmt",
+      "epType": "MGMT",
+      "protocol": "MQTT_TLS",
+      "url": "iotc-broker.zebra.com",
+      "port": 8883,
+      "verificationType": "VERIFY_HOST_PEER",
+      "tenantId": "<TENANT_ID>",
+      "activate": true,
+      "qosCommon": 1,
+      "mqttParams": {
+        "username": "<USER>", "password": "<PASS>",
+        "keepAlive": 60,
+        "publishTopics": [
+          {"topic": "MGMT/clients/resp", "qos": 1, "retain": false},
+          {"topic": "MGMT/clients/event", "qos": 1, "retain": false}
+        ],
+        "subscribeTopics": [{"topic": "MGMT/clients/cmnd", "qos": 1, "retain": false}]
+      },
+      "securityParams": {"caCertificateFile": "broker-ca", "clientCert": "fleet-client-cert", "clientKey": "fleet-client-key", "format": "PEM"}
+    }
+  }
+}
+```
+
+The MGMT endpoint declares two publish topics: `MGMT/clients/resp` carries command responses, and `MGMT/clients/event` carries the device events the reader pushes on its own — including the `heartbeatEVT` you subscribe to in Step 7. The reader prepends `<TENANT_ID>` and appends the device serial at runtime, so `MGMT/clients/event` becomes `<TENANT_ID>/MGMT/clients/event/<serial>`.
+
+**You should see** `mqttConnEVT: CONNECTED` on the new endpoint within seconds.
+
+### Step 4: Capture golden baseline from reader 1
+
+```json
+{"command": "get_endpoint_config", "requestId": "step4"}
+```
+
+Save the response (full snapshot), this is the golden config.
+
+### Step 5: Replay per-domain to readers 2 and 3
+
+For each of readers 2 and 3, send the following sequence of commands derived from the golden config:
+
+- [`install_certificate`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-install-certificate) for each cert in the baseline `installedCerts`
+- [`set_wifi`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-wifi) for each profile in the baseline `wifiConfig`
+- [`config_endpoint`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-config-endpoint) for each endpoint in the baseline `epConfig`
+- [`set_operating_mode`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-operating-mode) reproducing the baseline (captured separately via [`get_operating_mode`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-operating-mode) before Step 4)
+- [`set_post_filter`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-set-post-filter) reproducing the post-filter set (captured via [`get_post_filter`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-post-filter))
+- [`config_events`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-config-events) reproducing the event configuration
+
+**You should see** subsequent [`get_endpoint_config`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-endpoint-config) outputs on readers 2 and 3 match the baseline on every domain.
+
+### Step 6: Enable heartbeats fleet-wide
+
+```json
+{
+  "command": "config_events",
+  "requestId": "step6-<n>",
+  "eventConfiguration": {
+    "heartbeat": true,
+    "battery": true,
+    "heartbeatConfiguration": {
+      "interval": 30,
+      "inventoryStatus": true,
+      "batteryStatus": true
+    }
+  }
+}
+```
+
+**You should see** `heartbeatEVT` arriving from all three readers every 30 seconds.
+
+### Step 7: Build the dashboard
+
+```bash
+mosquitto_sub -h iotc-broker.zebra.com -p 8883 \
+  -u <USER> -P <PASS> --cafile zebra-broker-ca.pem \
+  -t "<TENANT_ID>/MGMT/clients/event/+" -v
+```
+
+**You should see** heartbeats interleaved from all three reader serials.
+
+### Recap
+
+You provisioned, secured, configured, and monitored a three-reader fleet end-to-end. The replay pattern in Step 5 — per-domain commands derived from a [`get_endpoint_config`](https://aa5123.github.io/RFID-40-90-handled-reader-api-reference-documentatiion/#op-get-endpoint-config) baseline — scales to fleets of any size; only the orchestration changes.
+
+**Related:** 📗 [Phase 2: Single-Reader Bootstrap with 123RFID Desktop](/quick-start/phase-2) · 📙 [Certificate Management](/infrastructure/certificate-management) · 📙 [TLS Setup](/infrastructure/tls-setup) · 📙 [SOTI Provisioning](/fleet/provisioning/soti-connect) · 📙 [Fleet Health Dashboard](/observability/monitoring/fleet-dashboard)
+
+---

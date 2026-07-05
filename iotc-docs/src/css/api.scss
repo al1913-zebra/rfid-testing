@@ -1,0 +1,725 @@
+@use 'sass:color';
+@use 'sass:map';
+
+$colors: (
+  'get': #1adb01,
+  'post': #70b8ff,
+  'put': #ffd900,
+  'patch': #ff8528,
+  'delete': #ff534d,
+);
+
+$contents: (
+  'get': 'get',
+  'post': 'post',
+  'put': 'put',
+  'patch': 'patch',
+  'delete': 'del',
+);
+
+$badge-classes: (
+  'get': 'badge--primary',
+  'post': 'badge--success',
+  'put': 'badge--info',
+  'patch': 'badge--warning',
+  'delete': 'badge--danger',
+);
+
+:root {
+  @each $name, $color in $colors {
+    --#{$name}-background-color: #{color.adjust($color, $alpha: -0.7)};
+    --#{$name}-border: 1px solid #{color.adjust($color, $lightness: -20%, $alpha: -0.75)};
+    --#{$name}-color: #{color.adjust($color, $lightness: -50%)};
+  }
+}
+
+[data-theme='dark'] {
+  @each $name, $color in $colors {
+    --#{$name}-background-color: #{color.adjust($color, $alpha: -0.9)};
+    --#{$name}-border: 1px solid #{color.adjust($color, $alpha: -0.7)};
+    --#{$name}-color: #{color.adjust($color, $lightness: 10%, $alpha: -0.1)};
+  }
+}
+
+.api-method > .menu__link {
+  align-items: center;
+  justify-content: start;
+}
+
+.api-method > .menu__link::before {
+  width: 34px;
+  height: 15px;
+  font-size: 9px;
+  line-height: 15px;
+  text-transform: uppercase;
+  font-weight: bold;
+  border-radius: var(--ifm-badge-border-radius);
+  border: 1px solid;
+  margin-right: var(--ifm-spacing-horizontal);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.api-method.menu__list-item--deprecated {
+  text-decoration: line-through;
+}
+
+@each $name, $color in $colors {
+  .#{$name} > .menu__link::before {
+    content: "#{map.get($contents, $name)}";
+    background-color: var(--#{$name}-background-color);
+    border: var(--#{$name}-border);
+    color: var(--#{$name}-color);
+  }
+}
+
+.openapi__method-endpoint {
+  @each $name, $color in $colors {
+    .#{map.get($badge-classes, $name)} {
+      background-color: var(--#{$name}-background-color);
+      border: var(--#{$name}-border);
+      color: var(--#{$name}-color);
+    }
+  }
+}
+
+.openapi__heading {
+  font-size: 3rem !important;
+}
+
+/* =========================================================================
+ * MQTT API reference — type badges, enum pills, and the intent/variant
+ * selector. Consumed by src/components/ApiType.tsx and
+ * src/components/VariantSelect.tsx (see _templates/COMMAND_TEMPLATE.mdx and
+ * _templates/EVENT_TEMPLATE.mdx).
+ *
+ * Type colors are chosen to clear WCAG AA (4.5:1) as text on the default
+ * Docusaurus surfaces (light #ffffff, dark #1b1b1d). `number`/`integer`
+ * share a hue and `object`/`array` share a hue, keeping the palette to ~6
+ * semantic hues, not a rainbow.
+ * ========================================================================= */
+
+/* ===== API type badges ===== */
+.api-type {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Light mode */
+.api-type--string { color: #0a7d33; }
+.api-type--number,
+.api-type--integer { color: #1259c3; }
+.api-type--boolean { color: #8a2be2; }
+.api-type--object,
+.api-type--array { color: #9a5b00; }
+.api-type--null { color: #6b6f76; }
+.api-type--enum { color: #0f766e; }
+
+/* Dark mode (Docusaurus sets data-theme="dark" on <html>) */
+[data-theme='dark'] .api-type--string { color: #4ec86f; }
+[data-theme='dark'] .api-type--number,
+[data-theme='dark'] .api-type--integer { color: #5fa8f5; }
+[data-theme='dark'] .api-type--boolean { color: #c58af9; }
+[data-theme='dark'] .api-type--object,
+[data-theme='dark'] .api-type--array { color: #e0a458; }
+[data-theme='dark'] .api-type--null { color: #a0a4ab; }
+[data-theme='dark'] .api-type--enum { color: #3fbdb0; }
+
+/* ===== Enum value pills (neutral, monospace — not per-value colors) ===== */
+.api-enum {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85em;
+  padding: 0.05em 0.4em;
+  margin: 0 0.15em;
+  border-radius: 4px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-900);
+  white-space: nowrap;
+}
+
+/* ===== Intent / variant dropdown ===== */
+.variant-select {
+  margin: 0 0 1rem;
+}
+
+.variant-select__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.variant-select__control {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  font: inherit;
+}
+
+.variant-select__panel {
+  margin-top: 1rem;
+}
+
+/* ===== Synced follower (Response body follows the Request dropdown) ===== */
+.variant-view {
+  margin: 0 0 1rem;
+}
+
+.variant-view__caption {
+  font-style: italic;
+  color: var(--ifm-color-emphasis-700);
+  margin: 0 0 0.5rem;
+}
+
+/* =========================================================================
+ * SchemaTable — unified, collapsible tree-table (schema + example in one).
+ * Consumed by src/components/SchemaTable.tsx. Reuses .api-type--* and
+ * .api-enum (defined above) for type badges and enum pills.
+ * ========================================================================= */
+
+.schema {
+  margin: 0 0 1rem;
+}
+
+/* Panel box — a rounded, bordered frame around the header + table, mirroring the
+   Example tab's .json-block. IMPORTANT: no `overflow:hidden` here — that would clip
+   the right-most header icon's tooltip at the panel edge (the Example tab is immune
+   because its right-most control is the tooltip-less Copy button). The four corners
+   are rounded at the sub-element level instead: the header rounds the top, and
+   .schema-table-scroll clips its OWN bottom corners (a sibling of the header, so the
+   tooltip — which lives in the header — is never clipped). */
+.schema-panel {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+}
+
+.schema-header {
+  border-top-left-radius: 7px; /* 8px panel radius − 1px border */
+  border-top-right-radius: 7px;
+}
+
+/* Expand all / Collapse all group (shared control style). Lives in the panel
+   header bar (.schema-header); the flex spacer there pushes it + the Expand-table
+   toggle to the right, mirroring the Example tab's .json-toolbar. */
+.schema-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.schema-ctrl {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+}
+
+.schema-ctrl:hover {
+  background: var(--ifm-color-emphasis-100);
+  border-color: var(--ifm-color-emphasis-400);
+}
+
+/* Compact icon variant — the Expand-all / Collapse-all pair (see TreeControls.tsx). */
+.schema-ctrl--icon {
+  position: relative; // anchor for the ::after tooltip
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  min-width: 1.9rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.schema-ctrl--icon svg {
+  display: block;
+}
+
+/* Tooltip for the icon-only buttons. Unlike the native `title` attribute (which
+   appears on mouse hover only), this shows on keyboard :focus-visible too, so the
+   chevrons are discoverable to keyboard users. Placed BELOW the button so it is not
+   clipped by .json-block { overflow: hidden }. Screen readers use the aria-label. */
+.schema-ctrl--icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  background: var(--ifm-color-emphasis-800);
+  color: var(--ifm-background-color);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 10;
+}
+
+.schema-ctrl--icon:hover::after,
+.schema-ctrl--icon:focus-visible::after {
+  opacity: 1;
+}
+
+/* State-aware no-op: the action isn't available in the current global state.
+   aria-disabled (not the native `disabled` attribute) keeps the button focusable
+   so it retains its tooltip / screen-reader name while dimmed and inert. */
+.schema-ctrl[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.schema-ctrl[aria-disabled='true']:hover {
+  background: var(--ifm-background-surface-color);
+  border-color: var(--ifm-color-emphasis-300);
+}
+
+/* JsonBlock's bulk-control group sits inline in the .json-toolbar (unlike the
+   Schema tab's .schema-controls, which sits as a block above the table). */
+.json-bulk-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.schema-table-wrap {
+  overflow-x: auto;
+}
+
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: table;
+}
+
+.schema-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-700);
+  background: var(--ifm-color-emphasis-200); /* a step darker than the odd-row stripe (emphasis-100) so the column headers stay distinct */
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+}
+
+.schema-cell {
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  padding: 0.35rem 0.6rem;
+  vertical-align: top;
+}
+
+.schema-cell--field {
+  white-space: nowrap;
+}
+
+.schema-cell--desc {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-800);
+  min-width: 14rem;
+}
+
+/* Zebra striping — alternate row shading for scannability (odd row = darker).
+   Applies to ALL cells incl. the line-number gutter so the whole row alternates.
+   nth-child counts the RENDERED rows (collapsed subtrees aren't in the DOM), so the
+   stripes stay correctly alternating after every expand/collapse. Parent/tree rows
+   stay legible via their bold field name + indentation, not a background. */
+.schema-table tbody tr:nth-child(odd) td {
+  background: var(--ifm-color-emphasis-100);
+}
+
+.schema-table tbody tr:nth-child(even) td {
+  background: var(--ifm-background-color);
+}
+
+.schema-indent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* +/- toggle (used by both the table and the JSON viewer) */
+.schema-toggle,
+.json-toggle {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 1px solid var(--ifm-color-emphasis-400);
+  border-radius: 4px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-color-emphasis-800);
+  cursor: pointer;
+  user-select: none;
+}
+
+.schema-toggle:hover,
+.json-toggle:hover {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #fff;
+}
+
+.schema-toggle-spacer,
+.json-toggle-spacer {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-block;
+}
+
+.schema-field {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85em;
+}
+
+.schema-row--parent .schema-field {
+  font-weight: 700;
+}
+
+.schema-example {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.82em;
+  background: var(--ifm-color-emphasis-200); /* darker than the odd-row stripe (emphasis-100) so the chip stays visible */
+  border-radius: 4px;
+  padding: 0.02em 0.35em;
+}
+
+.schema-units {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.82em;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.schema-muted {
+  color: var(--ifm-color-emphasis-500);
+}
+
+.schema-req {
+  font-weight: 600;
+}
+
+.schema-req--yes {
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .schema-req--yes {
+  color: var(--ifm-color-primary-light);
+}
+
+.schema-req--no {
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* =========================================================================
+ * JsonBlock — collapsible, copy-pasteable raw-JSON viewer.
+ * Consumed by src/components/JsonBlock.tsx.
+ * ========================================================================= */
+
+.json-block {
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Panel header bar — SHARED by the Example (JsonBlock) and Schema (SchemaTable)
+   tabs so the title + controls sit identically in both: [title] … [Expand-all]
+   [Collapse-all] [tab action]. */
+.json-toolbar,
+.schema-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--ifm-color-emphasis-100);
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.json-title,
+.schema-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.json-toolbar-spacer,
+.schema-header-spacer {
+  flex: 1 1 auto;
+}
+
+.json-copy {
+  min-width: 4rem;
+}
+
+/* Example-only qualifier caption (names which concrete example is shown). Rendered
+   under the header in the Example tab only; never over the variant-agnostic schema. */
+.json-caption {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ifm-color-emphasis-700);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--ifm-background-surface-color);
+}
+
+.json-pre {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: var(--ifm-background-surface-color);
+}
+
+.json-line {
+  white-space: pre;
+  display: flex;
+  align-items: flex-start;
+  min-height: 1.4em;
+}
+
+/* indentation lives on the inner content wrapper so the line-number gutter
+   (::before, below) stays column-aligned regardless of nesting depth */
+.json-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.json-key {
+  color: #9a5b00;
+}
+
+[data-theme='dark'] .json-key {
+  color: #e0a458;
+}
+
+.json-string {
+  color: #0a7d33;
+}
+
+[data-theme='dark'] .json-string {
+  color: #4ec86f;
+}
+
+.json-number {
+  color: #1259c3;
+}
+
+[data-theme='dark'] .json-number {
+  color: #5fa8f5;
+}
+
+.json-boolean {
+  color: #8a2be2;
+}
+
+[data-theme='dark'] .json-boolean {
+  color: #c58af9;
+}
+
+.json-null {
+  color: #6b6f76;
+}
+
+[data-theme='dark'] .json-null {
+  color: #a0a4ab;
+}
+
+.json-punct {
+  color: var(--ifm-color-emphasis-700);
+}
+
+.json-collapsed {
+  color: var(--ifm-color-emphasis-600);
+  cursor: pointer;
+  font-style: italic;
+}
+
+.json-collapsed:hover {
+  color: var(--ifm-color-primary);
+}
+
+/* ===== Line numbers ===== */
+
+/* Schema table: left-most line-number column (one number per VISIBLE row) */
+.schema-ln-head,
+.schema-ln {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  text-align: right;
+  padding-right: 0.6rem;
+  color: var(--ifm-color-emphasis-500);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.schema-ln {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8em;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  border-right: 1px solid var(--ifm-color-emphasis-200);
+  /* background is set by the zebra-stripe rule so the gutter alternates with its row */
+  vertical-align: top;
+}
+
+.schema-ln-head {
+  border-right: 1px solid var(--ifm-color-emphasis-300);
+}
+
+/* JSON viewer: line-number gutter via CSS counter (numbers the visible lines) */
+.json-pre {
+  counter-reset: json-line;
+}
+
+.json-line {
+  counter-increment: json-line;
+}
+
+.json-line::before {
+  content: counter(json-line);
+  flex: 0 0 auto;
+  width: 2.2rem;
+  margin-right: 0.6rem;
+  padding-right: 0.5rem;
+  text-align: right;
+  color: var(--ifm-color-emphasis-500);
+  border-right: 1px solid var(--ifm-color-emphasis-200);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* ===== Tabbed body (Schema | Example) ===== */
+.api-body-tabs {
+  margin-bottom: 1rem;
+}
+
+/* =========================================================================
+ * Wide schema tables — width solved at the TABLE level (the right-hand TOC stays
+ * persistent on every page; navigation is never hidden to buy table width). Three
+ * layers, consumed by src/components/SchemaTable.tsx:
+ *   1. Column sizing: cap the boundable columns + wrap long tokens so Description
+ *      keeps a comfortable, flexible width and most tables fit beside the TOC.
+ *   2. Graceful horizontal scroll: an edge fade signals overflow, and the scroll
+ *      box is a keyboard-focusable, labelled region only while it actually scrolls.
+ *   3. An explicit, per-table "Expand table" toggle full-bleeds ONLY that table to
+ *      the viewport's right edge on demand (desktop; width measured in JS).
+ * ========================================================================= */
+
+/* --- Layer 1: column sizing. The schema table is NOT a .markdown table, so it
+   doesn't inherit the global cell-wrapping rules — set them here. --- */
+.schema-cell {
+  overflow-wrap: break-word;
+}
+
+.schema-cell--type,
+.schema-cell--req {
+  white-space: nowrap; /* short tokens (type badge, Yes/No) — hug their content */
+}
+
+.schema-cell--enum,
+.schema-cell--example {
+  /* Long example tokens and string units wrap instead of stretching the table.
+     Array enums render as `.api-enum` pills (white-space:nowrap → atomic), so a very
+     long enum list can still overflow — that case falls back to Layers 2–3. */
+  overflow-wrap: anywhere;
+}
+
+/* --- Layer 2: graceful horizontal scroll with an edge fade that signals overflow.
+   The fades live on the non-scrolling outer wrapper so they stay pinned to the
+   visible edges (an absolute child of the scroll box would scroll with content). --- */
+.schema-table-scroll {
+  position: relative;
+  overflow: hidden; /* clip the table's last-row cells to the panel's rounded bottom */
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 7px;
+}
+
+.schema-table-scroll::before,
+.schema-table-scroll::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+
+.schema-table-scroll::before {
+  left: 0;
+  background: linear-gradient(to right, var(--ifm-background-color), rgba(0, 0, 0, 0));
+}
+
+.schema-table-scroll::after {
+  right: 0;
+  background: linear-gradient(to left, var(--ifm-background-color), rgba(0, 0, 0, 0));
+}
+
+.schema-table-scroll.has-scroll-left::before,
+.schema-table-scroll.has-scroll-right::after {
+  opacity: 1;
+}
+
+/* Focus ring for the scroll box when it is keyboard-focusable (only while it scrolls). */
+.schema-table-wrap:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: -2px; /* inset so the ring isn't clipped by .schema-table-scroll's overflow:hidden */
+}
+
+/* --- Layer 3: per-table full-bleed ("Expand table"). Desktop only — on mobile the
+   content is already near-full-width and the table simply scrolls. --- */
+@media (min-width: 997px) {
+  /* The whole panel (header + table) full-bleeds together so the title bar and
+     table stay aligned when expanded. */
+  .schema-panel--fullbleed {
+    width: var(--fb-width, 100%); /* JS measures the exact reach to the viewport's right edge */
+    position: relative;
+    z-index: 5; /* render the expanded panel above the sticky TOC it overlays */
+    background: var(--ifm-background-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); /* the 1px ring is now the panel's own border */
+  }
+
+  /* Safety net: clip any breakout overflow so it can never add a horizontal page
+     scrollbar. `clip` (not hidden) does not establish a scroll container, so the
+     sticky right TOC is unaffected. Scoped via :has() to only while a table is
+     expanded. */
+  .main-wrapper:has(.schema-panel--fullbleed) {
+    overflow-x: clip;
+  }
+}
+
+@media (max-width: 996px) {
+  /* No full-bleed affordance on mobile — the table scrolls natively there. */
+  .schema-fullbleed-toggle {
+    display: none;
+  }
+}

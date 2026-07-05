@@ -1,0 +1,9 @@
+=== zebra/box deploy watch for 29cf2a0 ===
+Deploy: status=in_progress concl=None run=28735438180
+Deploy: status=in_progress concl=None run=28735438193
+Deploy: status=in_progress concl=None run=28735438193
+Deploy: status=completed concl=success run=28735438180
+live_css=False (html 200) | pages: status=in_progress concl=None run=28735485187
+LIVE OK: new schema CSS is live (.schema-panel base rule present)
+pdfs: {"/pdf/reference/mgmt/get-status.pdf": "200/PDF", "/pdf/reference/ctrl/control-operation.pdf": "200/PDF", "/pdf/reference/api-reference-full.pdf": "200/PDF"}
+DONE: schema-table box + zebra CSS shipped and live.

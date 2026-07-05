@@ -1,0 +1,259 @@
+# Command: {command_name}
+
+<!--
+========================================================================
+TEMPLATE — PUBLIC MQTT COMMAND (request/response) reference.
+========================================================================
+End-user / developer-facing reference for ONE request/response command: an app
+client PUBLISHES a command to the topic the device SUBSCRIBES to; the device
+PUBLISHES the correlated reply to the topic the app SUBSCRIBES to. (The broker
+only routes between clients — never write "the broker sends".)
+
+HOW TO USE: copy this file, rename it `{command_name}.mdx`, put it in the API
+reference sidebar (see PLACEMENT below), fill every {placeholder}, then DELETE
+every HTML comment (MDX uses {/* */}).
+
+BODY DESIGN — <ApiBody> (Schema tab + Example tab):
+The Request payload and Response payload are each ONE <ApiBody rows={...} json={...} />,
+which renders two tabs of the SAME data:
+  • "Schema"  — a unified, collapsible tree-table (Field · Type · Required ·
+                Enum / Units · Example · Description) with a line-number gutter,
+                `+`/`−` toggles on every expandable row, and Expand all / Collapse all.
+  • "Example" — a collapsible, copy-pasteable JSON block with line numbers, the
+                same `+`/`−` folding, Expand all / Collapse all, and a Copy button.
+All <ApiBody> instances on the page share one tab state (Schema/Example) via the
+"api-body-view" groupId. Define the row tree and the JSON object ONCE in the ESM
+block (as `export const`), then reference them by name.
+
+PLACEMENT — the API reference is a SEPARATE doc from the conceptual docs: its own
+"API Reference" top-nav tab and its own `apiReference` sidebar in `sidebars.ts`
+(pages keep their /reference/... URLs). Add this page's id to the `apiReference`
+sidebar, NOT the conceptual `docs` sidebar. The right-hand table of contents is
+persistent; wide schema tables are handled at the table level (column sizing, a
+graceful horizontal-scroll region, and a per-table "Expand table" full-width toggle)
+inside `<SchemaTable>` — nothing to add per page.
+
+INTERNAL CONTENT LIVES ELSEWHERE: live-capture verdicts and provenance tags live
+in the companion `{command_name}.maintainer.md`, not here.
+
+MDX AUTHORING RULES:
+  - Replace ALL {placeholders}. DELETE every HTML comment (use {/* ... */} to keep one).
+  - Define row trees / JSON objects in the ESM block as `export const` (plain JS —
+    single-quote string values; backtick-delimited spans in a `desc` render as <code>).
+  - In PROSE or TABLE CELLS, literal { } and < are parsed as JSX — wrap in `backticks`
+    or escape as \{ \< . Safe only inside a code fence or the ESM JS block.
+  - Blank line after each opening JSX tag and before each closing one (inside <Variant>).
+  - Do NOT put a :::admonition inside a component.
+
+SCHEMA ROW SHAPE (for the `rows` tree): { field, type, required, enumUnits, example, desc, children }
+  - type: 'string' | 'integer' | 'number' | 'boolean' | 'object' | 'array' | 'enum' | 'null'
+  - required: true → "Yes", false → "No", or a custom string.
+  - enumUnits: ARRAY → enum pills; STRING → units/constraint text ('mAh', '0–100', 'date-time (ISO 8601)').
+  - children: nested rows (objects/arrays) → indented rows with a +/- toggle.
+
+Mask credentials as ******** (the device echoes a stored password back as "").
+========================================================================
+-->
+
+{/* Required MDX imports — components live in src/components (see TEMPLATE.assets.md) */}
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+{/* Only needed for MULTI-INTENT commands (see Request/Response payload). Delete if single-intent. */}
+import { VariantSelect, Variant, VariantView } from '@site/src/components/VariantSelect';
+
+{/*
+  ESM DATA — define the table tree(s) and JSON object(s) here, then reference them
+  by name in the body. Single-intent: REQUEST_ROWS/REQUEST_JSON + RESPONSE_ROWS/RESPONSE_JSON.
+  Multi-intent: one pair per intent (e.g. REQUEST_ROWS_MGMT, RESPONSE_ROWS_MGMT, …).
+*/}
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: '{command_name}', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: '{requestId}', desc: 'Correlation token; echoed in the response.' },
+  { field: '{payloadKey}', type: 'object', required: false, desc: 'Named payload wrapper — not in `required`.', children: [
+    { field: '{field}', type: 'string', required: true, example: '{value}', desc: 'What the field does.' },
+    { field: 'password', type: 'string', required: false, example: '********', desc: 'Masked credential; device reads back a stored password as "".' },
+  ] },
+];
+
+export const REQUEST_JSON = {
+  command: '{command_name}',
+  requestId: '{requestId}',
+  '{payloadKey}': { '{field}': '{value}', password: '********' },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: '{command_name}', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: '{requestId}', desc: 'Echoes the request `requestId` — pairs reply to request.' },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version. Confirm per command — some responses extend it (e.g. V1.2, V1.21).' },
+  { field: 'response', type: 'object', required: true, desc: 'Status wrapper.', children: [
+    { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success, non-zero = error; values per `refrence/response/response.yaml`.' },
+    { field: 'description', type: 'string', required: true, example: '{description}', desc: 'Human-readable status.' },
+  ] },
+];
+
+export const RESPONSE_JSON = {
+  command: '{command_name}',
+  requestId: '{requestId}',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: '{description}' },
+};
+
+## Overview
+
+<!-- 1–2 sentence headline of what {command_name} does, then a short paragraph of context.
+State plainly whether it is state-changing or read-only. Lead with the :::danger callout if
+destructive; otherwise delete it. -->
+
+`{command_name}` {one-sentence summary}. {A short paragraph: what it configures or returns, and the plane it runs on.}
+
+:::danger
+`{command_name}` is **state-changing**: describe what it changes and the blast radius, and the revert path. Delete this callout if the command is read-only.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | {endpoint/plane — e.g. CONTROL `CTRL` or device-management `MGMT`}; {device models — e.g. RFD40, RFD90} |
+| **Related Commands** | {e.g. [`{related_command}`](/reference/…), …} |
+| **Required Request Fields** | `command`, `requestId` |
+| **Supported Operations** | {full set / partial (merge) sets / read-only query} |
+| **State Change** | {STATE-CHANGING or READ-ONLY} |
+| **Reversibility** | {REVERSIBLE / NOT REVERSIBLE / n/a for read-only} |
+
+## When to Use
+
+<!-- 2–4 sentences/bullets: WHAT the caller gets, for WHAT purpose, in WHAT context, and WHAT
+problem it solves. Write for a developer deciding whether this is the right command. -->
+
+Use `{command_name}` when you need to **{outcome}** — {for what purpose}, typically in **{context / environment}**. It solves **{the problem}**.
+
+- **Get / change:** {what data or state}.
+- **Use it for:** {the concrete scenario(s)}.
+- **Prefer a different command when:** {pointer to the read-only or inverse command, if any}.
+
+## Topic Mapping
+
+<!-- Each row states Publish/Subscribe AND names the acting client (app vs device). The cmnd
+and resp topics are TWIN topics; the in-payload `requestId` links them. Wrap literal {serial} /
+<tenantId> tokens in backticks. -->
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/CTRL/clients/cmnd/{serial}` | {which endpoint must be active to route} |
+| Response (subscribe by app; published by device) | `zebra/CTRL/clients/resp/{serial}` | Correlated reply; `requestId` links the twin topics |
+
+:::note
+There is no per-message authentication block — credentials are presented once at CONNECT (Basic / token / mTLS). The `requestId` you send is echoed in the response so you can match reply to request.
+:::
+
+## Key Fields
+
+<!-- The 3–5 load-bearing fields, shown before the full body. -->
+
+- **`requestId`** (request) — your correlation token; make it unique per request. Echoed in the response.
+- **`{discriminating_field}`** (request) — {the field that selects the operation/target/mode}.
+- **`response.code`** (response) — read this to determine success vs failure (see [Response Codes](#response-codes)).
+- **{`{other_key_field}`}** — {why it matters}.
+
+## Request payload
+
+<!-- The request envelope is `{ command, requestId, {payloadKey} }`. Render it as ONE <ApiBody>.
+
+SINGLE-INTENT (most commands): keep the single <ApiBody> line below.
+
+MULTI-INTENT (e.g. config_endpoint with Add MGMT / CTRL / DATA1 variants): wrap per-intent
+<ApiBody> in a <VariantSelect> — one <Variant> per intent — with a page-unique groupId
+(e.g. "{command_name}-intent"), and mirror the ids in the Response payload's <VariantView>. Define
+one REQUEST_ROWS_*/REQUEST_JSON_* pair per intent in the ESM block. -->
+
+:::warning
+Mask any credential as `********` wherever the request is shown. The device returns a stored password as an empty string `""` on readback.
+:::
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+{/* MULTI-INTENT alternative (delete the <ApiBody> line above and use this shape):
+
+<VariantSelect label="Intent" groupId="{command_name}-intent">
+
+<Variant value="variant-a" label="Add {intent A}">
+
+<ApiBody rows={REQUEST_ROWS_A} json={REQUEST_JSON_A} title="Request payload" />
+
+</Variant>
+
+<Variant value="variant-b" label="Add {intent B}">
+
+<ApiBody rows={REQUEST_ROWS_B} json={REQUEST_JSON_B} title="Request payload" />
+
+</Variant>
+
+</VariantSelect>
+*/}
+
+## Response payload
+
+<!-- The response envelope is `{ command, requestId, apiVersion, response{ code, description }, … }`.
+Render as ONE <ApiBody>. For `response.code`, treat `refrence/response/response.yaml` as the source
+of truth — do NOT hardcode a numeric range.
+
+SINGLE-INTENT: keep the single <ApiBody> line below.
+
+MULTI-INTENT: replace with a <VariantView groupId="{command_name}-intent"> that has one <Variant>
+per intent (SAME value="…" ids as the Request payload's <VariantSelect>), each holding its own <ApiBody>. -->
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+{/* MULTI-INTENT alternative:
+
+<VariantView groupId="{command_name}-intent" caption="Response for the intent selected in Request payload.">
+
+<Variant value="variant-a" label="Add {intent A}">
+
+<ApiBody rows={RESPONSE_ROWS_A} json={RESPONSE_JSON_A} title="Response payload" />
+
+</Variant>
+
+</VariantView>
+*/}
+
+## Response Codes
+
+<!-- List the codes THIS command can return, sourced from refrence/response/response.yaml — do not
+invent a range. Link to the Error codes reference for the full table rather than duplicating it. -->
+
+| Code | Description |
+| --- | --- |
+| `0` | Success. |
+| `{code}` | {meaning, per refrence/response/response.yaml}. |
+
+:::warning
+Optional: note any real-device anomaly relevant to callers — e.g. a success response that omits `code`, or a code outside the documented set. Delete if none.
+:::
+
+## Examples
+
+<!-- ONE end-to-end worked exchange. Because the Request/Response payload <ApiBody>s already show the
+full JSON on their Example tab, keep this concise — a <JsonBlock> for the request and a one-line
+pointer to the Response payload is enough; do NOT paste the full response again. Keep credentials masked. -->
+
+`{command_name}` is a single request/response exchange. Publish the request below; the device replies with the correlated reply — the `requestId` (`{requestId}`) is echoed back so you can pair reply to request. The full reply is on the [Response payload](#response-payload) Example tab.
+
+<JsonBlock title="Request" data={REQUEST_JSON} />
+
+## Notes & Caveats
+
+<!-- Catch-all admonitions (:::tip / :::note / :::info / :::warning / :::danger). Delete unused.
+Restate the revert path for a state-changing command, and the masking reminder. -->
+
+:::tip
+A best-practice tip — e.g. read back state after a partial set to confirm what actually applied.
+:::
+
+:::danger
+If state-changing: the exact revert path — e.g. reboot restores defaults, or re-send `{command_name}` with the inverse value. Delete if read-only.
+:::
+
+**Related:** 📘 [{concept chapter}](/…) · 📕 [{sibling reference}](/reference/…) · 📕 [Error codes](/reference/errors/codes)

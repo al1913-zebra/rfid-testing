@@ -1,0 +1,52 @@
+name: CodeQL
+
+# Advanced CodeQL setup (replaces GitHub "default setup"). Scans only the
+# first-party code surface (src/, scripts/, workflows) via the path filters in
+# .github/codeql/codeql-config.yml, so the non-shipping _meta/ knowledge base
+# and other vendored/generated material no longer generate false-positive
+# alerts on the Security tab.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan (Mondays 05:23 UTC) to catch newly-published advisories.
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript covers src/ (React/TS) + config (.ts).
+        # python covers scripts/check_reachability.py.
+        # actions covers the GitHub Actions workflows themselves.
+        language: [javascript-typescript, python, actions]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: security-and-quality
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

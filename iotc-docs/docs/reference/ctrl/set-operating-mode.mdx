@@ -1,0 +1,336 @@
+---
+id: set-operating-mode
+title: set_operating_mode
+sidebar_label: "set_operating_mode"
+description: "MQTT reference for set_operating_mode: configure the reader's RFID operating mode — profile, RF config, access operations, radio triggers, Gen2 query, select pre-filters, and tag metadata — over the control (CTRL) endpoint. Partial-merge; arms destructive access operations."
+sidebar_custom_props: { emoji: "⚙️" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'enum', required: true, enumUnits: ['set_operating_mode'], example: 'set_operating_mode', desc: 'Fixed command name (pinned by the schema `enum`).' },
+  { field: 'requestId', type: 'string', required: true, example: '1286', desc: 'A unique identifier for the request; echoed back in the response.' },
+  {
+    field: 'operatingMode', type: 'object', required: false, desc: 'The operating-mode settings to apply. Required in practice; not in the command-level `required`. Partial: send only the sub-objects you want to change — they merge into the current mode (see Partial updates and merge).',
+    children: [
+      {
+        field: 'operatingModes', type: 'object', required: false, desc: 'The reader operating-mode configuration.',
+        children: [
+          { field: 'profiles', type: 'enum', required: false, enumUnits: ['FAST_READ', 'CYCLE_COUNT', 'DENSE_READERS', 'OPTIMAL_BATTERY', 'BALANCED_PERFORMANCE', 'ADVANCED'], example: 'BALANCED_PERFORMANCE', desc: 'RF profile (default `BALANCED_PERFORMANCE`). `ADVANCED` requires `advancedConfigurations` (else code `22`). `FAST_READ` is not currently supported (see Notes).' },
+          {
+            field: 'advancedConfigurations', type: 'object', required: false, desc: 'Custom RF settings — set only when `profiles` is `ADVANCED`.',
+            children: [
+              { field: 'transmitPower', type: 'number', required: false, enumUnits: 'centi-dBm (0–300)', example: '270', desc: 'Transmit power level.' },
+              { field: 'linkProfile', type: 'enum', required: false, enumUnits: ['M4_256K', 'M2_240K', 'M2_256K', 'M2_320K', 'M4_240K', 'M4_320K', 'FM0_0K', 'FM0_320K', 'M8_240K', 'M8_256K', 'M8_320K'], desc: 'RF link profile.' },
+              { field: 'session', type: 'enum', required: false, enumUnits: ['SESSION_0', 'SESSION_1', 'SESSION_2', 'SESSION_3'], desc: 'Gen2 session.' },
+              { field: 'dynamicPower', type: 'boolean', required: false, desc: 'Enable dynamic power.' },
+            ],
+          },
+          {
+            field: 'accessOperations', type: 'array', required: false, desc: '⚠️ Tag access operations to arm — executed on the next inventory. WRITE/LOCK/KILL are destructive (see the danger note in Notes).',
+            children: [
+              { field: 'operationType', type: 'enum', required: false, enumUnits: ['READ', 'WRITE', 'ACCESS', 'LOCK', 'KILL'], example: 'READ', desc: 'The access operation. WRITE writes tag memory; LOCK (un)locks banks; KILL permanently disables the tag.' },
+              {
+                field: 'config', type: 'object', required: false, desc: 'Operation parameters.',
+                children: [
+                  { field: 'memoryBank', type: 'enum', required: false, enumUnits: ['EPC', 'TID', 'USER', 'RESERVED'], example: 'EPC', desc: 'Target memory bank (READ/WRITE).' },
+                  { field: 'offset', type: 'integer', required: false, enumUnits: '16-bit words', example: '0', desc: 'Start word position.' },
+                  { field: 'length', type: 'integer', required: false, enumUnits: '16-bit words', example: '2', desc: 'Word count.' },
+                  { field: 'data', type: 'string', required: false, enumUnits: 'hex (×16-bit)', example: 'FFFFEEEE', desc: 'Words to write (WRITE). Overlong → code `31`; length mismatch → code `32`.' },
+                  { field: 'password', type: 'string', required: false, example: '********', desc: '⚠️ 8-hex-char (32-bit) access/lock/kill password. Default `0000`. Sensitive — mask it; the read-back never echoes it.' },
+                  { field: 'lockMemBank', type: 'enum', required: false, enumUnits: ['EPC', 'ACCESS_PWD', 'KILL_PWD', 'TID', 'USER', 'ALL'], desc: 'Bank to (un)lock (LOCK).' },
+                  { field: 'lockAction', type: 'enum', required: false, enumUnits: ['READ_AND_WRITE', 'PERMANENT_LOCK', 'PERMANENT_UNLOCK', 'UNLOCK'], desc: 'Lock action (LOCK). `PERMANENT_LOCK`/`PERMANENT_UNLOCK` are irreversible.' },
+                ],
+              },
+            ],
+          },
+          {
+            field: 'radioStartConditions', type: 'object', required: false, desc: 'When inventory starts. Absent → starts immediately on `start`.',
+            children: [
+              { field: 'trigger', type: 'enum', required: false, enumUnits: ['PRESSED', 'RELEASED', 'IMMEDIATE'], example: 'IMMEDIATE', desc: 'Start trigger.' },
+              { field: 'startDelay', type: 'integer', required: false, enumUnits: 'ms', example: '3000', desc: 'Delay before starting (when > 0).' },
+              { field: 'repeat', type: 'boolean', required: false, example: 'false', desc: 'Whether the trigger can restart inventory.' },
+            ],
+          },
+          {
+            field: 'radioStopConditions', type: 'object', required: false, desc: 'When inventory stops. Absent → runs until `stop`.',
+            children: [
+              { field: 'trigger', type: 'enum', required: false, enumUnits: ['PRESSED', 'RELEASED', 'IMMEDIATE'], example: 'IMMEDIATE', desc: 'Stop trigger.' },
+              { field: 'tagCount', type: 'integer', required: false, desc: 'Stop after N unique tags.' },
+              { field: 'stopTimeout', type: 'integer', required: false, enumUnits: 'ms', desc: 'Stop after this duration.' },
+              { field: 'inventoryCount', type: 'integer', required: false, desc: 'Stop after N inventory cycles.' },
+            ],
+          },
+          {
+            field: 'query', type: 'object', required: false, desc: 'Gen2 query parameters.',
+            children: [
+              { field: 'session', type: 'enum', required: false, enumUnits: ['SESSION_0', 'SESSION_1', 'SESSION_2', 'SESSION_3'], example: 'SESSION_1', desc: 'Gen2 session.' },
+              { field: 'inventoryState', type: 'enum', required: false, enumUnits: ['STATE_A', 'STATE_B', 'STATE_AB'], example: 'STATE_B', desc: 'Inventory flag state (`STATE_AB` flips).' },
+              { field: 'slFlag', type: 'enum', required: false, enumUnits: ['ALL', 'ASSERTED', 'DEASSERTED'], example: 'ALL', desc: 'SL (select) flag filter.' },
+              { field: 'tagPopulation', type: 'integer', required: false, enumUnits: '≥ 0', example: '30', desc: 'Estimated tag count (tunes the Q parameter).' },
+            ],
+          },
+          {
+            field: 'select', type: 'array', required: false, enumUnits: 'up to 32', desc: 'Select pre-filters (max 32; exceeding → code `24`). Each item requires all seven fields below.',
+            children: [
+              { field: 'enable', type: 'boolean', required: true, example: 'true', desc: 'Enable this pre-filter.' },
+              { field: 'tagPattern', type: 'string', required: true, enumUnits: 'hex (≤ 64, even)', example: '2222EEEEFFFF1111AAAABBBB', desc: 'Bit pattern to match. Overlong → code `28`.' },
+              { field: 'memoryBank', type: 'enum', required: true, enumUnits: ['EPC', 'TID', 'USER'], example: 'EPC', desc: 'Memory bank to match against.' },
+              { field: 'offset', type: 'integer', required: true, enumUnits: 'bits', example: '32', desc: 'Start bit position.' },
+              { field: 'action', type: 'enum', required: true, enumUnits: ['INV_A_NOT_INV_B_OR_ASRT_SL_NOT_DSRT_SL', 'INV_A_OR_ASRT_SL', 'NOT_INV_B_OR_NOT_DSRT_SL', 'INV_A2BB2A_NOT_INV_A_OR_NEG_SL_NOT_ASRT_SL', 'INV_B_NOT_INV_A_OR_DSRT_SL_NOT_ASRT_SL', 'INV_B_OR_DSRT_SL', 'NOT_INV_A_OR_NOT_ASRT_SL', 'NOT_INV_A2BB2A_OR_NOT_NEG_SL'], example: 'INV_B_NOT_INV_A_OR_DSRT_SL_NOT_ASRT_SL', desc: 'How to set the SL/inventory flag on match/mismatch (Gen2 select action).' },
+              { field: 'target', type: 'enum', required: true, enumUnits: ['SESSION_SL', 'SESSION_0', 'SESSION_1', 'SESSION_2', 'SESSION_3'], example: 'SESSION_1', desc: 'Session/SL flag to set.' },
+              { field: 'length', type: 'integer', required: true, enumUnits: 'bits', example: '16', desc: 'Number of bits to compare.' },
+            ],
+          },
+          {
+            field: 'tagMetaDataToEnable', type: 'object', required: false, desc: 'Which tag-metadata fields to report on each read (booleans). Enabling `EPC`/`TID`/`USER` auto-provisions a generic READ (see Notes).',
+            children: [
+              { field: 'RSSI', type: 'boolean', required: false, desc: 'Report signal strength.' },
+              { field: 'PHASE', type: 'boolean', required: false, desc: 'Report phase angle.' },
+              { field: 'SEENCOUNT', type: 'boolean', required: false, desc: 'Report detection count.' },
+              { field: 'CHANNEL', type: 'boolean', required: false, desc: 'Report the RF channel.' },
+              { field: 'PC', type: 'boolean', required: false, desc: 'Report the Protocol Control word.' },
+              { field: 'XPC', type: 'boolean', required: false, desc: 'Report the Extended PC word.' },
+              { field: 'CRC', type: 'boolean', required: false, desc: 'Report the CRC.' },
+              { field: 'EPC', type: 'boolean', required: false, desc: 'Report the EPC.' },
+              { field: 'TID', type: 'boolean', required: false, desc: 'Report the TID.' },
+              { field: 'USER', type: 'boolean', required: false, desc: 'Report USER memory.' },
+              { field: 'MAC', type: 'boolean', required: false, desc: "Report the reader's MAC." },
+              { field: 'HOSTNAME', type: 'boolean', required: false, desc: "Report the reader's hostname." },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  operatingMode: {
+    operatingModes: {
+      profiles: 'BALANCED_PERFORMANCE',
+      query: { session: 'SESSION_1', inventoryState: 'STATE_B', slFlag: 'ALL', tagPopulation: 40 },
+      select: [
+        { enable: true, tagPattern: 'FFFFEEEE3435363742426666', memoryBank: 'EPC', offset: 32, action: 'INV_B_NOT_INV_A_OR_DSRT_SL_NOT_ASRT_SL', target: 'SESSION_1', length: 96 },
+      ],
+    },
+  },
+};
+
+export const ADVANCED_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  operatingMode: {
+    operatingModes: {
+      profiles: 'ADVANCED',
+      advancedConfigurations: { transmitPower: 300, linkProfile: 'M2_240K', session: 'SESSION_1', dynamicPower: true },
+      accessOperations: [
+        { operationType: 'READ', config: { memoryBank: 'EPC', offset: 1, length: 2 } },
+        { operationType: 'WRITE', config: { memoryBank: 'USER', offset: 2, length: 2, data: 'FFFFEEEE', password: '********' } },
+        { operationType: 'LOCK', config: { password: '********', lockMemBank: 'TID', lockAction: 'UNLOCK' } },
+      ],
+      radioStartConditions: { trigger: 'IMMEDIATE', startDelay: 3000, repeat: false },
+      radioStopConditions: { trigger: 'IMMEDIATE', tagCount: 10, stopTimeout: 10000, inventoryCount: 0 },
+      query: { session: 'SESSION_1', inventoryState: 'STATE_B', slFlag: 'ALL', tagPopulation: 30 },
+      tagMetaDataToEnable: { RSSI: false, PHASE: false, SEENCOUNT: false, CHANNEL: false, PC: false, XPC: true, CRC: true, EPC: true, TID: true, USER: true, MAC: true, HOSTNAME: true },
+    },
+  },
+};
+
+export const RADIO_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  operatingMode: {
+    operatingModes: {
+      radioStartConditions: { trigger: 'PRESSED', startDelay: 5000, repeat: false },
+      radioStopConditions: { trigger: 'RELEASED', tagCount: 10, stopTimeout: 10000, inventoryCount: 0 },
+    },
+  },
+};
+
+export const PROFILE_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  operatingMode: { operatingModes: { profiles: 'BALANCED_PERFORMANCE' } },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'set_operating_mode', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: '1286', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command (device returns `V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status-only result — set_operating_mode echoes no configuration.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. Note: on success the device often omits `code` entirely (see Notes). See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  apiVersion: 'V1.1',
+  response: { code: 0, description: 'Success' },
+};
+
+export const ERROR_JSON = {
+  command: 'set_operating_mode',
+  requestId: '1286',
+  apiVersion: 'V1.1',
+  response: { code: 101, description: 'Error in processing command' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** configure the reader's RFID operating mode
+
+## Overview
+
+`set_operating_mode` **configures the reader's RFID operating mode** — the profile, advanced RF configuration, tag access operations, radio start/stop triggers, the Gen2 `query`, select pre-filters, and tag-metadata reporting flags. It is a state-changing **control-plane (CTRL) command**. It is a **partial, merging** update: you send only the sub-objects you want to change and they merge into the current mode. Read the result back with [`get_operating_mode`](/reference/ctrl/get-operating-mode).
+
+:::danger
+**`accessOperations` arm destructive tag operations.** `WRITE` rewrites tag memory, `LOCK` with `PERMANENT_LOCK`/`PERMANENT_UNLOCK` is **irreversible**, and `KILL` **permanently disables the tag**. These operations are *armed* by `set_operating_mode` and **execute on the next inventory** — against every tag in range. Clear armed operations before running an inventory you don't intend them for: **overwrite the `accessOperations` array with a benign (or empty) set, or [`reboot`](/reference/mgmt/reboot)**. A profile-only (or any partial set that omits `accessOperations`) does **not** clear them — the merge preserves them (see [Partial updates and merge](#partial-updates-and-merge)). Also note: **on success this command often omits `response.code`** — do not gate success on `code == 0` (see below).
+:::
+
+:::warning
+This is a **CTRL-endpoint command**, published on the **control** endpoint (`zebra/CTRL/clients/cmnd/{serial}`) and **not answered over the MGMT/MDM channel**. The reader must have an **active CTRL endpoint** ([`config_endpoint`](/reference/mgmt/config-endpoint), `epType: CTRL`, `activate: true`) or you get no response.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (partial-merge configuration) |
+| **Applies To** | **Control (CTRL) endpoint** — requires an active CTRL endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`get_operating_mode`](/reference/ctrl/get-operating-mode), [`control_operation`](/reference/ctrl/control-operation), [`config_endpoint`](/reference/mgmt/config-endpoint), [`reboot`](/reference/mgmt/reboot) |
+| **Required Request Fields** | `command`, `requestId` (plus `operatingMode.operatingModes` with the aspects to set) |
+| **Update Semantics** | Partial / merge — only the sub-objects sent are changed; others are preserved |
+| **State Change** | STATE-CHANGING (arms access ops; changes RF config) |
+| **Reversibility** | REVERSIBLE / VOLATILE — reset to default on [`reboot`](/reference/mgmt/reboot), or re-send to change |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `set_operating_mode` to **configure how the reader reads (and acts on) tags**:
+
+- **Select a profile** — e.g. `CYCLE_COUNT`, `DENSE_READERS`, `OPTIMAL_BATTERY`, `BALANCED_PERFORMANCE`, or `ADVANCED` (with `advancedConfigurations`).
+- **Tune the radio** — transmit power, link profile, session, dynamic power (ADVANCED).
+- **Compose triggers** — `radioStartConditions` / `radioStopConditions` (trigger, delay, tag/time/cycle stops).
+- **Shape inventory** — Gen2 `query` and up to 32 `select` pre-filters.
+- **Choose reporting** — `tagMetaDataToEnable` flags.
+- **Arm tag operations** — `accessOperations` (READ/WRITE/ACCESS/LOCK/KILL) that run on the next inventory. Handle with care (see the danger note).
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/CTRL/clients/cmnd/{serial}` | On the **control** endpoint. Requires an **active CTRL endpoint**. |
+| Response (subscribe by app; published by device) | `zebra/CTRL/clients/resp/{serial}` | Correlated reply; the in-payload `requestId` links the twin topics. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. Control commands are answered **only on the CTRL endpoint**. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+If control commands time out, confirm a CTRL endpoint is active (`get_endpoint_config` → `activeEndpoints`) and activate one with [`config_endpoint`](/reference/mgmt/config-endpoint) if needed. The mode cannot be changed while an inventory is running (code `11`).
+:::
+
+## Key Fields
+
+- **`operatingModes.profiles`** — the RF profile; `ADVANCED` requires `advancedConfigurations`.
+- **`operatingModes.accessOperations`** — ⚠️ armed tag operations (destructive; see the danger note).
+- **`operatingModes.select`** — up to 32 Gen2 pre-filters.
+- **`operatingModes.query` / `radioStartConditions` / `radioStopConditions`** — inventory shaping and trigger semantics.
+- **`response.code`** — read this to determine success vs failure; note the success-path omission and the partial-apply-on-error behavior (see Notes). See [Response Codes](#response-codes).
+
+## Request payload
+
+The envelope is `command`, `requestId`, and the `operatingMode` payload. Send only the `operatingModes` sub-objects you want to change. Use the **Schema** tab for the full field reference and the **Example** tab for a partial set (profile + query + select).
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="partial set" />
+
+## Partial updates and merge
+
+`set_operating_mode` is **cumulative**: it updates only the aspects present in the payload and leaves all others intact — it is **not** a full replacement. For example, sending only `radioStartConditions` changes the triggers while preserving `profiles`, `query`, `select`, `accessOperations`, and `tagMetaDataToEnable`. Send `{profiles: "BALANCED_PERFORMANCE"}` alone to reset the profile without touching anything else. Because merges accumulate, **armed `accessOperations` persist** across later partial sets until you overwrite them or reboot. Confirm the resulting merged mode with [`get_operating_mode`](/reference/ctrl/get-operating-mode).
+
+## Response payload
+
+`set_operating_mode` returns a **status-only** envelope — `command`, `requestId`, `apiVersion`, and `response`.
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+:::note
+**On success the device often omits `response.code`**, returning just `response: { "description": "Success" }`. Conversely, an error carries a `code` (e.g. `101`). Treat **`description: "Success"` (or an absent `code`) as success**, and the **presence of a `code` as an error** — do not gate on `code == 0`. The schema still requires `code`; this is a firmware behavior.
+:::
+
+## Response Codes
+
+`set_operating_mode` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the mode was applied. (Often conveyed as `description: "Success"` with `code` omitted — see above.) |
+| `11` | Inventory in progress (`IOT_ERROR_INVENTORY_IN_PROGRESS`) — the mode can't be changed while an inventory is running. Stop it with [`control_operation`](/reference/ctrl/control-operation) first. |
+| `22` | Advanced configuration not set (`IOT_CTRL_ADVANCED_PROFILE_NOT_SET`) — `profiles: ADVANCED` was sent without `advancedConfigurations`. |
+| `23` | Invalid enum value (`IOT_ERROR_INVALID_ENUM`) — a field (e.g. `profiles`, `operationType`, a Gen2 enum) is outside its allowed set. |
+| `24` | Max 32 prefilters limit exceeded (`IOT_ERROR_PREFILTERS_LIMIT_EXCEEDED`) — more than 32 `select` entries. |
+| `28` | Tag match pattern length exceeded (`IOT_ERROR_TAG_MATCH_PATTERN_LENGTH_EXCEEDED`) — a `select.tagPattern` is too long. |
+| `31` | Max write length exceeded (`IOT_ERROR_MAX_WRITE_LENGTH_EXCEEDED`) — a WRITE `data` block is too large. |
+| `32` | Write data length mismatch (`IOT_ERROR_WRITE_DATA_LENGTH_MISMATCH`) — a WRITE `data` length doesn't match its `length`. |
+| `101` | Default error (`Error in processing command`) — a generic failure. **Note:** a `101` can still leave the mode *partially applied* — read back with `get_operating_mode` to see what took effect. |
+
+## Examples
+
+Publish `set_operating_mode` over the CTRL endpoint; the device replies with the status envelope under [Response payload](#response-payload). The **Example** tab of the Request payload shows a partial set. The variants below cover a full `ADVANCED` configuration, radio-conditions-only, and profile-only (credentials masked).
+
+A full **`ADVANCED`** configuration — custom RF, armed access operations (destructive WRITE/LOCK; passwords masked), triggers, query, and metadata:
+
+<JsonBlock title="Request — ADVANCED (full config, passwords masked)" data={ADVANCED_JSON} />
+
+A **radio-conditions-only** partial set (trigger-based start/stop):
+
+<JsonBlock title="Request — radio conditions only (partial merge)" data={RADIO_JSON} />
+
+A **profile-only** partial set (also the way to reset to default):
+
+<JsonBlock title="Request — profile only" data={PROFILE_JSON} />
+
+A generic failure returns **code `101`** (which may still partially apply — read back to confirm):
+
+<JsonBlock title="Response — error (code 101)" data={ERROR_JSON} />
+
+## Notes & Caveats
+
+:::danger
+**Access operations are destructive and armed for the next inventory.** `accessOperations` (`WRITE`, `LOCK`, `KILL`) are stored by `set_operating_mode` and executed against tags **on the next inventory START** — not immediately. `KILL` permanently disables a tag; `LOCK` with `PERMANENT_LOCK`/`PERMANENT_UNLOCK` is irreversible; `WRITE` overwrites tag memory. Because partial sets **merge**, armed operations persist until you **overwrite the `accessOperations` array** (with a benign or empty set) or [`reboot`](/reference/mgmt/reboot). A profile-only set — or any partial set that omits `accessOperations` — does **not** clear them. Do this before running an inventory that shouldn't trigger them.
+:::
+
+:::warning
+**Credentials.** `accessOperations[].config.password` is an 8-hex-char (32-bit) access/lock/kill password you send (default `0000`) — mask it in shared artifacts. The device stores it but never echoes it back ([`get_operating_mode`](/reference/ctrl/get-operating-mode) returns it empty). This command carries no broker/Wi-Fi credentials.
+:::
+
+:::note
+**Success omits `code`; errors carry one; `101` may partially apply.** On success the device typically returns `response: { "description": "Success" }` with **no `code`** — treat an absent `code` / `description: "Success"` as success. An error returns a `code` (e.g. `101` "Error in processing command"), and a `101` can leave the mode **partially applied**, so always verify the result with [`get_operating_mode`](/reference/ctrl/get-operating-mode) rather than assuming a `101` changed nothing.
+:::
+
+:::note
+**Partial-merge semantics.** Only the `operatingModes` sub-objects present in the payload change; the rest are preserved. See [Partial updates and merge](#partial-updates-and-merge).
+:::
+
+:::note
+**`ADVANCED` requires `advancedConfigurations`; limits are enforced.** `profiles: ADVANCED` without `advancedConfigurations` returns code `22`. `select` allows up to 32 filters (code `24` if exceeded); an overlong `select.tagPattern` returns `28`; WRITE `data` that is too large or mismatched returns `31` / `32`. `FAST_READ` is enumerated but **not currently supported**, and configuring `FAST_READ` disables data events.
+:::
+
+:::note
+**Metadata flags auto-provision READ operations.** Enabling `tagMetaDataToEnable.EPC` / `TID` / `USER` causes the device to auto-add a generic `READ {offset 0, length 0}` access operation for that bank (and disabling it removes that op). So a `get_operating_mode` read-back may show READ operations you didn't explicitly send.
+:::
+
+:::note
+**Volatile & CTRL-only, per-handler `apiVersion`.** The operating mode resets to default on [`reboot`](/reference/mgmt/reboot). The command is answered only on the CTRL endpoint (see Topic Mapping). `set_operating_mode` reports `apiVersion` `V1.1`, while [`get_version`](/reference/mgmt/get-version) reports `V1.21` — per-handler, not device-wide.
+:::
+
+:::tip
+Configure with `set_operating_mode`, then **verify with [`get_operating_mode`](/reference/ctrl/get-operating-mode)** (especially after a `101`), and run the inventory with [`control_operation`](/reference/ctrl/control-operation). For the concept-level view, see [Operating-mode profiles](/rfid/operating-mode-profiles).
+:::
+
+**Related:** 📕 [`get_operating_mode`](/reference/ctrl/get-operating-mode) · 📕 [`control_operation`](/reference/ctrl/control-operation) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [`reboot`](/reference/mgmt/reboot) · 📕 [Error codes](/reference/errors/codes)

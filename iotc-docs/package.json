@@ -1,0 +1,64 @@
+{
+  "name": "zebra-handheld-rfid-iotc",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Zebra Handheld RFID Reader | IoT Connector (IOTC) MQTT API Documentation. RFD40 / RFD90 Series.",
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "serve": "docusaurus serve",
+    "pdf": "node scripts/generate-pdfs.mjs",
+    "clear": "docusaurus clear",
+    "typecheck": "tsc",
+    "write-translations": "docusaurus write-translations -l en"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.10.1",
+    "@docusaurus/faster": "^3.10.1",
+    "@docusaurus/plugin-client-redirects": "^3.10.1",
+    "@docusaurus/preset-classic": "^3.10.1",
+    "@mdx-js/react": "^3.1.1",
+    "@svgr/webpack": "^8.1.0",
+    "algoliasearch": "^5.53.0",
+    "clsx": "^2.1.1",
+    "docusaurus-plugin-sass": "^0.2.6",
+    "file-loader": "^6.2.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-instantsearch": "^7.35.0",
+    "remark-d2": "^0.2.3",
+    "sass": "^1.69.0",
+    "url-loader": "^4.1.1"
+  },
+  "overrides": {
+    "serialize-javascript": ">=7.0.5 <8",
+    "uuid": ">=11.1.1 <12"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.10.1",
+    "@docusaurus/tsconfig": "^3.10.1",
+    "@docusaurus/types": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.49.1",
+    "typescript": "~5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}

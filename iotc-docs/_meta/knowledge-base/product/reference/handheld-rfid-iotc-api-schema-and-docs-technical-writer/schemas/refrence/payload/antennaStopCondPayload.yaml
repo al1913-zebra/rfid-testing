@@ -1,0 +1,19 @@
+title: antennaStopCondition
+type: object
+description: Defines the stop condition for an individual antenna during inventory.
+properties:
+  type:
+    type: string
+    enum:
+      - DURATION
+      - INVENTORY_COUNT
+      - GPI
+      - SINGLE_INVENTORY_LIMITED_DURATION
+    description: Type of Stop Condition
+  value:
+    oneOf:
+      - type: number
+      - $ref: ./gpiPayload.yaml
+required:
+  - type
+  - value

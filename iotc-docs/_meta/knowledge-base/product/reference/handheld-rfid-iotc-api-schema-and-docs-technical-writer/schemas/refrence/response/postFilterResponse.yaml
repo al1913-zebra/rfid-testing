@@ -1,0 +1,24 @@
+title: postFilterPayload
+x-stoplight:
+  id: y5oysu0o0kuvb
+type: object
+description: Contains the current post-filter configuration applied to scanned tags.
+properties:
+  postFilter:
+    type: array
+    description: A list of post-filter configurations.
+    items:
+      type: object
+      properties:
+        dataEpType:
+          type: string
+          description: The type of data endpoint.
+        matchPattern:
+          type: string
+          description: The pattern to match during filtering.
+        matchPatternMethod:
+          type: string
+          description: The method used to apply the match pattern.
+        reportOperation:
+          type: string
+          description: The operation type for reporting.

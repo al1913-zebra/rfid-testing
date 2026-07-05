@@ -1,0 +1,342 @@
+---
+id: get-endpoint-config
+title: get_endpoint_config
+sidebar_label: "get_endpoint_config"
+description: "MQTT reference for get_endpoint_config: read back the reader's active MQTT endpoint configurations and the list of saved endpoint names over the management endpoint. Response includes broker credentials — treat as sensitive."
+sidebar_custom_props: { emoji: "🔌" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_endpoint_config', desc: 'Fixed command name.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request; echoed back in the response so you can pair reply to request.' },
+  {
+    field: 'endpointDetails', type: 'object', required: false, desc: 'Optional selector. Omit it to retrieve every active endpoint plus all saved names (all-endpoints mode); include it to retrieve one endpoint (single-endpoint mode).',
+    children: [
+      { field: 'endpointName', type: 'string', required: false, example: 'ctrl', desc: 'The saved endpoint name to retrieve. Case-sensitive. When present, only that endpoint is returned.' },
+    ],
+  },
+];
+
+export const REQUEST_JSON = {
+  command: 'get_endpoint_config',
+  requestId: 'abc123',
+};
+
+export const SINGLE_REQ_JSON = {
+  command: 'get_endpoint_config',
+  requestId: 'def456',
+  endpointDetails: {
+    endpointName: 'ctrl',
+  },
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_endpoint_config', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'string', required: true, example: 'V1.1', desc: 'API version reported by this command (`V1.1`). Emitted per-handler (see Notes).' },
+  {
+    field: 'endpointResponse', type: 'object', required: false, desc: 'The endpoint payload. Present on success; carries the active endpoints and the saved-names list. (Not in the envelope `required` set — a non-success reply may omit it.)',
+    children: [
+      {
+        field: 'activeEndpoints', type: 'object', required: false, desc: 'The full configuration of every currently-active endpoint.',
+        children: [
+          {
+            field: 'epConfig', type: 'array', required: false, desc: 'One entry per active endpoint.',
+            children: [
+              {
+                field: 'configuration', type: 'object', required: false, desc: 'The endpoint configuration. Required within an entry: `epType`, `protocol`, `activate`, `url`, `verificationType`, `port`.',
+                children: [
+                  { field: 'endpointName', type: 'string', required: false, example: 'mdm_ep', desc: 'The endpoint name.' },
+                  { field: 'epType', type: 'enum', required: true, enumUnits: ['MGMT', 'MGMT_EVT', 'CTRL', 'DATA1', 'DATA2', 'SOTI', 'MDM'], example: 'MDM', desc: 'The endpoint type (its role).' },
+                  { field: 'protocol', type: 'enum', required: true, enumUnits: ['MQTT', 'MQT-TLS'], example: 'MQTT', desc: '`MQTT` (no transport security) or `MQT-TLS` (TLS). See Notes on the enum spelling.' },
+                  { field: 'activate', type: 'boolean', required: true, example: 'true', desc: 'Whether the endpoint is active. Only active endpoints appear under `activeEndpoints`.' },
+                  { field: 'url', type: 'string', required: true, example: '192.168.1.6', desc: 'Broker address (host or IP).' },
+                  { field: 'verificationType', type: 'enum', required: true, enumUnits: ['NONE', 'VERIFY_PEER', 'VERIFY_HOST', 'VERIFY_HOST_PEER'], example: 'VERIFY_NONE', desc: 'TLS verification mode. Note: a plain-MQTT endpoint reads back `VERIFY_NONE`, which is not yet in the schema enum (see Notes).' },
+                  { field: 'port', type: 'integer', required: true, example: '1883', desc: 'Broker port.' },
+                  { field: 'qosCommon', type: 'integer', required: false, example: '0', desc: 'Default QoS level for the endpoint.' },
+                  { field: 'tenantId', type: 'string', required: false, example: 'zebra', desc: 'Tenant identifier; the first segment of every on-wire topic.' },
+                  {
+                    field: 'mqttParams', type: 'object', required: false, desc: 'MQTT connection parameters, topics, and broker credentials.',
+                    children: [
+                      { field: 'keepAlive', type: 'integer', required: false, enumUnits: 'seconds (≤ 65535)', example: '96', desc: 'Keep-alive interval.' },
+                      { field: 'cleanSession', type: 'boolean', required: false, example: 'false', desc: 'Whether the MQTT session is clean.' },
+                      { field: 'reconnectDelayMin', type: 'integer', required: false, enumUnits: 'seconds', example: '5', desc: 'Minimum reconnect back-off.' },
+                      { field: 'reconnectDelayMax', type: 'integer', required: false, enumUnits: 'seconds', example: '512', desc: 'Maximum reconnect back-off.' },
+                      { field: 'clientId', type: 'string', required: false, example: '', desc: 'MQTT client ID (may be empty; the device derives one).' },
+                      { field: 'username', type: 'string', required: false, example: '********', desc: '⚠️ Broker username (credential) — treat as sensitive; masked here.' },
+                      { field: 'password', type: 'string', required: false, example: '********', desc: '⚠️ Broker password (credential) — returned by this command; masked here. See the credential warning in Notes.' },
+                      {
+                        field: 'publishTopics', type: 'array', required: false, desc: 'Base topics the endpoint publishes to. Each item requires `qos` and `retain`.',
+                        children: [
+                          { field: 'topic', type: 'string', required: false, example: 'MDM/clients/resp', desc: 'Base topic (wrapped on-wire to `{tenantId}/{topic}/{serial}`). Present on the device; not formally declared in the item schema (see Notes).' },
+                          { field: 'qos', type: 'integer', required: true, example: '0', desc: 'QoS for this published topic.' },
+                          { field: 'retain', type: 'boolean', required: true, example: 'false', desc: 'Whether the broker retains the last message.' },
+                        ],
+                      },
+                      {
+                        field: 'subscribeTopics', type: 'array', required: false, desc: 'Base topics the endpoint subscribes to. Each item requires `qos` and `retain`.',
+                        children: [
+                          { field: 'topic', type: 'string', required: false, example: 'MDM/clients/cmnd', desc: 'Base topic (wrapped on-wire). Present on the device; not formally declared in the item schema (see Notes).' },
+                          { field: 'qos', type: 'integer', required: true, example: '0', desc: 'QoS for this subscription.' },
+                          { field: 'retain', type: 'boolean', required: true, example: 'false', desc: 'Retain flag for this subscription.' },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    field: 'securityParams', type: 'object', required: false, desc: 'TLS parameters. Required within `securityParams`: `format`. A plain-MQTT endpoint returns only `{ format }`.',
+                    children: [
+                      { field: 'format', type: 'enum', required: true, enumUnits: ['PEM', 'PFX'], example: 'PEM', desc: 'Certificate format.' },
+                      { field: 'algorithm', type: 'enum', required: false, enumUnits: ['RSA256', 'RSA512'], example: 'RSA256', desc: 'Certificate algorithm (TLS endpoints).' },
+                      { field: 'caCertificateFile', type: 'string', required: false, example: 'cloud-trusted-ca-certs.crt', desc: 'CA certificate reference (TLS endpoints).' },
+                      { field: 'clientCert', type: 'string', required: false, example: 'client_cert.pem', desc: 'Client certificate reference (TLS endpoints).' },
+                      { field: 'clientKey', type: 'string', required: false, example: 'client_key.pem', desc: 'Client key reference (TLS endpoints).' },
+                    ],
+                  },
+                  { field: 'eventConfiguration', type: 'object', required: false, desc: 'Per-endpoint event-routing toggles (which events this endpoint emits) plus optional heartbeat settings. See the Event routing fields table below for every field and the supported-vs-reserved split.' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        field: 'savedEndpoints', type: 'object', required: false, desc: 'The names of all saved endpoints (active and inactive).',
+        children: [
+          { field: 'epNames', type: 'array', required: false, enumUnits: 'strings', example: '["mdm_ep","ctrl_ep","data1_ep","mgmt_ep"]', desc: 'Every saved endpoint name — a superset of the active ones.' },
+        ],
+      },
+    ],
+  },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Status envelope for the read.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'get_endpoint_config',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  endpointResponse: {
+    activeEndpoints: {
+      epConfig: [
+        {
+          configuration: {
+            endpointName: 'mdm_ep',
+            epType: 'MDM',
+            protocol: 'MQTT',
+            activate: true,
+            url: '192.168.1.6',
+            verificationType: 'VERIFY_NONE',
+            port: 1883,
+            qosCommon: 0,
+            tenantId: 'zebra',
+            mqttParams: {
+              keepAlive: 96,
+              cleanSession: false,
+              reconnectDelayMin: 5,
+              reconnectDelayMax: 512,
+              clientId: '',
+              username: '********',
+              password: '********',
+              publishTopics: [
+                { topic: 'MDM/clients/resp', qos: 0, retain: false },
+                { topic: 'MDM/clients/event', qos: 0, retain: false },
+                { topic: 'MDM/clients/rfid', qos: 0, retain: true },
+              ],
+              subscribeTopics: [
+                { topic: 'MDM/clients/cmnd', qos: 0, retain: false },
+              ],
+            },
+            securityParams: { format: 'PEM' },
+            eventConfiguration: {
+              terminalConnection: false,
+              firmwareUpdate: true,
+              network: true,
+              heartbeat: false,
+              power: true,
+              battery: true,
+              temperature: false,
+              fileDownload: true,
+              antenna: false,
+              gpi: false,
+              exceptions: false,
+              ntp: true,
+              userApp: false,
+              cpuUsage: false,
+              flashUsage: false,
+              ramUsage: false,
+              cpuThreshold: 0,
+              ramThreshold: 0,
+              flashThreshold: 0,
+              temperatureThreshold: 0,
+            },
+          },
+        },
+      ],
+    },
+    savedEndpoints: { epNames: ['mdm_ep', 'ctrl_ep', 'data1_ep', 'mgmt_ep'] },
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** read back the reader's MQTT endpoint configuration and saved endpoint names
+
+## Overview
+
+`get_endpoint_config` **reads back the reader's MQTT endpoint configuration** — a faithful view of what was provisioned with [`config_endpoint`](/reference/mgmt/config-endpoint). It has two modes, chosen by whether you send `endpointDetails.endpointName`:
+
+- **All-endpoints (omit `endpointDetails`):** returns every **active** endpoint's full configuration under `endpointResponse.activeEndpoints.epConfig[]`, **plus** the names of **all saved** endpoints under `endpointResponse.savedEndpoints.epNames[]`.
+- **Single-endpoint (send `endpointDetails.endpointName`):** returns just that one endpoint's configuration.
+
+It is a read-only command on the device-management (MGMT) endpoint.
+
+:::warning
+The response **includes broker credentials** — `mqttParams.password` (and `username` where set) are returned in the endpoint configuration. Treat the output of `get_endpoint_config` as **sensitive**: redact credentials in logs, tickets, and screenshots, and move it only over secured channels. Every credential is masked as `********` on this page.
+:::
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`config_endpoint`](/reference/mgmt/config-endpoint), [`get_wifi`](/reference/mgmt/get-wifi), [`get_eth`](/reference/mgmt/get-eth), [`config_events`](/reference/mgmt/config-events) |
+| **Required Request Fields** | `command`, `requestId` (plus optional `endpointDetails.endpointName`) |
+| **Modes** | All-endpoints (no `endpointDetails`) · Single-endpoint (`endpointDetails.endpointName`) |
+| **State Change** | READ-ONLY (safe to poll) |
+| **API Version** | Reports `apiVersion` `V1.1` (per-handler — see Notes) |
+
+## When to Use
+
+Use `get_endpoint_config` to **inspect or audit** the reader's MQTT wiring:
+
+- **Before `config_endpoint`** — review the current configuration so you don't overwrite an active endpoint unexpectedly.
+- **Confirm the plumbing** — check `url` / `port`, `protocol`, `verificationType`, and the `publishTopics` / `subscribeTopics` a broker will see.
+- **List saved endpoints** — read `savedEndpoints.epNames[]` to see everything saved on the device (a superset of the active endpoints) before activating or deleting one.
+- **Audit routing & security** — review each endpoint's `eventConfiguration` and `securityParams`.
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`. The `publishTopics` / `subscribeTopics` inside the response are **base** topics (e.g. `MDM/clients/cmnd`); on-wire they are wrapped to `{tenantId}/{base}/{serial}`. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block — credentials are presented once at CONNECT. The `requestId` you send is echoed in the response so you can match reply to request. QoS and retain are governed by the endpoint's `mqttParams`, not by this command.
+:::
+
+## Key Fields
+
+- **`endpointDetails.endpointName`** (request) — omit for all endpoints; supply to target one (case-sensitive).
+- **`activeEndpoints.epConfig[]`** — the full config of each **active** endpoint. Inactive (saved-but-not-activated) endpoints do **not** appear here.
+- **`savedEndpoints.epNames[]`** — the names of **all** saved endpoints (active *and* inactive) — the active/saved distinction in one field.
+- **`configuration.mqttParams.password`** — ⚠️ a broker credential is present in the response; see [Response payload](#response-payload) and the credential warning below.
+- **`response.code`** — read this to determine success vs failure (see [Response Codes](#response-codes)).
+
+## Request payload
+
+To read **all** endpoints, send just `command` and `requestId`. Use the **Schema** tab for the full field reference and the **Example** tab for the all-endpoints request.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" exampleCaption="all endpoints" />
+
+To read **one** endpoint, add `endpointDetails.endpointName`:
+
+<JsonBlock title="Request — single endpoint" data={SINGLE_REQ_JSON} />
+
+## Response payload
+
+On success the device returns the envelope (`command`, `requestId`, `apiVersion`, `response`) with the endpoint payload under `endpointResponse` — `activeEndpoints.epConfig[]` (full configs) and `savedEndpoints.epNames[]` (all saved names). The **Example** tab shows one active MDM endpoint (credentials masked).
+
+:::warning
+`mqttParams.password` and `username` in the example below are **real broker credentials on a live device** — shown here as `********`. Never paste an unredacted `get_endpoint_config` response into a shared channel.
+:::
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Event routing fields
+
+Each endpoint's `configuration.eventConfiguration` selects which events that endpoint emits. The schema (`cfgEventPayload.yaml`) declares the full set below, **but only 8 of the boolean toggles are functional today**; the remaining 12 keys are accepted by the firmware and returned in the read-back but **have no effect yet** (reserved for a future release). Enabling a reserved toggle silently does nothing.
+
+| Field | Type | Status | Description |
+| --- | --- | --- | --- |
+| `terminalConnection` | boolean | ✅ Supported | Terminal connect/disconnect events. |
+| `firmwareUpdate` | boolean | ✅ Supported | Firmware-update events. |
+| `network` | boolean | ✅ Supported | Network events. |
+| `heartbeat` | boolean | ✅ Supported | Periodic heartbeat events. |
+| `power` | boolean | ✅ Supported | Power-source events. |
+| `battery` | boolean | ✅ Supported | Battery events. |
+| `temperature` | boolean | ✅ Supported | Temperature events. |
+| `fileDownload` | boolean | ✅ Supported | File-download events. |
+| `antenna` | boolean | 🔒 Reserved | Not yet functional. |
+| `gpi` | boolean | 🔒 Reserved | Not yet functional. |
+| `exceptions` | boolean | 🔒 Reserved | Not yet functional. |
+| `ntp` | boolean | 🔒 Reserved | Not yet functional. |
+| `userApp` | boolean | 🔒 Reserved | Not yet functional. |
+| `cpuUsage` | boolean | 🔒 Reserved | Not yet functional. |
+| `flashUsage` | boolean | 🔒 Reserved | Not yet functional. |
+| `ramUsage` | boolean | 🔒 Reserved | Not yet functional. |
+| `cpuThreshold` | integer | 🔒 Reserved | Not yet functional (paired with `cpuUsage`). |
+| `ramThreshold` | integer | 🔒 Reserved | Not yet functional (paired with `ramUsage`). |
+| `flashThreshold` | integer | 🔒 Reserved | Not yet functional (paired with `flashUsage`). |
+| `temperatureThreshold` | integer | 🔒 Reserved | Not yet functional. |
+| `heartbeatConfiguration` | object | ⚙️ Conditional | `{ interval, inventoryStatus, batteryStatus, userApps }`. Not returned by default — appears only after [`config_events`](/reference/mgmt/config-events) enables the heartbeat. `userApps` is not currently functional. |
+
+The **8 supported** booleans are exactly the ones you can rely on today; configure event routing with [`config_events`](/reference/mgmt/config-events).
+
+## Response Codes
+
+`get_endpoint_config` returns `response.code` per `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — the endpoint configuration was retrieved. |
+| `3` | Not able to retrieve information (`IOT_ERROR_INFO_NOT_AVAILABLE`) — the device could not gather the configuration at this time. Retry after a short delay; if persistent, reboot. |
+| `101` | Default error — generic catch-all. |
+
+## Examples
+
+Publish `get_endpoint_config`; the device replies with the envelope shown under [Response payload](#response-payload). The all-endpoints request (`command` + `requestId`) returns every active endpoint plus the saved-names list; the single-endpoint request (shown under [Request payload](#request-payload)) targets one endpoint by name.
+
+**Active vs saved.** In the response example, `activeEndpoints.epConfig[]` carries the full config of the one active endpoint (`mdm_ep`), while `savedEndpoints.epNames` lists all four saved (`mdm_ep`, `ctrl_ep`, `data1_ep`, `mgmt_ep`) — the three that are saved but not active appear **only** as names, with no config block. When more than one endpoint is active, `epConfig[]` holds one full configuration per active endpoint.
+
+## Notes & Caveats
+
+:::warning
+**The response returns broker credentials.** `configuration.mqttParams.password` (and `username`, when set) are part of the read-back. Redact them in logs, tickets, and screenshots; transport and store the response only over secured channels. This page masks every credential as `********`.
+:::
+
+:::note
+**Active vs saved.** `activeEndpoints.epConfig[]` contains a full configuration only for endpoints with `activate: true`. `savedEndpoints.epNames[]` lists **every** saved endpoint — so a name that appears in `epNames` but not in `epConfig[]` is saved but inactive.
+:::
+
+:::note
+**`verificationType` — the device returns `VERIFY_NONE`.** A plain-MQTT (non-TLS) endpoint reads back `verificationType: "VERIFY_NONE"`. That value is **not yet in the schema enum** (`NONE`, `VERIFY_PEER`, `VERIFY_HOST`, `VERIFY_HOST_PEER`) — a known firmware/schema mismatch pending reconciliation (the device uses `NONE` when *setting* and reports `VERIFY_NONE` on *get*). Treat `VERIFY_NONE` as "no TLS verification."
+:::
+
+:::note
+**`eventConfiguration` — 8 supported, 12 reserved.** Only the 8 supported booleans in [Event routing fields](#event-routing-fields) take effect today; the other 12 keys are returned in the read-back but have no effect yet. `heartbeatConfiguration` is returned only after [`config_events`](/reference/mgmt/config-events) enables the heartbeat.
+:::
+
+:::note
+**Topic items and the `protocol` spelling.** Each `publishTopics` / `subscribeTopics` entry carries `topic`, `qos`, and `retain`; the schema formally requires only `qos` and `retain` per item (the device always supplies `topic`). The TLS protocol enum value is spelled `MQT-TLS` in the schema (a likely typo for `MQTT_TLS`); use whichever value a `get_endpoint_config` read-back reports for your device.
+:::
+
+:::note
+**`apiVersion` is per-handler.** `get_endpoint_config` reports `apiVersion` `V1.1`; on the same firmware other commands (e.g. [`get_version`](/reference/mgmt/get-version)) report `V1.21`. Do not treat it as a single device-wide constant.
+:::
+
+:::tip
+Read `get_endpoint_config` **before** [`config_endpoint`](/reference/mgmt/config-endpoint) to review the current wiring and avoid clobbering an active endpoint. For the concept-level view, see [How the MQTT plumbing fits together](/infrastructure/mqtt-endpoints).
+:::
+
+**Related:** 📘 [MQTT endpoints](/infrastructure/mqtt-endpoints) · 📕 [`config_endpoint`](/reference/mgmt/config-endpoint) · 📕 [`config_events`](/reference/mgmt/config-events) · 📕 [`get_wifi`](/reference/mgmt/get-wifi) · 📕 [Error codes](/reference/errors/codes)

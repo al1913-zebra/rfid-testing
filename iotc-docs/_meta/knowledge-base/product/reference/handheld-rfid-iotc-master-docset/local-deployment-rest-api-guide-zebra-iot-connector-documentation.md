@@ -1,0 +1,1 @@
+When deployed in local mode, the reader can be controlled using the REST API. The definition can be found below

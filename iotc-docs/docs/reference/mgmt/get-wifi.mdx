@@ -1,0 +1,346 @@
+---
+id: get-wifi
+title: get_wifi
+sidebar_label: "get_wifi"
+description: "MQTT reference for get_wifi: a read-only query returning the reader's saved Wi-Fi profiles and their connection status — interface, access point, IPv4/IPv6, and per-security-type credentials — over the management endpoint."
+sidebar_custom_props: { emoji: "📶" }
+---
+import ApiBody from '@site/src/components/ApiBody';
+import JsonBlock from '@site/src/components/JsonBlock';
+
+export const REQUEST_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_wifi', desc: 'Fixed command name. Retrieves the Wi-Fi profiles saved on the device.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: 'A unique identifier for the request, allowing tracking and debugging. Echoed back unchanged in the response.' },
+];
+
+export const REQUEST_JSON = {
+  command: 'get_wifi',
+  requestId: 'abc123',
+};
+
+export const RESPONSE_ROWS = [
+  { field: 'command', type: 'string', required: true, example: 'get_wifi', desc: 'Echoes the executed command.' },
+  { field: 'requestId', type: 'string', required: true, example: 'abc123', desc: "Echoes the request's `requestId` — pairs reply to request." },
+  { field: 'apiVersion', type: 'enum', required: true, enumUnits: ['V1.0', 'V1.1'], example: 'V1.1', desc: 'API version reported by this command. See the caveat in Notes — apiVersion is emitted per-handler, not device-wide.' },
+  {
+    field: 'wifiProfiles', type: 'object', required: false, desc: 'Container for the list of Wi-Fi profiles. Present on a successful read; optional at the envelope level.',
+    children: [
+      {
+        field: 'wifiConfig', type: 'array', required: false, enumUnits: 'profile objects', desc: 'Array of Wi-Fi profiles (saved and active). Each item has the `interfaceDetails` structure below.',
+        children: [
+          {
+            field: 'interfaceDetails', type: 'object', required: false, desc: 'Per-profile interface and connection details.',
+            children: [
+              { field: 'interfaceName', type: 'string', required: true, example: 'wlan0', desc: 'Wireless interface name.' },
+              { field: 'hostname', type: 'string', required: true, example: 'RFD40-24190525100255', desc: 'Device hostname.' },
+              { field: 'macAddress', type: 'string', required: true, example: '8C:D5:4A:1C:98:24', desc: 'Interface MAC address.' },
+              { field: 'status', type: 'enum', required: false, enumUnits: ['CONNECTED', 'DISCONNECTED', 'DISABLED'], example: 'CONNECTED', desc: 'Interface-level status. Optional — omitted by the reference device (the association state is carried by `accessPoint.status`).' },
+              {
+                field: 'accessPoint', type: 'object', required: false, desc: 'The associated / configured access point.',
+                children: [
+                  { field: 'essid', type: 'string', required: true, example: 'IOT_TESTAP', desc: 'Network name (ESSID).' },
+                  { field: 'status', type: 'enum', required: true, enumUnits: ['CONNECTED', 'DISCONNECTED'], example: 'CONNECTED', desc: 'Association status.' },
+                  { field: 'securityType', type: 'enum', required: true, enumUnits: ['WPA2Personal', 'WPA3Personal', 'WPA2Enterprise', 'WPA3Enterprise'], example: 'WPA2Personal', desc: 'Security type; selects which `securityDetails` key is populated.' },
+                  { field: 'isPreferred', type: 'boolean', required: true, example: 'false', desc: 'Whether this is the preferred profile (auto-connected when in range).' },
+                  { field: 'autoConn', type: 'boolean', required: false, example: 'false', desc: 'Deprecated — kept for backward compatibility.' },
+                ],
+              },
+              {
+                field: 'ipv4Configuration', type: 'object', required: false, desc: 'IPv4 addressing for the interface.',
+                children: [
+                  { field: 'ipAddress', type: 'string', required: false, enumUnits: 'ipv4', example: '192.168.0.110', desc: 'IPv4 address.' },
+                  { field: 'subnetMask', type: 'string', required: false, enumUnits: 'ipv4', example: '255.255.255.0', desc: 'Subnet mask.' },
+                  { field: 'gateway', type: 'string', required: false, enumUnits: 'ipv4', example: '192.168.0.1', desc: 'Default gateway.' },
+                  { field: 'enableDhcp', type: 'boolean', required: false, example: 'true', desc: 'Whether DHCP is enabled for IPv4 assignment.' },
+                  { field: 'dnsServer', type: 'string', required: false, enumUnits: 'ipv4', example: '192.168.0.1', desc: 'DNS server address.' },
+                  { field: 'domainName', type: 'string', required: false, example: 'zebra.com', desc: 'Domain name.' },
+                ],
+              },
+              {
+                field: 'ipv6Configuration', type: 'object', required: false, desc: 'IPv6 addressing — schema-defined but not returned by the current firmware.',
+                children: [
+                  { field: 'ipAddress', type: 'string', required: false, enumUnits: 'ipv6', example: 'fe80::1643:8376:b32:4a16', desc: 'IPv6 address.' },
+                  { field: 'prefix', type: 'integer', required: false, example: '64', desc: 'IPv6 prefix length.' },
+                  { field: 'gateway', type: 'string', required: false, enumUnits: 'ipv6', example: '2a02:1234:420a:100b::99', desc: 'IPv6 gateway.' },
+                  { field: 'enableAuto', type: 'boolean', required: false, example: 'true', desc: 'Whether automatic IPv6 configuration is enabled.' },
+                  { field: 'dnsServer', type: 'string', required: false, enumUnits: 'ipv6', example: '2001:4860:4860::9999', desc: 'IPv6 DNS server.' },
+                  { field: 'domainName', type: 'string', required: false, desc: 'IPv6 domain name.' },
+                ],
+              },
+              {
+                field: 'securityDetails', type: 'object', required: false, desc: 'Credentials / protocol, keyed by security type — only the key matching `accessPoint.securityType` is present. Secrets are masked by the device.',
+                children: [
+                  {
+                    field: 'WPA2Personal', type: 'object', required: false, desc: 'WPA2-Personal credentials.',
+                    children: [{ field: 'password', type: 'string', required: false, example: '********', desc: 'WPA2-Personal password (returned masked).' }],
+                  },
+                  {
+                    field: 'WPA3Personal', type: 'object', required: false, desc: 'WPA3-Personal credentials.',
+                    children: [{ field: 'password', type: 'string', required: false, example: '********', desc: 'WPA3-Personal password (returned masked).' }],
+                  },
+                  {
+                    field: 'WPA2Enterprise', type: 'object', required: false, desc: 'WPA2-Enterprise configuration.',
+                    children: [
+                      { field: 'authentication', type: 'enum', required: false, enumUnits: ['tls', 'ttls', 'peap'], example: 'tls', desc: 'Outer EAP method.' },
+                      { field: 'innerAuthentication', type: 'enum', required: false, enumUnits: ['none', 'tls', 'mschapv2'], example: 'mschapv2', desc: 'Inner (phase-2) method.' },
+                      { field: 'identity', type: 'string', required: false, example: '********', desc: 'EAP identity (returned masked).' },
+                      { field: 'anonymousIdentity', type: 'string', required: false, example: '********', desc: 'Anonymous/outer identity (returned masked).' },
+                      { field: 'password', type: 'string', required: false, example: '********', desc: 'EAP password (returned masked).' },
+                      { field: 'passphrase', type: 'string', required: false, example: '********', desc: 'Passphrase (returned masked).' },
+                      {
+                        field: 'certificate', type: 'array', required: false, enumUnits: 'key/value objects', desc: 'Certificate references as `{key, value}` entries.',
+                        children: [
+                          { field: 'key', type: 'enum', required: false, enumUnits: ['ca_cert', 'client_key', 'client_cert', 'cert_key_password'], example: 'ca_cert', desc: 'Certificate role.' },
+                          { field: 'value', type: 'string', required: false, example: 'wifi_root_certificate', desc: 'Certificate reference name.' },
+                        ],
+                      },
+                      { field: 'protocol', type: 'enum', required: false, enumUnits: ['WPA2_Enterprise_CCMP'], example: 'WPA2_Enterprise_CCMP', desc: 'WPA2-Enterprise protocol.' },
+                    ],
+                  },
+                  {
+                    field: 'WPA3Enterprise', type: 'object', required: false, desc: 'WPA3-Enterprise configuration.',
+                    children: [
+                      { field: 'authentication', type: 'enum', required: false, enumUnits: ['tls', 'ttls', 'peap'], example: 'ttls', desc: 'Outer EAP method.' },
+                      { field: 'innerAuthentication', type: 'enum', required: false, enumUnits: ['none', 'tls', 'mschapv2'], example: 'mschapv2', desc: 'Inner (phase-2) method.' },
+                      { field: 'identity', type: 'string', required: false, example: '********', desc: 'EAP identity (returned masked).' },
+                      { field: 'anonymousIdentity', type: 'string', required: false, example: '********', desc: 'Anonymous/outer identity (returned masked).' },
+                      { field: 'password', type: 'string', required: false, example: '********', desc: 'EAP password (returned masked).' },
+                      { field: 'passphrase', type: 'string', required: false, example: '********', desc: 'Passphrase (returned masked).' },
+                      {
+                        field: 'certificate', type: 'array', required: false, enumUnits: 'key/value objects', desc: 'Certificate references as `{key, value}` entries.',
+                        children: [
+                          { field: 'key', type: 'enum', required: false, enumUnits: ['ca_cert', 'client_key', 'client_cert', 'cert_key_password'], example: 'ca_cert', desc: 'Certificate role.' },
+                          { field: 'value', type: 'string', required: false, example: 'wpa3_ca_cert', desc: 'Certificate reference name.' },
+                        ],
+                      },
+                      { field: 'protocol', type: 'enum', required: false, enumUnits: ['WPA3_Enterprise_CCMP', 'WPA3_Enterprise_CCMP_256', 'WPA3_Enterprise_GCMP_128', 'WPA3_Enterprise_GCMP_256_SHA256', 'WPA3_Enterprise_GCMP_256_SUITEB_192'], example: 'WPA3_Enterprise_GCMP_256_SHA256', desc: 'WPA3-Enterprise protocol suite.' },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    field: 'response', type: 'object', required: true, desc: 'Result wrapper.',
+    children: [
+      { field: 'code', type: 'integer', required: true, enumUnits: '0–101', example: '0', desc: '`0` = Success; non-zero = error. See Response Codes below.' },
+      { field: 'description', type: 'string', required: true, example: 'Success', desc: 'Human-readable status.' },
+    ],
+  },
+];
+
+export const RESPONSE_JSON = {
+  command: 'get_wifi',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  wifiProfiles: {
+    wifiConfig: [
+      {
+        interfaceDetails: {
+          interfaceName: 'wlan0',
+          hostname: 'RFD40-24190525100255',
+          macAddress: '8C:D5:4A:1C:98:24',
+          accessPoint: {
+            essid: 'Airtel_The_LAN_Before_Time',
+            status: 'CONNECTED',
+            securityType: 'WPA2Personal',
+            isPreferred: false,
+          },
+          ipv4Configuration: {
+            ipAddress: '192.168.1.5',
+            subnetMask: '255.255.255.0',
+            gateway: '192.168.1.1',
+            enableDhcp: true,
+            dnsServer: '192.168.1.1',
+            domainName: 'zebra.com',
+          },
+          securityDetails: {
+            WPA2Personal: { password: '********' },
+          },
+        },
+      },
+    ],
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+export const WPA2E_JSON = {
+  command: 'get_wifi',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  wifiProfiles: {
+    wifiConfig: [
+      {
+        interfaceDetails: {
+          interfaceName: 'wlan0',
+          hostname: 'RFD40-22326520100477',
+          macAddress: 'E0-D0-45-3D-38-3F',
+          accessPoint: { essid: 'SECURE_AP', status: 'CONNECTED', securityType: 'WPA2Enterprise', isPreferred: true },
+          ipv4Configuration: { ipAddress: '172.16.10.88', subnetMask: '255.255.255.0', gateway: '172.16.10.1', enableDhcp: true, dnsServer: '172.16.10.5', domainName: 'secure.corp' },
+          securityDetails: {
+            WPA2Enterprise: {
+              authentication: 'tls',
+              passphrase: '********',
+              certificate: [
+                { key: 'ca_cert', value: 'wifi_root_certificate' },
+                { key: 'client_cert', value: 'wifi' },
+                { key: 'client_key', value: 'wifi' },
+              ],
+              protocol: 'WPA2_Enterprise_CCMP',
+            },
+          },
+        },
+      },
+    ],
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+export const WPA3E_JSON = {
+  command: 'get_wifi',
+  requestId: 'abc123',
+  apiVersion: 'V1.1',
+  wifiProfiles: {
+    wifiConfig: [
+      {
+        interfaceDetails: {
+          interfaceName: 'wlan0',
+          hostname: 'RFD40-22326520100477',
+          macAddress: 'E0-D0-45-3D-38-4A',
+          accessPoint: { essid: 'WPA3_ENTERPRISE', status: 'CONNECTED', securityType: 'WPA3Enterprise', isPreferred: false },
+          ipv4Configuration: { ipAddress: '192.168.100.200', subnetMask: '255.255.255.0', gateway: '192.168.100.1', enableDhcp: true, dnsServer: '192.168.100.10', domainName: 'wpa3.enterprise.com' },
+          securityDetails: {
+            WPA3Enterprise: {
+              authentication: 'ttls',
+              innerAuthentication: 'mschapv2',
+              identity: '********',
+              anonymousIdentity: '********',
+              password: '********',
+              certificate: [{ key: 'ca_cert', value: 'wpa3_ca_cert' }],
+              protocol: 'WPA3_Enterprise_GCMP_256_SHA256',
+            },
+          },
+        },
+      },
+    ],
+  },
+  response: { code: 0, description: 'Success' },
+};
+
+> 📕 **REFERENCE** · **Audience:** API consumer · **Use:** read the reader's saved Wi-Fi profiles and connection status
+
+## Overview
+
+`get_wifi` retrieves the **Wi-Fi profiles saved on the reader** together with their current connection status and configuration. The response is a list (`wifiProfiles.wifiConfig[]`) of profiles; each describes the wireless interface, the associated access point (ESSID, security type, connection status), the IPv4/IPv6 addressing, and a `securityDetails` block keyed by the security type (`WPA2Personal`, `WPA3Personal`, `WPA2Enterprise`, `WPA3Enterprise`). It is a read-only query on the device-management (MGMT) endpoint.
+
+Stored credentials are **masked** by the device — passwords, passphrases, and identities are returned as a mask, never the real secret. Use `get_wifi` to verify which SSID a reader is connected to and confirm its addressing before relying on the wireless uplink.
+
+## Details
+
+| Property | Value |
+| --- | --- |
+| **Pattern Name** | Request / Response (app publishes a command; device publishes the correlated reply) |
+| **Applies To** | Device-management (MGMT) endpoint; RFD40 series, RFD90 series (verified on RFD40) |
+| **Related Commands** | [`set_wifi`](/reference/mgmt/set-wifi), [`delete_wifi_profile`](/reference/mgmt/delete-wifi-profile), [`get_eth`](/reference/mgmt/get-eth) |
+| **Required Request Fields** | `command`, `requestId` |
+| **Supported Operations** | Read-only query — returns the saved Wi-Fi profiles and status; no payload |
+| **State Change** | READ-ONLY |
+| **Reversibility** | n/a (read-only) |
+
+## When to Use
+
+Use `get_wifi` when you need to **verify the reader's wireless configuration** — during commissioning, a connectivity check before inventory, or a fleet audit of which SSID each device is on.
+
+- **Confirm the connection:** check `accessPoint.status` (CONNECTED?), `accessPoint.essid` (correct network?), and `accessPoint.isPreferred`.
+- **Validate security:** check `accessPoint.securityType` matches the AP; the matching `securityDetails` block shows the (masked) credential/protocol configuration.
+- **Validate addressing:** check `ipv4Configuration.ipAddress`, `gateway`, and `enableDhcp` to confirm the reader has a working route to the broker / back-end.
+
+## Topic Mapping
+
+| Direction | Topic | Note |
+| --- | --- | --- |
+| Request (publish by app) | `zebra/MGMT/clients/cmnd/{serial}` | On the management endpoint. The topic base is endpoint-configurable; the reference test device used an `MDM` base (`zebra/MDM/clients/cmnd/{serial}`). |
+| Response (subscribe by app; published by device) | `zebra/MGMT/clients/resp/{serial}` | Correlated reply to the request above; the in-payload `requestId` links the twin topics. Test device: `zebra/MDM/clients/resp/{serial}`. |
+
+The full pattern is `<tenantId>/<topic>/<deviceSerialNumber>`, where `<topic>` is configured per endpoint. See [Topic hierarchy](/foundations/mqtt/topic-hierarchy) and the [Topic quick reference](/reference/appendices/topic-quick-reference).
+
+:::note
+There is no per-message authentication block — credentials are presented once at CONNECT. The `requestId` you send is echoed in the response so you can match reply to request. QoS and retain are governed by the endpoint's `mqttParams`, not by this command.
+:::
+
+## Key Fields
+
+- **`requestId`** (request) — your correlation token; make it unique per request. The device echoes it in the response so you can pair reply to request.
+- **`wifiProfiles.wifiConfig[]`** (response) — the array of saved profiles; iterate it to find the connected one.
+- **`…accessPoint.status`** / **`essid`** (response) — the association state and network name of each profile.
+- **`…accessPoint.securityType`** (response) — selects which `securityDetails` key is populated.
+- **`…ipv4Configuration.ipAddress`** (response) — the DHCP-assigned address the reader uses to reach the broker.
+- **`response.code`** (response) — read this to determine success vs failure (see [Response Codes](#response-codes)).
+
+## Request payload
+
+The request envelope is just `command` and `requestId` — there is no payload wrapper and no per-message `auth` block. Use the **Schema** tab for the field reference and the **Example** tab for a ready-to-send, copy-pasteable request.
+
+<ApiBody rows={REQUEST_ROWS} json={REQUEST_JSON} title="Request payload" />
+
+## Response payload
+
+The response envelope is `command`, `requestId`, `apiVersion`, `response`, and a `wifiProfiles` object whose `wifiConfig` is the **array of profiles**. On the **Schema** tab, expand `wifiProfiles` → `wifiConfig` → `interfaceDetails` (and its `accessPoint`, `ipv4Configuration`, `ipv6Configuration`, `securityDetails` sub-objects) to see every field. Within each profile's `interfaceDetails`, only `interfaceName`, `hostname`, and `macAddress` are required; the interface-level `status` is optional (and is omitted by the reference device). `securityDetails` carries only the key matching `accessPoint.securityType`, with secrets masked. The **Example** tab shows a live WPA2-Personal profile; enterprise variants are in [Examples](#examples).
+
+<ApiBody rows={RESPONSE_ROWS} json={RESPONSE_JSON} title="Response payload" />
+
+## Response Codes
+
+`get_wifi` returns `response.code` per `response.yaml` and `error_codes.json`. The codes applicable to this command are below; for the full table see the [Error codes reference](/reference/errors/codes) and [Error format](/reference/errors/format).
+
+| Code | Description |
+| --- | --- |
+| `0` | Success — Wi-Fi profiles retrieved and returned. |
+| `3` | Not able to retrieve information (`IOT_ERROR_INFO_NOT_AVAILABLE`) — the device could not gather the Wi-Fi configuration at this time. Retry after a short delay; if it persists, reboot the device. |
+| `101` | Default error — generic catch-all. |
+
+:::note
+The general error table also defines code `20` (`Wifi is not supported`) for hardware/configurations without Wi-Fi support. See the [Error codes reference](/reference/errors/codes).
+:::
+
+## Examples
+
+`get_wifi` is a single request/response exchange. Publish the request below; the device replies on the response topic with the correlated reply — the `requestId` you send (`abc123`) is echoed back so you can pair reply to request. The live WPA2-Personal reply, field by field, is shown under [Response payload](#response-payload) above.
+
+<JsonBlock title="Request" data={REQUEST_JSON} />
+
+A **WPA2-Enterprise** profile carries an EAP `authentication` method, a `certificate` array of `{key, value}` references, and a `protocol` — credentials masked:
+
+<JsonBlock title="Response — WPA2-Enterprise profile" data={WPA2E_JSON} />
+
+A **WPA3-Enterprise** profile additionally carries `innerAuthentication`, `identity` / `anonymousIdentity`, and a WPA3 `protocol` suite:
+
+<JsonBlock title="Response — WPA3-Enterprise profile" data={WPA3E_JSON} />
+
+## Notes & Caveats
+
+:::warning
+**Credentials are masked.** The device returns stored passwords, passphrases, and identities as a mask (never the real secret). Treat every credential field in the response as opaque — you cannot read back the actual value with `get_wifi`.
+:::
+
+:::note
+**Security type selects the credential block.** `securityDetails` contains only the one key that matches `accessPoint.securityType` — `WPA2Personal` / `WPA3Personal` (a single `password`) or `WPA2Enterprise` / `WPA3Enterprise` (EAP `authentication`, optional `innerAuthentication` / `identity` / `anonymousIdentity`, a `certificate` array, and a `protocol`). `ipv6Configuration` is schema-defined but is not returned by the current firmware.
+:::
+
+:::warning
+**Wi-Fi-disabled response shape (firmware quirk).** On the current firmware, when Wi-Fi is disabled the payload may be returned under a **top-level `wifiConfig`** object (rather than `wifiProfiles.wifiConfig[]`) and the interface `status` may be Title-cased (e.g. `Disabled` instead of the canonical `DISABLED`). This is a known firmware inconsistency pending a fix; the canonical (connected) shape documented here is `wifiProfiles.wifiConfig[]` with enum-cased status values.
+:::
+
+:::warning
+**`apiVersion` is per-handler, not device-wide.** `get_wifi` reports `apiVersion` `V1.1` (within its documented enum `V1.0` / `V1.1`), but on the same firmware other commands (e.g. [`get_version`](/reference/mgmt/get-version), [`get_status`](/reference/mgmt/get-status)) report `V1.21`. The value is emitted by each command's handler, so do not treat it as a single device-wide constant.
+:::
+
+:::tip
+`get_wifi` is a read-only getter — safe to poll during commissioning or troubleshooting. Configure profiles with [`set_wifi`](/reference/mgmt/set-wifi) / [`delete_wifi_profile`](/reference/mgmt/delete-wifi-profile); for the concept-level view, see [Wi-Fi networking](/infrastructure/network/wifi). Enterprise profiles depend on installed certificates — see [TLS & certificates](/infrastructure/tls-and-certificates).
+:::
+
+**Related:** 📘 [Wi-Fi networking](/infrastructure/network/wifi) · 📕 [Network configuration (MGMT)](/reference/mgmt/get-eth) · 📕 [`get_eth`](/reference/mgmt/get-eth) · 📕 [Network troubleshooting](/infrastructure/network/troubleshooting) · 📕 [Error codes](/reference/errors/codes)

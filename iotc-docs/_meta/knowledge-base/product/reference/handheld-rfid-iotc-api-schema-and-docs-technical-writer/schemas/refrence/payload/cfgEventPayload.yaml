@@ -1,0 +1,86 @@
+title: eventConfiguration
+x-stoplight:
+  id: jcezrdndi0i9w
+type: object
+description: Specifies which device events to enable or disable and their configuration thresholds.
+properties:
+  antenna:
+    type: boolean
+    description: set to true to enable antenna connection/disconnection events
+  terminalConnection:
+    type: boolean
+    description: set to true to enable terminal connection/disconnection events
+  firmwareUpdate:
+    type: boolean
+    description: set to true to enable fw update events
+  gpi:
+    type: boolean
+    description: set to true to enable GPI (General Purpose Input) state-change events
+  network:
+    type: boolean
+    description: set to true to enable network events
+  exceptions:
+    type: boolean
+    description: set to true to enable device runtime exception/error events
+  ntp:
+    type: boolean
+    description: set to true to enable NTP synchronization events
+  userApp:
+    type: boolean
+    description: set to true to enable user-application lifecycle events
+  heartbeat:
+    type: boolean
+    description: set to true to enable heart beat
+  power:
+    type: boolean
+    description: set to true to enable power source alerts
+  battery:
+    type: boolean
+    description: set to true to enable battery alerts
+  temperature:
+    type: boolean
+    description: set to true to enable temperature alerts; requires temperatureThreshold
+  fileDownload:
+    type: boolean
+    description: set to true to enable file download alerts
+  cpuUsage:
+    type: boolean
+    description: set to true to enable CPU usage alerts; requires cpuThreshold
+  flashUsage:
+    type: boolean
+    description: set to true to enable flash usage alerts; requires flashThreshold
+  ramUsage:
+    type: boolean
+    description: set to true to enable RAM usage alerts; requires ramThreshold
+  heartbeatConfiguration:
+    type: object
+    properties:
+      interval:
+        type: integer
+        example: 100
+        description: heart beat interval in seconds
+      inventoryStatus:
+        type: boolean
+        description: set to true to enable inventory status as part of heartbeat message
+      batteryStatus:
+        type: boolean
+        description: set to true to enable battery status as part of heartbeat message
+      userApps:
+        type: boolean
+        description: set to true to include user-application status as part of heartbeat message
+  cpuThreshold:
+    type: integer
+    example: 80
+    description: CPU usage percentage that triggers a CPU alert (paired with cpuUsage)
+  ramThreshold:
+    type: integer
+    example: 80
+    description: RAM usage percentage that triggers a RAM alert (paired with ramUsage)
+  flashThreshold:
+    type: integer
+    example: 80
+    description: flash usage percentage that triggers a flash alert (paired with flashUsage)
+  temperatureThreshold:
+    type: integer
+    example: 55
+    description: temperature in degrees Celsius that triggers a temperature alert (paired with temperature)

@@ -1,0 +1,129 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Print / PDF stylesheet.
+ *
+ * Applies to browser Ctrl+P AND to the CI-generated API-reference PDFs
+ * (scripts/generate-pdfs.mjs renders each command/event page with Chromium,
+ * which uses print-media emulation for page.pdf()). Responsibilities:
+ *
+ *   1. Reveal BOTH <ApiBody> tabs (Schema + Example). Docusaurus keeps the
+ *      inactive tab panel in the DOM (just `hidden`), and a fresh page load
+ *      already mounts every SchemaTable / JsonBlock fully expanded — so
+ *      forcing both panels visible captures the complete schema + example.
+ *   2. Strip site chrome (navbar, sidebars, TOC, breadcrumbs, pagination,
+ *      footer, the H1 action buttons, the feedback widget).
+ *   3. Lay the article out full-width, keep wide tables / JSON from being
+ *      clipped by their scroll containers, and control page breaks + colours.
+ */
+
+@media print {
+  /* --- 1. Reveal both ApiBody tab panels; drop the (now redundant) tab bar ---
+     Docusaurus applies the <Tabs> className to the <ul role="tablist"> itself and
+     renders the panels as siblings, so we reveal every tab panel and hide every
+     tab bar in print. On the API-ref pages that stacks the ApiBody Schema +
+     Example content; elsewhere it makes Ctrl+P show all tab content too. */
+  [role='tabpanel'] {
+    display: block !important;
+  }
+  [role='tablist'] {
+    display: none !important;
+  }
+
+  /* Interactive controls in the panel header bars are meaningless on paper — hide the
+     buttons but KEEP the header title (.json-title / .schema-title) as the section label. */
+  .json-toolbar .schema-ctrl,
+  .schema-header .schema-ctrl {
+    display: none !important;
+  }
+
+  /* Neutralize the schema table's horizontal-scroll affordance / full-bleed on paper:
+     the edge-fade overlays and the expanded-panel chrome shouldn't print. */
+  .schema-table-scroll::before,
+  .schema-table-scroll::after {
+    display: none !important;
+  }
+  .schema-panel--fullbleed {
+    width: auto !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* --- 2. Strip site chrome --- */
+  .navbar,
+  .navbar-sidebar,
+  .navbar-sidebar__backdrop,
+  .theme-doc-sidebar-container,
+  .theme-doc-toc-desktop,
+  .theme-doc-toc-mobile,
+  .table-of-contents,
+  .theme-doc-breadcrumbs,
+  .pagination-nav,
+  .theme-doc-footer,
+  .footer,
+  .h1-actions,
+  feedback-modal,
+  [class*='backToTop'] {
+    display: none !important;
+  }
+
+  /* --- 3. Full-width article layout --- */
+  .main-wrapper,
+  .container,
+  .row,
+  main,
+  article,
+  .theme-doc-markdown,
+  .markdown,
+  .docItemCol,
+  .col {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 100% !important;
+  }
+
+  /* Wide schema tables / JSON must expand, not scroll, on paper. */
+  .schema-table-wrap,
+  .json-pre,
+  .table-wrapper {
+    overflow: visible !important;
+  }
+
+  /* --- Page-break control --- */
+  .schema-row,
+  .json-line,
+  tr,
+  .theme-admonition,
+  .json-block,
+  pre {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
+
+  /* Keep type badges / enum pills / syntax colours in the printed output. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* d2 diagrams and content images scale to the page width. */
+  main article img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Don't append raw URLs after links (keeps prose clean in the PDF). */
+  a[href]::after {
+    content: none !important;
+  }
+
+  @page {
+    margin: 14mm 12mm 16mm;
+  }
+}

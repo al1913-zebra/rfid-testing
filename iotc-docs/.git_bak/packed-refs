@@ -1,0 +1,5 @@
+# pack-refs with: peeled fully-peeled sorted 
+d7d2dd1a1272195d1f4c11fa45997b1fc350e20d refs/remotes/origin/chore/consolidate-meta-folder
+bbe8a2a42ea95751cde4eb64533aa5d0a6ba0ac2 refs/remotes/origin/dependabot/npm_and_yarn/npm_and_yarn-09fa3c0cf9
+7b926483d7397c57e0bd9061feb3e4b33ceb74ad refs/remotes/origin/gh-pages
+d7d2dd1a1272195d1f4c11fa45997b1fc350e20d refs/remotes/origin/main

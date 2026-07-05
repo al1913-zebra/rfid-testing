@@ -1,0 +1,76 @@
+.searchContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.input {
+  min-width: 12rem;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 30rem;
+  max-width: 92vw;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0.4rem;
+  background-color: var(--ifm-background-surface-color, var(--ifm-background-color));
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-global-radius);
+  box-shadow: var(--ifm-global-shadow-md);
+  z-index: var(--ifm-z-index-dropdown, 200);
+}
+
+.hitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hit {
+  display: block;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+}
+
+.hit:hover,
+.hit:focus {
+  background-color: var(--ifm-color-emphasis-100);
+  text-decoration: none;
+}
+
+.hitTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+.hitDesc {
+  display: -webkit-box;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--ifm-color-emphasis-600);
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.empty {
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* Highlight matches in the brand colour rather than the default yellow mark. */
+.hit :global(mark) {
+  padding: 0;
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  background-color: transparent;
+}
