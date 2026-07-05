@@ -1,0 +1,5 @@
+### 1.3.6 Be Aware of Issues with HTTP Compression
+
+In 2012, the CRIME attack showed how data compression can be used to compromise network encryption, and TLS in particular. This discovery eventually led to the removal of compression from TLS. The following year, TIME and BREACH attack variations focused on retrieving secrets from compressed HTTP response content. Unlike TLS compression, which was easy to let go, HTTP compression has a huge performance and financial impact, so the world decided to leave it on—and to leave the security issues to linger.
+
+TIME and BREACH attacks can target any sensitive data embedded in a HTML page, which is why there isn't a generic mitigation technique. In practice, most attacks would target CSRF tokens, which would give attackers the ability to carry out some activity on a web site under the identity of the attacked user. For the best security, ensure that CSRF tokens are masked with random content. In addition, web sites should generally be looking at adopting SameSite cookies (see RFC 6265bis), another recent security measure designed to improve cookie security, this time against CSRF attacks.

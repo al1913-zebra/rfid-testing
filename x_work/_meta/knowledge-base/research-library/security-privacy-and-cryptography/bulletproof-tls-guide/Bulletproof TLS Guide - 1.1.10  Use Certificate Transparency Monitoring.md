@@ -1,0 +1,3 @@
+### 1.1.10 Use Certificate Transparency Monitoring
+
+Since 2018, all public certificates for web sites are recorded via Certificate Transparency (CT), a Google-led effort to improve transparency of the Internet PKI. There are specialized monitoring services that observe all recorded certificates and make it possible to find all certificates issued for your properties. A good tool will not only find all your certificates, but also perform sanity checking of all issuances in real time to avoid sending you an endless stream of notification emails. CT monitoring is an easy and cost-effective way to understand issuance in complex environments (in terms of who is doing what and where), enforce policy, and catch unexpected certificates or even misissuance.

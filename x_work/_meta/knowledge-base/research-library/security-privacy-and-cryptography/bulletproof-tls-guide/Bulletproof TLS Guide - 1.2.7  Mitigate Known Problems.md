@@ -1,0 +1,3 @@
+### 1.2.7 Mitigate Known Problems
+
+There was a period of time when it was common to learn about new protocol issues, but that now seems to be behind us. At some point, we stopped finding new problems; the ones we know about were largely fixed or mitigated. Then TLS 1.3 came along and, with a thorough protocol update, made things much better still. Critical issues at the protocol level are not so common today, but it’s generally accepted that security always deteriorates over time. For that reason, it’s a good practice to be aware of what’s going on. At this point in time, the most likely problems you will encounter are implementation issues in libraries and server software. Apply patches promptly when they become available.

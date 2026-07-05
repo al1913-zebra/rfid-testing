@@ -1,0 +1,114 @@
+{
+  "title": "get_current_region",
+  "x-stoplight": {
+    "id": "seamkz959jnmb"
+  },
+  "type": "object",
+  "examples": [
+    {
+  "command": "get_current_region",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "currentRegion": {
+    "frequencyHopping": true,
+    "channelData": [
+      "915750",
+      "915250",
+      "903250",
+      "926750",
+      "926250",
+      "904250",
+      "927250",
+      "920250",
+      "919250",
+      "909250",
+      "918750",
+      "917750",
+      "905250",
+      "904750",
+      "925250",
+      "921750",
+      "914750",
+      "906750",
+      "913750",
+      "922250",
+      "911250",
+      "911750",
+      "903750",
+      "908750",
+      "905750",
+      "912250",
+      "906250",
+      "917250",
+      "914250",
+      "907250",
+      "918250",
+      "916250",
+      "910250",
+      "910750",
+      "907750",
+      "924750",
+      "909750",
+      "919750",
+      "916750",
+      "913250",
+      "923750",
+      "908250",
+      "925750",
+      "912750",
+      "924250",
+      "921250",
+      "920750",
+      "922750",
+      "902750",
+      "923250"
+    ],
+    "country": "United States",
+    "lbtEnabled": false,
+    "maxTxPowerSupported": 30,
+    "minTxPowerSupported": 0,
+    "regulatoryStandard": "FCC"
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "example": "get_current_region",
+      "description": "The command issued by the client, indicating the operation to retrieve the current region."
+    },
+    "requestId": {
+      "type": "string",
+      "example": "abc123",
+      "description": "A unique identifier for tracking the request."
+    },
+    "apiVersion": {
+      "type": "string",
+      "enum": [
+        "V1.0",
+        "V1.1"
+      ],
+      "example": "V1.1",
+      "description": "The version of the API being called, allowing for version-specific processing."
+    },
+    "currentRegion": {
+      "$ref": "../../refrence/response/currentRegionResponse.yaml",
+      "description": "A reference to the detailed payload structure containing region-specific information."
+    },
+    "response": {
+      "$ref": "../../refrence/response/response.yaml",
+      "description": "A reference to the standard response schema used for this API."
+    }
+  },
+  "required": [
+    "command",
+    "requestId",
+    "apiVersion",
+    "response"
+  ]
+}

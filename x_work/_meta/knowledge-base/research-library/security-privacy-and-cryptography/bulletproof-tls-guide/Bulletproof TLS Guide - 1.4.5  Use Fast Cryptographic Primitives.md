@@ -1,0 +1,9 @@
+### 1.4.5 Use Fast Cryptographic Primitives
+
+Measured server-side, the overhead of cryptography tends to be very low and there aren’t many opportunities for performance improvements. In fact, my recommended configuration is also the fastest as it prefers ECDSA, ECDHE, and AES with reasonable key sizes. These days, to deploy fast TLS, you generally _(1)_ deploy with ECDSA keys and _(2)_ ensure that your servers have CPUs that support hardware-accelerated encryption.
+
+However, things change somewhat if we look at the performance from the client perspective. Recently there’s been an explosion in the adoption of mobile devices, which use different processors and have different performance characteristics. What’s good for your servers may not be good for mobile phones. So which do you want to optimize?
+
+In practice, some organizations choose to take a performance hit on their servers in order to provide a better end user experience. In practice, this means that they choose to negotiate ChaCha20 suites with mobile devices because they are not only several times faster, but also consume less battery. But how do we know which clients are mobile devices?
+
+The trick is to use something called an equal preference cipher suite configuration. Normally, we want our servers to select the best possible cipher suite, so naturally that would be something with AES-GCM. But with mobile devices we want ChaCha20 instead, and our servers have no way of knowing which user agents are mobile phones and which are not. BoringSSL was the first to introduce a feature in which the client’s list of suites is analyzed to determine if it prefers ChaCha20 over AES. Only if it did would the server select a ChaCha20 suite over an AES-GCM one. This feature is now also available in OpenSSL via the `prioritize_chacha` configuration option.

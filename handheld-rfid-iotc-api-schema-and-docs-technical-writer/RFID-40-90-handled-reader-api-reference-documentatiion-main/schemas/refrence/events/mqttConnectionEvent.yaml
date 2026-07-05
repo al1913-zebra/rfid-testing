@@ -1,0 +1,33 @@
+title: epConnection
+x-stoplight:
+  id: 6614a3b0a035f
+type: object
+description: MQTT connection event reporting the connection state of a device endpoint.
+properties:
+  connectionState:
+    type: boolean
+  deviceModel:
+    type: string
+    enum:
+      - RFD40
+      - RFD90
+      - FX900
+  epType:
+    type: string
+    enum:
+      - MQTT
+      - HTTPS
+      - WS
+    example: MQTT
+  apiVersion:
+    type: string
+  mqttVersion:
+    type: string
+    example: V3.1
+  mqttConnTenantId:
+    type: string
+    example: Zebra_RFD40
+required:
+  - connectionState
+  - deviceModel
+  - epType

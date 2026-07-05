@@ -1,0 +1,512 @@
+![](https://cdnintech.com/web/frontend/www/assets/06.115/journals/OpenAccessLock.svg)Open access
+
+Written By
+
+Azra Bayraktar, Erdal Yılmaz and Şakir Erdem
+
+Submitted: 10 November 2010 Published: 15 June 2011
+
+DOI: 10.5772/20822
+
+[DOWNLOAD FOR FREE](https://www.intechopen.com/chapters/18089/#)
+
+ ![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-share.svg) Share
+
+ ![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-copy.svg) Cite
+
+Cite this chapter
+
+There are two ways to cite this chapter:
+
+1\. Choose citation style Select style Vancouver APA Harvard IEEE MLA Chicago  Copy to clipboard Get citation
+
+2\. Choose citation style Select format Bibtex RIS [Download citation](https://www.intechopen.com/chapters/18089/#)
+
+![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-checkmark-circle-checked.svg)
+
+## Author Information
+
+-   #### Azra Bayraktar \*
+    
+    #### Azra Bayraktar \*
+    
+    -   Marmara University, School of Economics and Business Administration, Department of Marketing and Production Management, Turkey
+    
+-   #### Erdal Yılmaz
+    
+    #### Erdal Yılmaz
+    
+    -   Marmara University, School of Economics and Business Administration, Department of Marketing and Production Management, Turkey
+    
+-   #### Şakir Erdem
+    
+    #### Şakir Erdem
+    
+    -   Marmara University, School of Economics and Business Administration, Department of Marketing and Production Management, Turkey
+    
+
+\*Address all correspondence to:
+
+## 1\. Introduction
+
+“_Technology has made our lives more full, yet at the same time we’ve become uncomfortably “full”._ ([Maeda, 2006](https://www.intechopen.com/chapters/18089#B10), p.I). After considering these words within marketing context we can see that each day we are dealing with an information flow. Although there is a lot of information about almost everything (sold products, barcodes, invoices, information from the supplier, prices, customer data, competitors etc.) today’s managers are more unsecure to take certain decisions. They also don’t have enough time to pay attention for these controllable or uncontrollable forces. During a business process the way from production to wholesalers and than to retailers is very complicated. After products finally meet the customers, feedbacks are coming back to the companies and the cycle begins from the start. This product and information flow makes business processes very complex because different people (engineers, sales staff, consumers, managers) interfere this cycle. In this study our aim is - based on the simplicity theory of John Maeda – with the help of RFID technology to create a simple process model for retailers. By using RFID tags in their warehouses and stores they might be able to serve better and more efficiently to their customers and have a better overview in a short period of time. The information supplied via RFID allows corporations to plan their internal processes more efficiently. We also would like to analyze the pitfalls of RFID with a case from Turkish retail industry especially for In-Store usage of RFID.
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 2\. RFID implications and simplification of processes
+
+In his theory Maeda emphasizes simplicity laws: ([Maeda, 2006](https://www.intechopen.com/chapters/18089#B10), p.I)
+
+Reduce: The simplest way to achieve simplicity is through thoughtful reduction
+
+Organize: Organization makes a system of many appear fewer
+
+Time: Savings in time feel like simplicity
+
+Learn: Knowledge makes everything simpler
+
+Differences: Simplicity and complexity need each other ….
+
+1.  Reducing: Reducing the unnecessary information through RFID tacked products and shelves.
+    
+2.  Organize: Organizing the sales person more effective so they can have necessary information about their customers with the help of wireless handheld devices and can read the personalized customer cards.
+    
+3.  Time: With the help of RFID tagged products the store managers can gather information about stock levels and responds to customer requirements on time.
+    
+4.  Learn: Store managers and marketing managers can learn detailed and up to minute product information during the day.
+    
+5.  Differences: Not every customer is the same; marketers should approach different customers in different ways.
+    
+6.  Shrinking the time: With the help of RFID- you can get crucial and accurate information about your customer preferences on time.
+    
+
+![Figure 1.RFID Implications and Simplification of Processes](https://cdnintech.com/media/chapter/18089/1512345123/media/image2.jpg)
+
+#### Figure 1.
+
+RFID Implications and Simplification of Processes
+
+### 2.1. The definition of RFID
+
+RFID is a form of automatic identification and data capture (AIDC) technology that uses electric or magnetic fields at radio frequencies for identification, authentication, location, or automatic data acquisition and transmit, and support a wide range of applications—everything from asset management and tracking to access control and automated payment. RFID systems have the capability of sharing information across organizational boundaries, such as supply chain applications ([Sabbaghi and Vaidyanathan, 2008](https://www.intechopen.com/chapters/18089#B13), p.73).
+
+Radio Frequency Identification (RFID) is a generic technology concept that refers to the use of radio waves to identify objects (Auto-ID Center 2002). The core of RFID technology is the RFID transponder (tag) – a tiny computer chip with an antenna. Consumer good suppliers attach these tags to logistic units (palettes, cases, cartons and hanger-good shipments) and, in some cases, to individual items. Logistic units and individual items are identified by the Electronic Product Code (EPC). An RFID reader is used to identify the EPC stored on the RFID tag. The antenna enables the microchip to transmit the object information to the reader, which transforms it to a format understandable by computers ([Angelles, 2005](https://www.intechopen.com/chapters/18089#B1), p. 52).
+
+Empowered by the capability to identify uniquely and automatically provide continuous, accurate and real time information on the position and the status of product instances, RFID offers a great improvement opportunity to the shelf replenishment process ([Bardaki, Pramateri, 2008](https://www.intechopen.com/chapters/18089#B3); p:4)
+
+### 2.2. Components of RFID systems
+
+RFID Technologies support a wide range of applications—everything from asset management and tracking to manufactured products and related customer services to access controls and automated payments. Each RFID system has different components and customizations so that it can support a particular business process for an enterprise. Depending on the application in an industry and the enterprise within an industry, A RFID system can be very complex, and its implementations may vary greatly. Conceptually, RFID system may be composed of three subsystems as shown in the figure below ([Sabbaghi and Vaidyanathan, 2008](https://www.intechopen.com/chapters/18089#B13), p.73):
+
+1.  An RF subsystem, which performs identification and related transactions using wireless communication,
+    
+2.  An enterprise subsystem, which contains computers running specialized software that can store, process, and analyze data acquired from RF subsystem transactions to make the data useful to a supported business process, and
+    
+3.  An inter-enterprise subsystem, which connects enterprise subsystems when information needs to be shared across organizational boundaries.
+    
+
+![Figure 2.Inter-Enterprise Architecture](https://cdnintech.com/media/chapter/18089/1512345123/media/image3.jpg)
+
+#### Figure 2.
+
+Inter-Enterprise Architecture
+
+Asghar Sabbaghi and Ganesh Vaidyanathan “Effectiveness and Efficiency of RFID technology in Supply Chain Management: Strategic Values and Challenges”, Journal of Theoretical and Applied Electronic Commerce Research ISSN 0718–1876 Electronic Version Vol. 3 / Issue 2 / August 2008 / 71-81
+
+Every RFID system contains an RF subsystem, which is composed of tags and readers. In many RFID systems, the RF subsystem is supported by an enterprise subsystem that is composed of middleware, analytic systems, and networking services. However, in a supply chain application, a tagged product is tracked throughout its life cycle, from the manufacture to final purchase, and sometimes even afterwards (e.g., to support targeted product recalls or related service), and thus its RFID systems has to share information across organizational boundaries. Thus, the RFID systems supporting supply chain applications have also an inter-enterprise subsystem ([Sabbaghi and Ganesh, 2008](https://www.intechopen.com/chapters/18089#B13), p 71-81).
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 3\. Warehouse applications for RFID
+
+RFID can be used for many warehouse inventory management operations, including receiving, storage, picking and shipping procedures. With RFID system, items can have a unique and secure serial numbers and it became so visible in inventory and supply chain operations. This visibility brings several benefits that can eliminate current disadvantages and this wireless system can be more efficient.
+
+Warehousing Operations:
+
+Receiving; when pallets are unloaded from the truck, they are automatically identified with fixed position or mobile RFID readers. Fixed position RFID readers can be mounted at the dock door. Mobile readers can be designed as a PDA or they can be mounted on a forklift. Mobile RFID readers can be more effective because they can be used throughout the facility and they require less investment. While RFID system is integrated with Warehouse Management System (WMS), data read from the pallet’s tags are transferred into WMS and updating inventory files. This warehouse process reduces the labor needs. If bar codes were being used in this process, all received pallets would have to be scanned by workers and on the contrary RFID, bar codes needs clearly visible labels.
+
+Storage; in the conventional warehouse systems, different items should be storage different locations. Whereas RFID readers can scan locations and read RFID tags from anywhere. As a result of this, items do not have to be storage in specific locations. In this way, many different storage location alternatives can be used for fast replenishment and picking.
+
+Picking; when RFID system integrates with order management system, the order is checked by the WMS to confirm the picked item belongs with the order.
+
+Shipping; the order management system can confirm pallet loads and improve the accuracy of the shipping process with RFID readers. A RFID tagged pallet can be identified a fixed position RFID reader (as vehicle mounted) or a mobile reader (handheld device). RFID allows for an automatic check of the items loaded into the trailer against the customer order. ([Jones and Chung, 2008](https://www.intechopen.com/chapters/18089#B8), pg. 325)
+
+Mandates from the large retailers (Wal-Mart, Target, Albertson etc) and government agencies in USA have increased the awareness of RFID. But still companies that have not been affected by the mandate requirements prefer to wait until the technology matures so that they have adequate knowledge about its potential benefits, especially many companies are concerned about the ROI (Return on Investment) models of RFID ([Bhattacharya et al. 2007](https://www.intechopen.com/chapters/18089#B5), p. 1; [Jabjiniak and Gilbert, 2004](https://www.intechopen.com/chapters/18089#B9)). Determining accurate measures for RFID ROI is very important in order to convince managers. Developing a comprehensive framework for all short term and long term benefits will contribute toward the development of ROI measures ([Bhattacharya, 2007](https://www.intechopen.com/chapters/18089#B5), p.2).
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 4\. Benefits of RFID system in retailing
+
+RFID technology can track inventory more accurately in real time resulting in reduced processing time and labor. There are many applications and possibilities for RFID/EPC as these objects in motion are traced throughout the supply chain. The complete visibility of accurate inventory data throughout the supply chain from manufacturer’s shop floor to warehouses to retail stores brings opportunities for improvement and transformation in various processes of the supply chain. RFID technology can help a wide range of organizations and individuals such as hospitals and patients, retailers and customers, and manufacturers and distributors throughout the supply chain to realize significant productivity gains and efficiencies ([Sabbaghi and Vaidyanathan, 2008](https://www.intechopen.com/chapters/18089#B13), p.72).
+
+RFID usage in retailing has taken a lot of attention recently ([Bhattacharya et al.2007](https://www.intechopen.com/chapters/18089#B5)) because the retail industry is one of the most aggressive supporters of this technology; In comparison, a 2005 report by Frost & Sullivan determined the revenue in the RFID retail market to be $400.2 million in 2004, a figure expected to grow to $4,169 million by 2011 ([Bacheldor, 2006](https://www.intechopen.com/chapters/18089#B2), p.1).
+
+During the last decade several research studies have focused on RFID and its benefits and challenges in retail sector ([Bhattacharya, 2007](https://www.intechopen.com/chapters/18089#B5), p.3) :
+
+| Larsson and Qviberg (2004)  |                                  Justification of RFID implementation                                   |
+|-----------------------------|---------------------------------------------------------------------------------------------------------|
+|     Jones et al. (2004)     |       Potential benefits and challenges of RFID throughout the supply chain for retailers in UK.        |
+|   Koh, Kim and Kim (2006)   |                         Issues and critical factors of RFID in retail industry                          |
+| Vijayaraman and Osyk (2006) |                     Empirical study of RFID implementation in warehousing industry                      |
+|      Karkkainen (2003)      | Analysis of RFID benefits obtained by increasing supply chain efficiency for short shelf life products. |
+
+### Table 1.
+
+Studies about RFID benefits in Retail Sector
+
+[Bhattacharya, Mithu; Chu Chao-Hsien; Mullen Tracy (2007).](https://www.intechopen.com/chapters/18089#B5) RFID Implementation in Retail Industry: Current Status, Issues and Challenges; _Decision Science Institute (DSI) Conference_, Phoenix Arizona AZ, p.3
+
+According to IdTechEx ([Bhattacharya, 2007](https://www.intechopen.com/chapters/18089#B5), p.6) the retail industry will comprise %44 of the global RFID market value system including tags by the year 2016. In retail industry RFID is expected to replace the barcode technology as it provides more benefits. The most important benefits for the future is integrated supply chain management, which enables availability of products, inventory management and decreasing of the costs ([Bhattacharya, 2007](https://www.intechopen.com/chapters/18089#B5), p.6). After conducting a content analysis in 2006 about RFID and retrieved 362 articles which have been published between 2002 and 2006 Bhattacharya _et al_. have categorized and summarized the challenges, drivers and benefits of RFID technology for retail industry along with the frequency of articles that support the analysis ([Bhattacharya, 2007](https://www.intechopen.com/chapters/18089#B5), p.9- 15)
+
+|                                                                                                                                 **Drivers for RFID in Retail Ind.**                                                                                                                                  |                     **Percentage**                     |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
+|                                                                       Benefits*<br>Wal-Mart Mandate<br>Decreasing Cost of tags and readers<br>EPC Global initiatives for Standardization<br>Anti-Counter feiting<br>TOTAL                                                                        | 92,68%<br>2.85%<br>2.03%<br>2.03%<br>0,41%<br>100% |
+|                                                                                                                                **Benefits* from RFID Implementation**                                                                                                                                 |                     **Percentage**                     |
+| Operational Efficiency<br>- Reduced out of stock<br>- Accuracy, speed and efficiency of process<br>- Automated shipping/receiving<br>- Reduced Inventory<br>- Improved efficiency of store operations<br>- Improved labor productivity<br>- Streamlined process achievement/Leaner manufacturing |                       36.84%                       |
+|                         Improved Visibility<br>- Real-time Visibility<br>- Tracking and Tracing<br>- Improved visibility of orders and inventory<br>- Asset Management<br>- Return/Recall Management<br>- Tracking shopping behavior<br>- Streamlined reverse logistics                          |                       24.12%                       |
+|                                                                                                          Reduced Costs<br>- Reduced labor requirements/costs<br>- Reduced overall costs                                                                                                          |                       10.53%                       |
+|                                                                         Improved Security<br>Security against theft/fraud<br>Reduced shrinkage<br>Improved supply chain security<br>Eliminates return merchandise fraud                                                                          |                       9.21%                        |
+|                                                                                                                                 Improved Customer Service Levels                                                                                                                                 |                       7.89%                        |
+|                                                                                                  Better Information Accuracy<br>Improved packing and shipment accuracy<br>Business Intelligence                                                                                                  |                     7.46%<br>                      |
+|                                                                                                                                         Increased Sales                                                                                                                                          |                       3.95%                        |
+
+### Table 2.
+
+Benefits from RFID Implementation in Retail Industry
+
+[Bhattacharya, Mithu; Chu Chao-Hsien; Mullen Tracy (2007).](https://www.intechopen.com/chapters/18089#B5) RFID Implementation in Retail Industry: Current Status, Issues and Challenges; _Decision Science Institute (DSI) Conference_, Phoenix Arizona AZ, 2007, (pp 9-11).
+
+Bhattacharya _et al._ has also emphasized that all these retailer specific benefits have a potential to impact customer service levels positively. Although RFID imbedded loyalty programs can add extra values for the customers, store managers and shopping mall management, many companies are acting reluctantly still to use RFID for their Customer Relationship Strategies ([Bayraktar; Yilmaz, 2010](https://www.intechopen.com/chapters/18089#B4)).
+
+Privacy issues are one of the main concerns of RFID. A balance should be kept between the benefits that consumers can get in terms of better service, time saving and protection of their privacy. Also many business managers would like to see a detailed cost and benefit analysis of RFID implementation.
+
+![Figure 3.Integrated Supply Chains (adapted from Callana, 2006; Bhattacharya, 2007 p. 14-15)](https://cdnintech.com/media/chapter/18089/1512345123/media/image4.jpg)
+
+#### Figure 3.
+
+Integrated Supply Chains (adapted from Callana, 2006; Bhattacharya, 2007 p. 14-15)
+
+We see that most of the dominant RFID benefits are focusing on the lower side of the supply chain. RFID technology has the ability to provide up-to-minute information on sales of items, thus can give accurate information about inventory levels. With this accuracy managers may hold their inventory levels at minimum and this may cause to reduce their inventory costs. RFID technology at the pallet level has the potential to automate the distribution of goods between manufacturing plants warehouses and retail stores of different organizations. Companies can cut their costs also down from lost/misplaced inventory ( [Sounderpandian et al., 2007](https://www.intechopen.com/chapters/18089#B18), p. 105).
+
+There are evidences which prove a positive ROI for warehouse application but in our study we also would like to consider the advantages of in-store applications for store management and customers.
+
+### 4.1. In-store applications for RFID
+
+In a retail store RFID tag information is generated based on events: A product is leaving a shelf or a product being checked out by a customer at a checkout corner ([Sounderpandian et al., 2007](https://www.intechopen.com/chapters/18089#B18), p. 105). The tag readers should be deployed in a shelf; these tag readers are responsible for reading RFID tags of items on the shelf. Items read by the tag at the checkout generate messages for the host system. After processing these messages the host system informs other partner in supply chain. In addition the host system may send some of the RFID transaction data to the enterprise system of the retailer. The host system is connected to the enterprise information system via a virtual private network ([Sounderpandian et al., 2007](https://www.intechopen.com/chapters/18089#B18), p. 106).
+
+![Figure 4.RFID infrastructure in a retail store](https://cdnintech.com/media/chapter/18089/1512345123/media/image5.jpg)
+
+#### Figure 4.
+
+RFID infrastructure in a retail store
+
+Sounderpandian Jayavel; Boppana Rajendra V ;Chalasani Suresh ; Madni Asad M. (2007). Models for Cost-Benefit Analysis of RFID Implementations in Retail Stores_. IEEE Systems Journal_, Vol..1, No,2 December. p. 106.
+
+In Europe, Metro Group has been using In-store RFID implications in its Future Stores since 2004. At the end of 2008 Metro group has brought 200 sales points in action, included all Metro Cash&Carry big supermarkets,, in 9 central distribution-warehouse of Metrogroup and also most of the Real Warehouses. They also started in 2008 France with RFID applications of 1.3 billion palettes for 89 Metro Cash and Carry Stores.
+
+There are new usage areas for RFID- Instore applications that have been applied by Metro Ag. at Galeria Kaufhof Essen. Applications are following ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11)):
+
+#### 4.1.1. Personal digital assistants/smart shelf
+
+Retailers have limited shelf space available. The choice of which items to stock and the allocation of scarce shelf space among the stocked items are relevant issues for the retailer. For individual SKUs these decisions are important determinants of sales and marketing effectiveness. At the aggregate level, shelf allocation is an important factor in the revenue, cost, and eventual profit of a product category. Complementary to the amount of space to allocate to an item, there is the problem of the location of the item on the shelf. For example, items on the lower shelf usually get less consumer attention than items on upper shelves. The items on the lower shelves may therefore have lower sales and may also benefit less from promotions.
+
+Finding the profit-maximizing shelf arrangement while, at the same time, meeting manufacturers requirements is far from easy. A prerequisite to actual shelf optimization is a proper measurement of the effect of shelf layout on sales and marketing effectiveness ([Nierop amd Franses, 2008](https://www.intechopen.com/chapters/18089#B12), p. 1).
+
+Retailers are testing the Smart Shelf, where an RFID reader is incorporated into the shelf and stocked with tagged product. The Smart Shelf monitors its rate of depletion, provides an alert when stock runs low and automates reordering to minimize out-of stocks. Gillette is testing smart shelves in an attempt to minimize theft. Because store personnel program the system with store sales data, the system detects behavior outside the norm and can alert store personnel by transmitting information to a personal digital assistant. By identifying the nature of the stock loss and mapping and addressing points of vulnerability, losses in some stores have been reduced by 70% to 80% ([Thompson, 2004](https://www.intechopen.com/chapters/18089#B19); p.3).
+
+Advantage to the company with RFID systems: RFID also provides transparency on the sales floor. Every item of clothing is assigned a certain position on hangers or shelves. This data is saved in the outlets database. Employees record these items on shelves with “Personal Digital Assistants (portable RFID readers)”. Incorrectly stacked goods could easily be found and resorted ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11); [Yalçınkaya; 2007](https://www.intechopen.com/chapters/18089#B21)). Advantage to the Customers: In store located RFID readers constantly detect item transponders. Current stock is shown detailed (according to color and size) on the screen. This way customer can check if desired items are in stock on the hangers or shelves ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11)).
+
+#### 4.1.2. Check out
+
+Today, staff at the check out scan the barcodes on items to calculate the total amount purchased and deactivate the EAS (electronic article surveillance).
+
+Advantage to the company with RFID systems: During the payment process, data is removed from the RFID system that operates parallel to the merchandise management system. Advantage to the Customers: No links are made between the purchased items and personal data – regardless of whether payment is with an EC Card or credit card. Customer can ask staff to remove the transponders completely if they wish ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11)).
+
+#### 4.1.3. Smart mirror
+
+The advantage to the Customers: Customers could check the Smart Mirror to see if the selected garments fit. Integrated RFID readers detect the transponders that are fitted to the clothes being tried on. Detailed information (washing instructions, price etc.) on a chosen product then appears on the mirror’s surface if requested ([Metro Group-Future Store-Guided Tour](https://www.intechopen.com/chapters/18089#B11)).
+
+Also another brand for luxury goods, Prada is using the smart mirrors in its stores in New York Epicenter Store. The mirrors in dressing rooms become magic mirror with a combination of a touch activated display and cameras, so customers may see what they try on from various angles. All articles in this shop have been tagged with RFID transponders which enables this technology ([Spektrum RFID, 2011](https://www.intechopen.com/chapters/18089#B17)).
+
+#### 4.1.4. Smart dressing rooms
+
+Advantages to the Customers: There were also touch screens in the cubicles in Gardeur shop. Smart Dressing rooms identify which item customers try on and shows product details on the screen. It also gives tips on accessories and possible combinations. Customers can also access details on suggested items by touching screen ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11)).
+
+#### 4.1.5. Handheld reader for salespersons
+
+Advantages to the company with RFID systems: Within the store, which has been tagged with RFID transponders a handheld reader tells employees which items are still in stock. This is also an enormous advantage for customer service and availability of goods ([Spektrum RFID, 2011](https://www.intechopen.com/chapters/18089#B17)).
+
+#### 4.1.6. Anti-theft system
+
+Advantages to the company with RFID systems: RFID readers were also installed at transition points around escalators and lifts. In the future Metro AG is also planning to use passive RFID transponders ([Metro Group-Future Store- Guided Tour](https://www.intechopen.com/chapters/18089#B11)).
+
+### 4.2. Cost and benefit analysis of RFID systems in retailing
+
+Benefits of the RFID systems in various industries (defense, healthcare, entertainment ets.) have been widely discussed, but managers still have some concerns about using this technology especially for in-store applications.
+
+The advantages of In-store RFID systems are automatic check-out and reducing inventory costs due to the efficient shelf replenishment. Another issue is also the reduced losses due shoplifting. The points for these concerns are:
+
+-   Tag readers cost’s, infrastructure costs (hardware and software costs, including the communication network required for RFID implementations)
+    
+-   Yearly operational or maintenance costs ([Sounderpandian, 2007](https://www.intechopen.com/chapters/18089#B18), p. 106).
+    
+-   Educating sales personnel about the new technology,
+    
+-   Ethical issues and security concerns from the customers ([Bayraktar, Yilmaz, 2010](https://www.intechopen.com/chapters/18089#B4)).
+    
+
+[Sounderpandian et al. (2007](https://www.intechopen.com/chapters/18089#B18)) have calculated the formula for a retail store to evaluate whether or not an RFID implication is beneficial for a retail store. Then they showed with the help of a numerical example a retail store which uses part-time employees and implemented RFID system in its stores ([Sounderpandian et al, 2007](https://www.intechopen.com/chapters/18089#B18), p. 112): The formula is:
+
+FRFID<F+BSL+BPOS+TIC\*√(1−VRFID/v)$$
+\text{FRFID}<\text{F}+\text{BSL}+\text{BPOS}+\text{TIC}*√\text{}(\text{1}-\text{VRFID}/\text{v})
+$$
+
+E1
+
+FRFID = Fix costs: The costs at the maximum number of shelf replenishments $312.000
+
+V= Variable costs: Wages of part-time employees who have been hired depending on the workload and the cost of consumables, $0,75. Variable costs depend on the number of replenishments in a year.
+
+FRFID: RFID implementation costs: Amortized cost of computer hardware, RFID Related Equipment, RFID Tags, salaries of full-time employees, and the wages of (fewer) part-time employees, variable costs are the costs for the consumables.
+
+BSL: Benefit from shoplifting: Using RFID reduces the loss due to shoplifting (for example $10 a day makes $3650 a year)
+
+BPOS= Savings from the use of RFID at POS terminals so the checkout will be faster. Store needs fewer checkout counters and fewer cashiers. BPOS:$ 24.000 (in a year)
+
+TIC: Total Inventory costs: Total costs of carrying and ordering inventory. Carrying costs: The costs of the shelf space: Rent, utilities maintenance of the area where the shelves are kept. TIC: $980.000
+
+Sounderpandian and his colleagues have made the calculation for a retail store and discovered that RFID installation is beneficial.
+
+$750000<$312000+$3650+$24000+$980000\*√(1−0,10/0,75)\=$750000<$961805.$$
+$\text{75}0\text{}000<\text{}$\text{312}000+\text{}$\text{365}0\text{}+$\text{24}000+\text{}$\text{98}0\text{}000\text{}*\text{}√\text{}(\text{1}-\text{}0,\text{1}0/0,\text{75})=$\text{75}0\text{}000\text{}<\text{}$\text{9618}0\text{5}.
+$$
+
+E2
+
+However in countries where labor costs are relatively cheaper, managers may prefer to pay wages for part-time workers instead of paying for RFID implementation.
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 5\. Concerns for global brands
+
+Another problem for Global Brands is that the franchisees may not agree to tag their products with RFID transponders unless the main company (franchisor) agrees to place the RFID tags in the products before arriving at the retail store. (Number 7 in [Figure 5)](https://www.intechopen.com/chapters/18089#F5).
+
+![Figure 5.Transition of an item from the manufacturer to the consumer in the supply chain and the relevant RFID transactions.](https://cdnintech.com/media/chapter/18089/1512345123/media/image8.jpg)
+
+#### Figure 5.
+
+Transition of an item from the manufacturer to the consumer in the supply chain and the relevant RFID transactions.
+
+[Sounderpandian Jayavel; Boppana Rajendra V ;Chalasani Suresh ; Madni Asad M. (2007).](https://www.intechopen.com/chapters/18089#B18) Models for Cost-Benefit Analysis of RFID Implementations in Retail Stores_. IEEE Systems Journal_, Vol.1, No,2 December, pp. 107.
+
+It is not feasible for a large retailer, one with a daily turnover of 40,000-60,000, to place RFID tags on products before entering the store.
+
+Another issue is that they have to change all labels and price tags three times a year according to the sales etc. Usually on product labels there is information about the country of origin, washing instructions etc. Therefore an extra RFID tag is sometimes too much for an item.
+
+Other problem will be in point 8 and 9 in [Figure 5](https://www.intechopen.com/chapters/18089#F5). If the retail store is in a shopping mall, they have to unload their pallets in certain hours, and they can use loading elevators in shopping malls during limited hours. Until the stores open at 10.00 am, all the articles have to be unpacked, tagged, labeled and placed in the store shelves. Therefore with the increase the item numbers have been sold in the store this system could be complicated and costly.
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 6\. Case Study: RFID Application in a Turkish Retail Company
+
+Turkey’s ready-to-wear clothing industry is one of the major industries of its economy and international trade. According to [Sevim and Emek (2006)](https://www.intechopen.com/chapters/18089#B16) clothing and textiles have annual sales of $30 billion and a 26 percent share of total export Vol.ume in 2005. Turkey is the fourth largest clothing supplier in the world and second largest supplier to the European Union. Under the World Trade Organization Agreement on Textiles and Clothing this sector continues to maintain and enhance its competitiveness despite the abolition of quotas ([Sevim and Emek, Turkish Clothing Industry Report, Export Promotion Center of Turkey, 2006](https://www.intechopen.com/chapters/18089#B16)). Germany, the UK and the U.S. are the most important markets for Turkish exports, with export shares of 27%, 18%, and 8% respectively. However, compared to 2004 data, exports to the U.S. have declined 21 percent. Hence, understanding the causal factors has potential for reversing this decline and growing apparel and textile exports to the U.S ([Seitz, Neace, Razzouk, Keyfli, Tung,2008](https://www.intechopen.com/chapters/18089#B14); p:173)
+
+Throughout the theoretical findings we prefer to make a exploratory study about using RFID technology. In general, exploratory research is appropriate to any problem about which little is known. Exploratory research then becomes the foundation for a good study ([Churchill, 1999](https://www.intechopen.com/chapters/18089#B7);p:103).
+
+![Figure 6.Types of Exploratory Studies](https://cdnintech.com/media/chapter/18089/1512345123/media/image9.jpg)
+
+#### Figure 6.
+
+Types of Exploratory Studies
+
+[Seltiz, C., Wrightsman, L.S.,Cook, S.W. (1976).](https://www.intechopen.com/chapters/18089#B15) Research Methods in Social relations, 3<sup>rd</sup> ed. New York. pp.90-91.
+
+As shown in [figure 6](https://www.intechopen.com/chapters/18089#F6), “analysis of selected cases” is a type of exploratory study. The analysis of selected cases is sometimes referred to as the analysis of “insight-stimulating examples.” By either label, the approach involves the intensive study of selected cases of the phenomenon under investigation. Examination of existing records, observation of the occurrence of the phenomenon, unstructured interviewing, or some other approach may be used. The focus may be on entities (individual people or institutions) or groups of entities as sales representatives or distributors in various regions ([Churchill, 1999](https://www.intechopen.com/chapters/18089#B7); p:113).
+
+For the case study we have contacted a Turkish retailer and focused on a company. The company (mentioned as X to protect the confidentiality of the company) is one of the fastest growing retailers in Turkey. The company is active in the textile business and its product categories consist of casual children’s, men’s and women’s articles. Their price ranges are between low and medium. After discussing with operations and logistics manager, we gathered enough information regarding RFID.
+
+The company has been using the RFID technology for 3 three years. Contrary to other companies we have seen in the literature, the company X made some tests for its warehouse about the feasibility of the process three years ago but then decided to use RFID technology in its five selected (two stores in Istanbul, three stores outside of Istanbul) stores but not in its warehouse and supply chain system.
+
+### 6.1. RFID test project
+
+Products should be placed with RFID tags by the suppliers first. For the textile products they have ordered samples for washable, sewn-in RFID tags and made reliability tests for stock control. Companies who tried the string RFID tags had problems because they can break off and get lost easier; therefore, they have built antennas in the warehouses and made RFID track tests for the sample products with sewn RFID tags.
+
+_Results of the test:_ For stock follow ups and inventory levels they have nearly 100% reliability. Defection of the tags and the possibility of not reading the RFID codes within the cases was nearly 0%. In product incoming process into the warehouse:
+
+Defection rate because of the inability of tag reading was again nearly 0%.
+
+For the calculating stock level’s accuracy rates were nearly 100% because of the durability of RFID tags. Live time value of RFID tags are 5 years but they should not come near the magnetic areas like near the transformer room etc.
+
+_Following up customer complaints:_ Even if a complaint comes from the customer for a specific product the company can match the Product ID with factory code. Especially The sewn-in tags are more durable than the thermal ones during warehouse processing. This system also facilitates the quality control process.
+
+### 6.2. Advantages of RFID tags within the supply chain for company X
+
+_Unique ID Number:_ The advantage of unique RFID tags compared to Product ID is each product with the same color, the same size and the same model will have the same Model ID. Even 100 products will have the same Model ID. But with RFID each product will have a unique product ID and company X will follow the products from supplier to consumer with this unique ID number.
+
+_Sorting system_: Before products have been distributed from the main warehouse, RFID can also make it easier during the preparation stage of delivering goods. Even within the stores, if there is an elevator in the store, building RFID antennas at elevator doors can help sorting the system between the stages and make the follow-up process easier for the employees. Company X delivers 3600 cases/hour daily from its main warehouse to its stores.
+
+_Quality of RFID Tags:_ Company X uses thermal etiquettes now and they can be damaged because of dust, tearing off, getting lost etc. but sewn RFID etiquettes can avoid all these disadvantages.
+
+_Collecting of Off-Season Articles:_ If a company use a trolley with an RFID antenna at the bottom, they can collect all the RFID tagged off-season articles in the store and when the trolley leaves the store and goes to the store warehouse, items can be deleted from the system automatically.
+
+Despite all these advantages the company X decided not to implement RFID technology for their supply chain system at this time. Reasons of these decisions are following:
+
+### 6.3. Disadvantages of RFID tags for company X in their supply chain
+
+_Problems for different Product types:_ Company X needs different types of RFID tags (for belts, for the coats for the shoes, etc.)
+
+_Implementation costs:_ Each year 160 million products are sold. For each sewn-in RFID tags they had to paid (in 2007) 11-14 cents. If they implement this strategy they would like to eliminate the barcode system.
+
+The cost for 160 million item delivery per year and implementation cost for 320 stores in Turkey (including software costs, RFID tags of all Products, handheld computers for employees, antennas, etc.) is 37 billion dollars.
+
+As fixed cost the company calculated for the stores’ antennas at the door and at the check out point.
+
+Variable costs are handheld terminals, RFID tags.
+
+_ROI time :_ In retailing ROI time is approximately one year. According to their calculation company X can get this investment in 27 months.
+
+_Production in different locations:_ The Company has 300 producers and 50% of them are outside of Turkey. Their production facilities are in Bangladesh, Egypt, Sri Lanka and in China. After sewing RFID tags into the products, suppliers should also match the RFID tags with the unique products and load information in to the Network system.
+
+_Problems with sewn-in Tags:_ These tags should be sewn separately and carefully without damaging the antenna. For this sewing process they have to pay 1 cent extra and it makes the RFID tag cost 15 cent per unit. Because the retail prices for their products are not so high, company X can not add these extra costs to their prices.
+
+_Different system in the Warehouse and in the stores:_ If one company decides to use RFID in their warehouses and it they should also implement this strategy in their stores to make a hypenate for the information cycle. If the company uses barcodes in the stores and RFID tags in the warehouses, the information system should always transfer data between Model ID and Unique Product ID. Now in their system, stores are transferring RFID data as a barcode data to the warehouse.
+
+Therefore company X did not implement RFID technology in its supply chain and warehouse system. They are still using barcodes for the product groups in factories and warehouses.
+
+### 6.4. RFID applications for company X within the stores
+
+Company X selected two test stores for RFID tags in two different areas in Istanbul. They have contacted a Turkish IT company, who invented a special alarm tag EAS (electronic article surveillance) with RFID for them.
+
+_Process for the incoming products:_ Before placing the incoming products on the shelves, sales personnel have to match each product with the barcode and the RFID transponders. In order to simplify this process company X placed a horizontal antenna. Since products are shipped from the factories with a barcode inside, employees should match barcodes with RFID transponders. After the matching process is completed, employees place the products on the shelves.
+
+_For missing products in the stores:_ Company X is not using an intelligent shelf system. If a customer searches for a product which is in store network system but not on its shelf, employees are entering its RFID code in the handheld computers and walking within the store until transponders give a signal for the lost item.
+
+_Deactivating RFID tags:_ After customers finish their payment process, employees tear off the EAS tags (within RFID transponders). These tags and their information are deleted at the end of the day, so one EAS (RFID transponders) can be matched with another barcode and used 10.000 times. With this system customers can be sure about the privacy issue, because they wont carry the RFID tags on the products ([Orel, 2006](https://www.intechopen.com/chapters/18089#B20)).
+
+### 6.5. Advantages of RFID tags for company X within the stores
+
+_Reducing check out time:_ Employees are also using this system for the item counting. The main benefit of RFID transponders is reducing check-out time and line. Since the company has low prices, customers usually buy three or more items. Employees are putting all purchased products on the antenna, and the RFID transponder’s, system can read them within seconds.
+
+![Figure 7.RFID Basket](https://cdnintech.com/media/chapter/18089/1512345123/media/image10.jpeg)
+
+#### Figure 7.
+
+RFID Basket
+
+### 6.6. Disadvantages of RFID tags for company X within the stores
+
+After discussing with the store manager, she explained the difficulties of RFID tags, as follows;
+
+![Figure 8.Difficulties of RFID tags](https://cdnintech.com/media/chapter/18089/1512345123/media/image11.jpeg)
+
+#### Figure 8.
+
+Difficulties of RFID tags
+
+The impact of RFID for Incoming and Store Warehouse Process:
+
+This test store is one of the most crowded stores of the company. Each day this store receives 120-150 big boxes of products.
+
+![Figure 9.The impact of RFID](https://cdnintech.com/media/chapter/18089/1512345123/media/image12.jpeg)
+
+#### Figure 9.
+
+The impact of RFID
+
+![Figure 10.Check-Out Point](https://cdnintech.com/media/chapter/18089/1512345123/media/image13.jpeg)
+
+#### Figure 10.
+
+Check-Out Point
+
+Security Issue:
+
+The needles of the alarms are very short and can be taken off very easily. This problem increases also shop-lifting per day (especially for expensive products like coats). To eliminate this problem Company X hired extra security personnel (4 full-time, 2 part-time). One person is responsible for the entrance and the others are responsible for inside the store and for dressing rooms. But still the Company can not prevent this situation.
+
+Technological support service from the RFID Company:
+
+In our case Company X has an outsourced RFID company, which supplies them the tags, portable readers, check-point readers etc. But this company was not able to give appropriate service for RFID. Tags, readers can be damaged easily and RFID company charged each time when they have to fix the devices extra cost to the head office of Company x.
+
+Problems from the customer point of view:
+
+Because of the reading problem at the check-out point customers may sometimes pay for the products that they had not bought. The RFID reader may read a barcode multiple times. The percentage of this problem is 5% to 6%. But if a customer has bought ten items, it can take half an hour for the employee to renew the process. Also for EAS alarms there is a last control device at the check-point before customer leaves the store. But for RFID there is no device and customers may face with alarm at the exit if one tag remained on the items.
+
+These problems damage also the customer relations of the Company X.
+
+[Advertisement](https://ehealthcaresolutions.com/contact-us/)
+
+## 7\. Conclusion
+
+For the new technological systems like RFID, mobile etiquettes and printers etc. retailers want the ROI less than one year. If the ROI time is longer than one year, they prefer not implementing these technologies.
+
+To also consider the opportunity cost effect many retailers would like to invest this amount into advertising or other short term investments and gain the information instead of RFID with other cheaper technologies.
+
+For in-store usage RFID Companies have to work especially on security issues. During the R&D process they have to work closely with the retailers and store managers in order to find the best solution, which will satisfy the need of each member in the supply chain.
+
+If the retailers would like to implement this technology in their stores, it is appropriate only for stores which receive 100 items (on average) daily, have expensive merchandise and relative low in-store traffic.
+
+But still the advantages are really very important. Also a lot of companies are ready to invest in this technology as soon as the cost for RFID tags decreases. Therefore for future research into new uses and of RFID tags need to be investigated.
+
+## References
+
+1.  1. AngellesR.2005RFID Technologies: Supply Chain Applications and Implementation Issues, Information System Management, Winter 2005, 5165
+2.  2. BacheldorB.2006Forecast Indicates Strong RFID Demand by Heavy Manufacturing. RFID Journal, Available at: http://www.rfidjournal.com/article/articleview/2652accessed on 23.02.2011)
+3.  3. BardakiC.PramatariK.2008IP-Mapping a RFID-integrated Shelf Replenishment Information System for the Retail Industry to Assess Information Quality. Proceedings of the 16th European Conference on Information Systems (ECIS), Galway, Ireland, June 911
+4.  4. BayraktarA.YilmazE.YamakO.2010Implementation of RFID Technology for the Differentiation of Loyalty Programs. Journal of Relationship Marketing, 9,1:30-42.
+5.  5. BhattacharyaM.ChuC. H.MullenT.2007RFID Implementation in Retail Industry: Current Status, Issues and Challenges; Decision Science Institute (DSI) Conference, Phoenix Arizona AZ, Available at: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.77.2715&rep=rep1&type=pdflast accessed on 26.02.2011).
+6.  6. CallanaG.2006Improving Supply Chain Efficiency in Retail Sector. Supply Chain Europe, London: May/June. 15Iss.2; 22
+7.  7. ChurchillG. A.1999Marketing Research: Methodological Foundations. Dryden Press Seventh Edition. Orlando.
+8.  8. JonesE. C.ChungC. A.2008RFID in Logistics: A Practical Introduction, CRC Press Taylor & Francis Group, USA.
+9.  9. JabjiniakB.GilbertG.2004RFID Warrants a Strategic Approach, Business Integration Journal, 2931
+10.  10. MaedaJ.2006Laws of Simplicity : The MIT Press, Cambridge Massachusetts London England. 100262134721
+11.  11. Metro Group-Future Store\- Guided Tour: Available at: http://www.future-store.org/fsi-internet/html/de/23786/index. html;http://www.future-store.org/fsi-internet/html/de/1613/index.html, last accessed on March 2011.
+12.  12. NieropE. V.FokD.FransesP. H.2008Interaction Between Shelf Layout and Marketing Effectiveness and its Impact on Optimizing Shelf Arrangements. Marketing Science, Articles in Advance, Published online ahead of print June 23, 2008 119
+13.  13. SabbaghiA.VaidyanathanG.2008Effectiveness and Efficiency of RFID technology in Supply Chain Management: Strategic values and Challenges. Journal of Theoretical and Applied Electronic Commerce Research 0718-1876Electronic Version 32August, 7181
+14.  14. SeitzV.NeaceM. B.RazzoukN.KeyfliE.TungC. W.2008Turkey: gaining market share in the U.S. ready-to-wear clothing market. Review of Economic and Business Studies, 1171178
+15.  15. SeltizC.WrightsmanL. S.CookS. W.1976Research Methods in Social relations, 3<sup>rd</sup> ed. New York. 9091
+16.  16. Sevim and Emek, Turkish Clothing Industry Report2006Export Promotion Center of Turkey,
+17.  17. Spektrum RFID: Metro Group: Future Store Initiative, available at (http://www.future-store.org/fsiinternet/get/documents/FSI/multimedia/pdfs/broschueren/WISSB\_Publikationen\_Broschueren\_SpektrumRFID.pdf)last accessed on February 2011.
+18.  18. SounderpandianJayavel.BoppanaRajendra. V.ChalasaniSuresh.AsadM.Madni2007Models for Cost-Benefit Analysis of RFID Implementations in Retail Stores. IEEE Systems Journal, 12December, 105114
+19.  19. ThompsonO.2004Supply chain payoffs with RFID:With advances in technology and increased Volumes, RFID will become cost effective for many applications. Food Engineering Magazine. April 6 2004 (http://www.foodengineeringmag.com/Articles/Column/718f8b49082f8010VgnVCM100000f932a8c0
+20.  20. OrelF. D.2006Mağazacılıkta Ümit Veren Yeni Bir Teknoloji: RFID (A new technology which gives hope to retailing), available at http://www.fatmaorel.net/bizim%20market/RFID.pdf,last accessed on 14 March 2011.
+21.  21. YalçınkayaL.2007RFID ve Hazır Giyim Sektörüne Katkıları (RFID and its contributions to ready to wear industry), March, available at http://sts-rfid.com/docs/doc1.pdf,last accessed on March 2011.
+
+Written By
+
+Azra Bayraktar, Erdal Yılmaz and Şakir Erdem
+
+Submitted: 10 November 2010 Published: 15 June 2011
+
+[DOWNLOAD FOR FREE](https://www.intechopen.com/chapters/18089/#)
+
+ ![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-share.svg) Share
+
+ ![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-copy.svg) Cite
+
+Cite this chapter
+
+There are two ways to cite this chapter:
+
+1\. Choose citation style Select style Vancouver APA Harvard IEEE MLA Chicago  Copy to clipboard Get citation
+
+2\. Choose citation style Select format Bibtex RIS Download citation
+
+![](https://www.intechopen.com//cdnintech.com/web/frontend/www/assets/06.115/series/icons/ic-checkmark-circle-checked.svg)
+
+© 2011 The Author(s). Licensee IntechOpen. This chapter is distributed under the terms of the [Creative Commons Attribution-NonCommercial-ShareAlike-3.0 License](https://creativecommons.org/licenses/by-nc-sa/3.0/), which permits use, distribution and reproduction for non-commercial purposes, provided the original is properly cited and derivative works building on this content are distributed under the same license.
+
+### Continue reading from the same book
+
+[View All](https://www.intechopen.com/books/445)
+
+    [![Designing and Deploying RFID Applications](https://cdnintech.com/books/445/1713431904-1992221893/cover.jpg)    IntechOpen
+
+Designing and Deploying RFID Applicatio... Edited by Cristina Turcu](https://www.intechopen.com/books/445)
+
+#### [Designing and Deploying RFID Applications](https://www.intechopen.com/books/445)
+
+Edited by [Cristina Turcu](https://www.intechopen.com/profiles/9302)
+
+Published: 15 June 2011
+
+Previous slide Next slide

@@ -1,0 +1,5 @@
+### 1.3.1 Encrypt Everything
+
+There is no longer any excuse not to encrypt everything by default. A long time ago there was—_maybe_—but not any longer. The first barrier fell with the increase of CPU power, which removed encryption as a computational bottleneck. More recently, several things happened to make encryption widely adopted. First, there was the rise of Let’s Encrypt, which started to offer free certificates and automated issuance. Second, browsers started to mark plaintext content as insecure and search engines started to favor encrypted content.
+
+Mixed content is the name we use to refer to web pages that are themselves encrypted but rely on resources that are not. For example, an HTML page could be fetching audio or visual files without encryption. The original excuse—that heavy content can’t be delivered encrypted—no longer applies, and today we need to deal with the legacy. Browsers have been restricting mixed content for a while. The long-term direction is not only that all content within a page must be encrypted, but also that the related actions (e.g., downloads) must be as well.

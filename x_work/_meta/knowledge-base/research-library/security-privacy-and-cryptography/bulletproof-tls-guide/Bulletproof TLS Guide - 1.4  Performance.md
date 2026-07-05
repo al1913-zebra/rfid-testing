@@ -1,0 +1,3 @@
+## 1.4 Performance
+
+Everybody worries about security, but they worry about performance even more. What use is a secure service that people can’t or don’t want to use? Properly configured, TLS is plenty fast. With little effort, the performance will be good enough. In some cases, it’s even possible to deploy TLS with virtually no performance overhead. In this section, we’ll look at how you can achieve best-in-class performance with some additional effort.

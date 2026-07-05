@@ -1,0 +1,5 @@
+## Chapter 1. Configuration Guide
+
+Transport Layer Security, or TLS as better known, is arguably the most important network security protocol in existence, used worldwide to encrypt a variety of higher-up application protocols. We don’t have to go far to find good examples of how it's used: HTTP and SMTP, which make up most of the internet traffic, rely on TLS for security. Initially known as SSL (as in Secure Sockets Layer) in 1995, TLS has come a long way: from being poorly designed but neglected and ignored, to dissected and taken apart due to a variety of flaws a decade later, to finally rising again after a complete redesign. The latest and greatest version is TLS 1.3, which came out in 2018.
+
+The four main sections of this guide map to the major aspects of the configuration work. We start with PKI for the foundation, which includes a discussion about private keys and certificates. The second section is about the configuration of TLS itself, while the third section covers performance. The fourth major section provides additional recommendations that are necessary to secure web sites when TLS is used to protect HTTP.

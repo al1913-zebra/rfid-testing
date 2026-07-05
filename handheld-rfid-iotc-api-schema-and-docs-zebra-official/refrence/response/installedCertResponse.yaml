@@ -1,0 +1,74 @@
+title: installedCerts
+x-stoplight:
+  id: svr3iljexdwdi
+type: object
+description: Contains the list of certificates installed on the device.
+properties:
+  certInfo:
+    type: array
+    description: A list of installed certificates with their details.
+    items:
+      type: object
+      description: Details of a single installed certificate.
+      properties:
+        name:
+          type: string
+          description: The name of the certificate.
+          example: Reader Main Certificate
+        type:
+          type: string
+          description: The type of the certificate, such as client, server, or other specified types.
+          example: server
+          enum:
+            - client
+            - server
+            - mqtt
+            - wifi
+            - filestore
+        installTime:
+          type: string
+          description: The date and time when the certificate was installed.
+          example: '2022-07-01T03:01:31.464Z'
+          format: date-time
+        issuerName:
+          type: string
+          description: The name of the issuer of the certificate.
+          example: FX9600EE5729
+        publicKeyAlg:
+          type: string
+          description: The algorithm used for the public key.
+          enum:
+            - RSA
+            - RSAMD5
+            - RSA_SHA_1
+            - RSA_SHA_256"
+            - RSA_SHA_384"
+            - RSA_SHA_512"
+        publicKey:
+          type: string
+          description: The public key of the certificate in string format.
+          example: 091234acgbe12
+        serial:
+          type: string
+          description: The serial number of the certificate.
+          example: 'ed:83:dd:4a:47:dd:07:98'
+        subjectName:
+          type: string
+          description: The name of the subject to whom the certificate belongs.
+          example: FX9600EE572
+        validFrom:
+          type: string
+          description: The start date from which the certificate is valid.
+          example: '2024-07-01T07:00:00Z'
+          format: date-time
+        validTill:
+          type: string
+          description: The end date until which the certificate is valid.
+          example: '2034-02-28T15:18:47Z'
+          format: date-time
+      required:
+        - type
+        - issuerName
+        - subjectName
+        - validFrom
+        - validTill

@@ -1,0 +1,187 @@
+{
+  "title": "alert_short",
+  "x-stoplight": {
+    "id": "ps4oql8nfry5a"
+  },
+  "type": "object",
+  "examples": [
+    {
+      "id": "FIRMWARE_DOWNLOAD_SUCCESS",
+      "timestamp": "2026-04-17T05:09:13.808Z",
+      "type": "ALERT",
+      "priority": "LOW",
+      "messageID": "ZEBRA_RFID_HH_ALERTS",
+      "description": "firmware download completed successfully"
+    },
+    {
+      "id": "BATTERY_CRITICAL_SET",
+      "timestamp": "2026-04-17T05:09:13.808Z",
+      "type": "ALERT",
+      "priority": "CRITICAL",
+      "messageID": "ZEBRA_RFID_HH_ALERTS",
+      "description": "battery level is critically low"
+    },
+    {
+      "id": "WIFI_CONFIG_FAIL",
+      "timestamp": "2026-04-17T05:09:13.808Z",
+      "type": "NOTIFICATION",
+      "priority": "HIGH",
+      "messageID": "ZEBRA_RFID_HH_ALERTS",
+      "description": "WiFi configuration failed"
+    },
+    {
+      "id": "MQTT_ROOT_CERT_DOWNLOAD_SUCCESS",
+      "timestamp": "2026-04-17T05:09:13.805Z",
+      "type": "NOTIFICATION",
+      "priority": "HIGH",
+      "messageID": "ZEBRA_RFID_HH_ALERTS",
+      "description": "MQTT root certificate download success"
+    },
+    {
+      "id": "MQTT_ROOT_CERT_INSTALL_SUCCESS",
+      "timestamp": "2026-04-17T05:09:13.808Z",
+      "type": "NOTIFICATION",
+      "priority": "HIGH",
+      "messageID": "ZEBRA_RFID_HH_ALERTS",
+      "description": "MQTT root certificate install success"
+   },
+   {
+    "id": "WIFI_CLIENT_CERT_DOWNLOAD_SUCCESS",
+    "timestamp": "2026-04-17T05:09:57.351Z",
+    "type": "NOTIFICATION",
+    "priority": "HIGH",
+    "messageID": "ZEBRA_RFID_HH_ALERTS",
+    "description": "Wi-Fi client certificate download success"
+   },
+   {
+    "id": "WIFI_CLIENT_CERT_INSTALL_SUCCESS",
+    "timestamp": "2026-04-17T05:09:57.354Z",
+    "type": "NOTIFICATION",
+    "priority": "HIGH",
+    "messageID": "ZEBRA_RFID_HH_ALERTS",
+    "description": "Wi-Fi client certificate install success"
+  },
+  {
+    "id": "FILESTORE_CLIENT_KEY_DOWNLOAD_FAIL",
+    "timestamp": "2026-04-17T05:10:15.538Z",
+    "type": "NOTIFICATION",
+    "priority": "HIGH",
+    "messageID": "ZEBRA_RFID_HH_ALERTS",
+    "description": "Filestore client key download fail"
+  }
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "enum": [
+        "FIRMWARE_DOWNLOAD_FAIL",
+        "FIRMWARE_DOWNLOAD_SUCCESS",
+        "BATTERY_LOW_SET",
+        "BATTERY_LOW_CLEAR",
+        "BATTERY_CRITICAL_SET",
+        "BATTERY_FULL",
+        "TEMPERATURE_HIGH_SET",
+        "TEMPERATURE_HIGH_CLEAR",
+        "TEMPERATURE_CRITICAL_SET",
+        "TEMPERATURE_CRITICAL_CLEAR",
+        "NETWORK_INTERFACE_CHANGE",
+        "FIRMWARE_UPDATE_FAIL",
+        "FIRMWARE_UPDATE_SUCCESS",
+        "WIFI_CONFIG_SUCCESS",
+        "WIFI_CONFIG_FAIL",
+        "ETH_CONFIG_SUCCESS",
+        "ETH_CONFIG_FAIL",
+        "POWER_SOURCE_UPDATE",
+        "MQTT_INSTALL_CERTIFICATE_SUCCESS",
+        "MQTT_INSTALL_CERTIFICATE_FAIL",
+        "MQTT_CLIENT_CERT_DOWNLOAD_FAIL",
+        "MQTT_CLIENT_CERT_DOWNLOAD_SUCCESS",
+        "MQTT_CLIENT_KEY_DOWNLOAD_FAIL",
+        "MQTT_CLIENT_KEY_DOWNLOAD_SUCCESS", 
+        "MQTT_ROOT_CERT_DOWNLOAD_FAIL",
+        "MQTT_ROOT_CERT_DOWNLOAD_SUCCESS",
+        "WIFI_INSTALL_CERTIFICATE_SUCCESS",
+        "WIFI_INSTALL_CERTIFICATE_FAIL",
+        "WIFI_CLIENT_CERT_DOWNLOAD_FAIL",
+        "WIFI_CLIENT_CERT_DOWNLOAD_SUCCESS",
+        "WIFI_CLIENT_KEY_DOWNLOAD_FAIL",
+        "WIFI_CLIENT_KEY_DOWNLOAD_SUCCESS",
+        "WIFI_ROOT_CERT_DOWNLOAD_FAIL",
+        "WIFI_ROOT_CERT_DOWNLOAD_SUCCESS",
+        "FILESTORE_INSTALL_CERTIFICATE_SUCCESS",
+        "FILESTORE_INSTALL_CERTIFICATE_FAIL",
+        "FILESTORE_CLIENT_CERT_DOWNLOAD_FAIL",
+        "FILESTORE_CLIENT_CERT_DOWNLOAD_SUCCESS",
+        "FILESTORE_CLIENT_KEY_DOWNLOAD_FAIL",
+        "FILESTORE_CLIENT_KEY_DOWNLOAD_SUCCESS",
+        "FILESTORE_ROOT_CERT_DOWNLOAD_FAIL",
+        "FILESTORE_ROOT_CERT_DOWNLOAD_SUCCESS",
+        "MQTT_ROOT_CERT_INSTALL_SUCCESS",
+        "MQTT_ROOT_CERT_INSTALL_FAIL",
+        "MQTT_CLIENT_CERT_INSTALL_SUCCESS",
+        "MQTT_CLIENT_CERT_INSTALL_FAIL",
+        "MQTT_CLIENT_KEY_INSTALL_SUCCESS",
+        "MQTT_CLIENT_KEY_INSTALL_FAIL",
+        "WIFI_ROOT_CERT_INSTALL_SUCCESS",
+        "WIFI_ROOT_CERT_INSTALL_FAIL",
+        "WIFI_CLIENT_CERT_INSTALL_SUCCESS",
+        "WIFI_CLIENT_CERT_INSTALL_FAIL",
+        "WIFI_CLIENT_KEY_INSTALL_SUCCESS",
+        "WIFI_CLIENT_KEY_INSTALL_FAIL",
+        "FILESTORE_ROOT_CERT_INSTALL_SUCCESS",
+        "FILESTORE_ROOT_CERT_INSTALL_FAIL",
+        "FILESTORE_CLIENT_CERT_INSTALL_SUCCESS",
+        "FILESTORE_CLIENT_CERT_INSTALL_FAIL",
+        "FILESTORE_CLIENT_KEY_INSTALL_SUCCESS",
+        "FILESTORE_CLIENT_KEY_INSTALL_FAIL"
+      ],
+      "example": "FIRMWARE_DOWNLOAD_SUCCESS",
+      "description": "The unique identifier for the alert, representing the specific type of event or notification."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "example": "2026-03-13T08:02:59.207Z",
+      "description": "The time when the alert was generated, formatted as a string."
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION",
+        "ALERT"
+      ],
+      "description": "The category of the message, indicating whether it is a notification or an alert."
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "HIGH",
+        "LOW",
+        "CRITICAL"
+      ],
+      "description": "The urgency level of the alert, specifying its priority as HIGH, LOW, or CRITICAL."
+    },
+    "messageID": {
+      "type": "string",
+      "example": "ZEBRA_RFID_HH_ALERTS",
+      "enum": [
+        "ZEBRA_RFID_HH_ALERTS"
+      ],
+      "description": "The identifier for the message type, used to categorize the source or purpose of the alert."
+    },
+    "description": {
+      "type": "string",
+      "example": "firmware download started",
+      "description": "A brief human-readable text describing the alert or notification."
+    }
+  },
+  "required": [
+    "id",
+    "timestamp",
+    "type",
+    "priority",
+    "messageID",
+    "description"
+  ],
+  "description": "Short form of alerts, does not contain details about the alert. This is mainly meant for SOTI."
+}

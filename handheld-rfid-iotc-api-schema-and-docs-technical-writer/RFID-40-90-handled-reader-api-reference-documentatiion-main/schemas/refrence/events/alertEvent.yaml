@@ -1,0 +1,45 @@
+title: alertEvent
+x-stoplight:
+  id: o0nu0f04g6d2y
+type: object
+description: Alert event reporting device alerts such as battery, network, power, and firmware update notifications.
+properties:
+  evtData:
+    anyOf:
+      - properties:
+          ntp:
+            type: object
+            description: NTP synchronization details included in the alert.
+            properties:
+              offset:
+                type: number
+              reach:
+                type: number
+          cpuUsage:
+            type: number
+          flashUsage:
+            type: number
+          ramUsage:
+            type: number
+          userApp:
+            type: object
+            description: User application details included in the alert.
+            properties:
+              appName:
+                type: string
+              message:
+                type: string
+          temperature:
+            type: object
+            description: Temperature readings included in the alert.
+            properties:
+              nge:
+                type: number
+                description: NGE radio temperature
+              pa:
+                type: number
+                description: 'Power amp temperature '
+              ambient:
+                type: number
+    type: object
+    description: Alert event data payload containing device diagnostic readings.

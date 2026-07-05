@@ -1,0 +1,208 @@
+{
+  "title": "get_wifi",
+  "x-stoplight": {
+    "id": "ya5mj1gornet6"
+  },
+  "type": "object",
+  "examples": [
+    {
+  "command": "get_wifi",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "wifiProfiles": {
+    "wifiConfig": [
+      {
+        "interfaceDetails": {
+          "interfaceName": "wlan0",
+          "status": "",
+          "hostname": "RFD40-211545201D0034",
+          "macAddress": "AC:3F:A4:00:2B:15",
+          "accessPoint": {
+            "essid": "IOT_TESTAP",
+            "status": "CONNECTED",
+            "securityType": "WPA2Personal",
+            "isPreferred": false,
+            "autoConn": false
+          },
+          "ipv4Configuration": {
+            "ipAddress": "192.168.0.110",
+            "subnetMask": "255.255.255.0",
+            "gateway": "192.168.0.1",
+            "enableDhcp": true,
+            "dnsServer": "192.168.0.1",
+            "domainName": "zebra.com"
+          },
+          "securityDetails": {
+            "WPA2Personal": {
+              "password": "XXXXXXXX"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+},
+    {
+      "command": "get_wifi",
+      "requestId": "abc002",
+      "apiVersion": "V1.1",
+      "wifiProfiles": {
+        "wifiConfig": [
+          {
+            "interfaceDetails": {
+              "interfaceName": "wlan0",
+              "status": "ENABLED",
+              "hostname": "RFD40-22326520100477",
+              "macAddress": "E0-D0-45-3D-38-3F",
+              "accessPoint": {
+                "essid": "SECURE_AP",
+                "status": "CONNECTED",
+                "securityType": "WPA2Enterprise",
+                "isPreferred": true,
+                "autoConn": true
+              },
+              "ipv4Configuration": {
+                "ipAddress": "172.16.10.88",
+                "subnetMask": "255.255.255.0",
+                "gateway": "172.16.10.1",
+                "enableDhcp": true,
+                "dnsServer": "172.16.10.5",
+                "domainName": "secure.corp"
+              },
+              "securityDetails": {
+                "WPA2Enterprise": {
+                  "authentication": "tls",
+                  "passphrase": "XXXXXXXX",
+                  "certificate": [
+                    {
+                      "key": "ca_cert",
+                      "value": "wifi_root_certificate"
+                    },
+                    {
+                      "key": "client_cert",
+                      "value": "wifi"
+                    },
+                    {
+                      "key": "client_key",
+                      "value": "wifi"
+                    }
+                  ],
+                  "protocol": "WPA2_Enterprise_CCMP"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "response": {
+        "code": 0,
+        "description": "Success"
+      }
+    },
+    {
+      "command": "get_wifi",
+      "requestId": "abc003",
+      "apiVersion": "V1.1",
+      "wifiProfiles": {
+        "wifiConfig": [
+          {
+            "interfaceDetails": {
+              "interfaceName": "wlan0",
+              "status": "ENABLED",
+              "hostname": "RFD40-22326520100477",
+              "macAddress": "E0-D0-45-3D-38-4A",
+              "accessPoint": {
+                "essid": "WPA3_ENTERPRISE",
+                "status": "CONNECTED",
+                "securityType": "WPA3Enterprise",
+                "isPreferred": false,
+                "autoConn": false
+              },
+              "ipv4Configuration": {
+                "ipAddress": "192.168.100.200",
+                "subnetMask": "255.255.255.0",
+                "gateway": "192.168.100.1",
+                "enableDhcp": true,
+                "dnsServer": "192.168.100.10",
+                "domainName": "wpa3.enterprise.com"
+              },
+              "securityDetails": {
+                "WPA3Enterprise": {
+                  "authentication": "ttls",
+                  "innerAuthentication": "mschapv2",
+                  "identity": "XXXXXXXX",
+                  "anonymousIdentity": "XXXXXXXX",
+                  "password": "XXXXXXXX",
+                  "certificate": [
+                    {
+                      "key": "ca_cert",
+                      "value": "wpa3_ca_cert"
+                    }
+                  ],
+                  "protocol": "WPA3_Enterprise_GCMP_256_SHA256"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "response": {
+        "code": 0,
+        "description": "Success"
+      }
+    },
+    {
+  "command": "get_wifi",
+  "requestId": "abc123",
+  "apiVersion": "V1.1",
+  "wifiConfig": {
+    "interfaceDetails": {
+      "interfaceName": "wlan0",
+      "status": "Disabled",
+      "hostname": "RFD40-211545201D0034",
+      "macAddress": "78:B8:D6:27:41:B9"
+    }
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "example": "get_wifi",
+      "description": "The command that was executed to retrieve the WiFi configuration."
+    },
+    "requestId": {
+      "type": "string",
+      "example": "abc123",
+      "description": "The unique identifier of the original request."
+    },
+    "apiVersion": {
+      "type": "string",
+      "example": "V1.1",
+      "enum": [
+        "V1.0",
+        "V1.1"
+      ]
+    },
+    "wifiProfiles": {
+      "$ref": "../../refrence/response/getWifiResponse.yaml"
+    },
+    "response": {
+      "$ref": "../../refrence/response/response.yaml"
+    }
+  },
+  "required": [
+    "command",
+    "requestId",
+    "apiVersion",
+    "response"
+  ]
+}

@@ -1,0 +1,5 @@
+### 1.4.1 Don’t Use Too Much Security
+
+We all like security, but it’s possible to have too much of it. If you go overboard and choose cryptographic primitives that are too strong, your security won’t be better in any meaningful way, but your services will nevertheless be slower, and sometimes significantly so. Most sites should aim to use primitives that provide 128 bits of security. We make an exception for RSA keys and the DHE exchange, which, at 2,048 bits, provide 112 bits of security. That’s close enough. ECDSA and ECDHE are the preferred combination these days anyway, and they each provide a full 128 bits of security for their respective operations.
+
+When it comes to symmetric encryption, 128 bits is also the default and sufficient for virtually everyone. You may consider upping that to 256 bits if you think that quantum computers pose a threat to your data. There is only a small performance penalty to pay.

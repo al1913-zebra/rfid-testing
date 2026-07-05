@@ -1,0 +1,3 @@
+Note
+
+Modern TLS versions are resilient to protocol downgrade attacks, which means that it's safe to support older protocol versions that are still not obviously insecure. If you need to support older user agents and wish to continue to use protocols such as TLS 1.2 and TLS 1.0, base your decisions on evidence, not fear. In fact, you should ideally have an established process to monitor your usage of all types of cryptography. When you determine from evidence that you no longer need an older protocol version or a particular primitive, just turn them off.

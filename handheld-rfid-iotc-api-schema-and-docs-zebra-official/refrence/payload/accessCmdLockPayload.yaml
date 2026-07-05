@@ -1,0 +1,40 @@
+title: lock
+type: object
+description: Defines the lock command payload used to lock or unlock memory banks on an RFID tag.
+examples:
+  - type: LOCK
+    config:
+      actions:
+        - PERMALOCK_USER_BANK
+      password: string
+properties:
+  config:
+    type: object
+    description: Lock operation parameters specifying the password, memory bank, and lock actions.
+    required:
+      - actions
+    properties:
+      password:
+        type: string
+        description: Access password set to allow lock operation.
+      memoryBank:
+        type: string
+        enum:
+          - EPC
+          - ACCESS_PWD
+          - KILL_PWD
+          - TID
+          - USER
+          - ALL
+      actions:
+        type: array
+        description: Payload Field (see EPC Gen2 Spec)
+        items:
+          type: string
+          enum:
+            - READ_AND_WRITE
+            - PERMANENT_LOCK
+            - PERMANENT_UNLOCK
+            - UNLOCK
+required:
+  - config

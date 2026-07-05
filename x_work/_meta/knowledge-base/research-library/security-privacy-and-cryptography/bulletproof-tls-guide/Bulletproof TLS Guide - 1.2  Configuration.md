@@ -1,0 +1,3 @@
+## 1.2 Configuration
+
+When it comes to protocol configuration, your choices are likely to be influenced by a combination of security, interoperability, and regulatory requirements. In the ideal world, focusing on security alone, you would allow only TLS 1.3 and disable all other protocol versions. But that works only in well-understood environments; although modern browsers support TLS 1.3, many other products and tools still don’t.

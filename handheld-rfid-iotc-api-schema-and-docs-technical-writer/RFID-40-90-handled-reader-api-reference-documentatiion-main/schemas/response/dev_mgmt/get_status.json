@@ -1,0 +1,77 @@
+{
+  "title": "get_status",
+  "x-stoplight": {
+    "id": "24fcpat4g238u"
+  },
+  "type": "object",
+  "examples": [
+    {
+  "command": "get_status",
+  "requestId": "abcd123",
+  "apiVersion": "V1.21",
+  "deviceStatus": {
+    "powerSource": "USB",
+    "radioActivity": "INACTIVE",
+    "radioConnection": "DISCONNECTED",
+    "systemTime": "2026-06-15T09:26:00.443Z",
+    "ntp": {
+      "offset": 0,
+      "reach": 0
+    },
+    "terminalConnection": {
+      "status": "CONNECTED",
+      "type": "USB"
+    },
+    "batteryStatus": {
+      "mfgDate": "22DEC2024",
+      "cycleCount": 8,
+      "fullChargeCapacity": 5739,
+      "temperature": 24,
+      "designCapacity": 6400,
+      "batteryType": "LI-ION",
+      "capacity": 2467,
+      "stateOfHealth": "GOOD",
+      "chargePercentage": 46,
+      "chargeStatus": 1
+    }
+  },
+  "response": {
+    "code": 0,
+    "description": "Success"
+  }
+}
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "example": "get_status",
+      "description": "The command that was executed to retrieve the device status."
+    },
+    "requestId": {
+      "type": "string",
+      "example": "abc123",
+      "description": "The unique identifier of the original request."
+    },
+    "apiVersion": {
+      "type": "string",
+      "enum": [
+        "V1.1",
+        "V1.2",
+        "V1.21"
+      ],
+      "example": "V1.21"
+    },
+    "deviceStatus": {
+      "$ref": "../../refrence/response/deviceStatusResponse.yaml"
+    },
+    "response": {
+      "$ref": "../../refrence/response/response.yaml"
+    }
+  },
+  "required": [
+    "command",
+    "requestId",
+    "apiVersion",
+    "response"
+  ]
+}

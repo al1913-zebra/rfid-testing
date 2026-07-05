@@ -1,0 +1,7 @@
+### 1.1.4 Prevent Certificate Warnings
+
+Certificate warnings are not unusual and happen for a number of reasons, but all of them can be prevented. The world of technology is confusing enough; you shouldn’t add to the cognitive load your users are already experiencing. If you don’t pay attention, you will confuse them and weaken their confidence in your technical abilities. In addition, for web sites that disable certificate warnings via HTTP Strict Transport Security (HSTS), misconfigured certificates lead to immediate breakage.
+
+Getting certificates right is not very difficult, especially when compared to everything else you need to do to ensure security. With correct initial configuration, renewal automation, and monitoring, you will ensure a smooth experience for your users.
+
+You should pay attention to ensure you have valid certificates for all different domain names and subdomains. As a rule of thumb, keep track of every DNS name that points to your properties and get certificates for all of them. For example, if your main web site is at `www.example.com`, the domain `example.com` should also have a valid certificate, even though this variant will be configured only to redirect your users to the main location. It’s easy to use just one certificate for all related domains.

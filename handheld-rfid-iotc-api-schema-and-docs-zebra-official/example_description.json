@@ -1,0 +1,153 @@
+{
+    "control_operation": {
+        "Start inventory": "Payload to start inventory",
+        "Stop inventory": "Payload to stop inventory"
+    },
+    "get_operating_mode": {
+        "Get operating mode": "Payload to get operating mode configurations"
+    },
+    "get_post_filter": {
+        "Get post filter": "Payload to get post filter configurations"
+    },
+    "set_operating_mode": {
+        "Set operating mode": "Payload to set operating mode configurations",
+        "Profile setting": "Payload to set operating mode profile type",
+        "Access operations": "Payload to set the required access operations",
+        "Radio start/stop conditions": "Payload to set inventory start and stop conditions",
+        "Query settings": "Payload to set query parameters",
+        "Select settings": "Payload to set select pre-filters parameters",
+        "Query and select settings": "Payload to set query and select parameters",
+        "Tag metadata settings": "Payload to enable/disable tag metadata to be reported"
+    },
+    "set_post_filter": {
+        "Filter tags using prefix": "Payload to filter tags using prefix",
+        "Filter tags using regex": "Payload to filter tags based on regex",
+        "Filter tags using suffix": "Payload to filter tags using suffix"
+    },
+    "set_os": {
+        "No authentication HTTP": "Payload to initiate firmware update with no authentication",
+        "Pre-installed CA certificate HTTPS": "Payload to initiate firmware update with pre-installed CA certificate content",
+        "Inline CA certificate HTTPS": "Payload to initiate firmware update with inline CA certificate content"
+    },
+    "reboot": {
+        "Reboot device": "Payload to perform a device reboot"
+    },
+    "get_endpoint_config": {
+        "Active endpoint config": "Payload to get active endpoint configuration details with all saved endpoint names",
+        "Specific endpoint config": "Payload to get the specified endpoint configurations"
+    },
+    "set_wifi": {
+        "Create WPA2 personal": "Payload to create a new WiFi profile with WPA2 Personal security",
+        "Modify WPA2 personal": "Payload to modify an existing WiFi profile password",
+        "Set preferred AP": "Payload to set an access point as preferred",
+        "Create WPA2 enterprise TLS": "Payload to create a WiFi profile with WPA2 Enterprise using TLS authentication and certificates",
+        "Create WPA2 enterprise TTLS": "Payload to create a WiFi profile with WPA2 Enterprise using TTLS authentication and CA certificate",
+        "Create WPA2 enterprise PEAP": "Payload to create a WiFi profile with WPA2 Enterprise using PEAP authentication and CA certificate",
+        "Create WPA3 enterprise TLS": "Payload to create a WiFi profile with WPA3 Enterprise using TLS authentication and certificates",
+        "Create WPA3 enterprise TTLS": "Payload to create a WiFi profile with WPA3 Enterprise using TTLS authentication and CA certificate",
+        "Create WPA3 enterprise PEAP": "Payload to create a WiFi profile with WPA3 Enterprise using PEAP authentication and CA certificate"
+    },
+    "config_endpoint": {
+        "Add MGMT endpoint for MQTT TLS": "Payload to add a new management endpoint configuration with MQTT TLS protocol",
+        "Add control endpoint for MQTT TLS": "Payload to add a new control endpoint configuration with MQTT TLS protocol and security parameters",
+        "Add data endpoint": "Payload to add a new data endpoint configuration",
+        "Add MDM endpoint": "Payload to add a new MDM endpoint configuration",
+        "Add control endpoint": "Payload to add a new control endpoint with publish/subscribe topics",
+        "Add data endpoint for MQTT TLS": "Payload to add a new data endpoint configuration with MQTT TLS protocol and security parameters",
+        "Delete endpoint": "Payload to delete an existing endpoint configuration",
+        "Update endpoint": "Payload to update an existing endpoint configuration with modified parameters"
+    },
+    "config_events": {
+        "Enable all events": "Payload to enable all event types with threshold configuration",
+        "Selective events": "Payload to selectively enable/disable specific event types"
+    },
+    "delete_wifi_profile": {
+        "Delete wifi profile": "Payload to delete a saved WiFi profile"
+    },
+    "delete_wifi_profile_response": {
+        "Successful deletion": "Response when WiFi profile is successfully deleted",
+        "Cannot delete active SSID": "Error response when attempting to delete an active/connected WiFi profile",
+        "SSID not found": "Error response when the specified WiFi profile SSID is not found on the device"
+    },
+    "set_config": {
+        "Create wifi profile": "Payload to create a new WiFi profile with WPA2 Personal security",
+        "Modify wifi profile": "Payload to modify an existing WiFi profile and set as preferred",
+        "Add mdm endpoint": "Payload to add a new MDM endpoint configuration with reboot setting",
+        "Add data endpoint": "Payload to add a data endpoint configuration with MQTT parameters",
+        "Add control endpoint": "Payload to add a control endpoint with publish/subscribe topics",
+        "Complete config setup": "Payload to set complete configuration with WiFi and management endpoint"
+    },
+    "delete_certificate": {
+        "Delete wifi ca cert": "Payload to delete a WiFi CA certificate from the device",
+        "Delete mqtt client cert": "Payload to delete an MQTT client certificate from the device",
+        "Delete filestore ca cert": "Payload to delete a filestore CA certificate from the device"
+    },
+    "install_certificate": {
+        "MQTT certificates with certificate authentication": "Payload to install MQTT certificates using CA certificate",
+        "Filestore certificate with certificate authentication": "Payload to install filestore CA certificate",
+        "MQTT certificates without authentication": "Payload to install MQTT client certificates without authentication via HTTP",
+        "WiFi certificates without authentication": "Payload to install WiFi certificates without authentication via HTTP",
+        "WiFi CA certificate using direct content": "Installing WiFi CA certificate, where certificate content is provided as part of API",
+        "Server certificate": "Payload to install server certificates with authentication",
+        "MQTT CA certificate install": "Installing MQTT CA certificate, where certificate content is provided as part of API"
+    },
+    "installCertificate": {
+        "Install certificate payload accepted": "Install certificate response indicating the command payload is accepted",
+        "Url missing for HTTP source": "Error response when URL is missing for HTTP source",
+        "Certificate content missing for direct source": "Error response when certificate content is missing for direct source"
+    },
+    "get_wifi": {
+        "WPA2 Personal connection": "Response with WiFi connected to WPA2 Personal network",
+        "WPA2 Enterprise connection": "Response with WiFi connected to WPA2 Enterprise network with certificates", 
+        "WPA3 Enterprise connection": "Response with WiFi connected to WPA3 Enterprise network with advanced security",
+        "WiFi interface disabled": "Response when WiFi interface is disabled on the device"
+    },
+    "get_version": {
+        "Device version info": "Response with device serial, model, SKU and firmware version details"
+    },
+    "get_status": {
+        "Device status info": "Response with current device status including battery and connection details"
+    },
+    "get_config": {
+        "Complete device config": "Response with complete device configuration including all settings"
+    },
+    "get_current_region": {
+        "Current region info": "Response with current device region configuration"
+    },
+    "get_installed_certificates": {
+        "Installed certificates list": "Response with list of all installed certificates"
+    },
+    "get_eth": {
+        "Ethernet config info": "Response with ethernet interface configuration details",
+        "Ethernet interface disabled": "Response when ethernet interface is disabled on the device"
+    },
+    "alert": {
+        "Battery alert": "Alert indicating battery status such as low or critical battery level",
+        "Power alert": "Alert indicating power events.",
+        "Network alert for WiFi": "Alert indicating network events when WiFi connected",
+        "Network alert for ethernet": "Alert indicating network events when ethernet connected",
+        "Firmware update alert": "Alert indicating firmware update started",
+        "File download alert": "Alert indicating file download status",
+        "File saved alert": "Alert indicating file save status"
+    },
+    "alert_short": {
+        "Firmware download success": "Alert indicating successful firmware download",
+        "Battery critical set": "Alert indicating battery level is critically low",
+        "WiFi config fail": "Notification indicating WiFi configuration failure",
+        "MQTT CA certificate download success": "Notification indicating successful MQTT CA certificate download",
+        "MQTT CA certificate install success": "Notification indicating successful MQTT CA certificate installation",
+        "WiFi client certificate download success": "Notification indicating successful WiFi client certificate download",
+        "WiFi client certificate install success": "Notification indicating successful WiFi client certificate installation",
+        "Filestore client key download fail": "Notification indicating failure in filestore client key download"
+
+    },
+    "epConnection": {
+        "Connected event": "Event indicating the device has established a connection",
+        "Disconnected event": "Event indicating the device has lost the connection"
+    },
+    "Data Events": {
+        "Tag data event": "Tag data published in batches(max 40 tags per batch)",
+        "Tag data with additional details": "Tag data event including EPC, TID, channel, peak RSSI, phase, seen count, MAC, and hostname",
+        "Tag events for access operations": "Tag data events that include results of specified access operations such as read/write to memory banks"
+    }
+}

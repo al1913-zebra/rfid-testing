@@ -1,0 +1,182 @@
+title: epConfig
+x-stoplight:
+  id: l9v7iab36nd84
+type: object
+description: Defines the endpoint configuration including protocol, security, and MQTT parameters.
+examples: []
+properties:
+  operation:
+    type: string
+    enum:
+      - add
+      - delete
+      - update
+    example: add
+    description: Specifies the type of operation to perform, either adding, deleting, or updating a configuration.
+  configuration:
+    type: object
+    description: The endpoint configuration parameters including connection, protocol, and security settings.
+    required:
+      - endpointName
+      - epType
+      - protocol
+      - activate
+      - url
+      - verificationType
+      - port
+      - qosCommon
+      - tenantId
+    properties:
+      endpointName:
+        type: string
+        example: mgmt
+        description: Identifies the name of the endpoint, which determines its purpose or function.
+      epType:
+        type: string
+        example: MGMT
+        enum:
+          - MGMT
+          - MGMT_EVT
+          - CTRL
+          - DATA1
+          - DATA2
+          - SOTI
+          - MDM
+        description: Specifies the type of the endpoint.
+      protocol:
+        type: string
+        enum:
+          - MQTT
+          - MQTT_TLS
+        example: MQTT
+        description: Defines the communication protocol used by the endpoint.
+      activate:
+        type: boolean
+        default: false
+        description: Set to true to activate the endpoint to which MQTT connections will be made.
+      url:
+        type: string
+        example: soti.example.com
+        description: Specifies the URL associated with the endpoint.
+      verificationType:
+        type: string
+        enum:
+          - NONE
+          - VERIFY_PEER
+          - VERIFY_HOST
+          - VERIFY_HOST_PEER
+        example: VERIFY_PEER
+        description: Specifies the type of verification used for establishing secure connections.
+      port:
+        type: integer
+        example: 1883
+        description: Specifies the port number used for communication.
+      qosCommon:
+        type: integer
+        example: 1
+        description: Defines the Quality of Service (QoS) level for the endpoint.
+      tenantId:
+        type: string
+        example: ZEBRA
+        description: Identifies the tenantID associated with the configuration.
+      mqttParams:
+        type: object
+        description: MQTT-specific connection parameters including keep-alive, session, and topic configuration.
+        properties:
+          keepAlive:
+            type: integer
+            maximum: 65535
+            example: 300
+            description: Specifies the keep-alive interval in seconds when client is idle.
+          cleanSession:
+            type: boolean
+            default: true
+            description: Indicates whether to start a clean session for the MQTT client.
+          reconnectDelayMin:
+            type: integer
+            description: Specifies the minimum delay in seconds before reconnecting when a connection is lost.
+          reconnectDelayMax:
+            type: integer
+            description: Specifies the maximum delay in seconds before reconnecting when a connection is lost.
+          clientId:
+            type: string
+            example: zebra-rfd40-01
+            description: Specifies the client ID used for MQTT connections.
+          username:
+            type: string
+            description: The username when MQTT broker requires username authentication.
+          password:
+            type: string
+            description: The password when MQTT broker requires password authentication.
+          publishTopics:
+            type: array
+            items:
+              type: object
+              description: A publish topic entry with its QoS and retain settings. Supports up to 3 publish topics.
+              properties:
+                topic:
+                  type: string
+                  example: zebra/rfd40/01/data
+                  description: Specifies the MQTT topic to which messages will be published.
+                qos:
+                  type: integer
+                  example: 1
+                  description: Defines the QoS level for publishing messages.
+                retain:
+                  type: boolean
+                  description: Indicates whether the message should be retained by the broker.
+              required:
+                - topic
+                - qos
+                - retain
+          subscribeTopics:
+            type: array
+            items:
+              type: object
+              description: A subscribe topic entry with its QoS and retain settings. Supports up to 1 subscribe topic.
+              properties:
+                topic:
+                  type: string
+                  example: zebra/rfd40/01/data
+                  description: Specifies the MQTT topic to which messages will be subscribed.
+                qos:
+                  type: integer
+                  description: Defines the QoS level for subscribing to messages.
+                retain:
+                  type: boolean
+                  description: Indicates whether the subscription retains messages.
+              required:
+                - topic
+                - qos
+                - retain
+      securityParams:
+        type: object
+        description: Defines the security parameters for the endpoint.
+        properties:
+          format:
+            type: string
+            enum:
+              - PEM
+              - PFX
+            example: PEM
+            description: Specifies the format of the security certificates. Currently, only PEM is supported.
+          caCertificateFile:
+            type: string
+            example: cloud-trusted-ca-certs.crt
+            description: Specifies the file containing the CA certificates.
+          clientCert:
+            type: string
+            example: client_cert.pem
+            description: Specifies the file containing the client certificate.
+          clientKey:
+            type: string
+            example: client_key.pem
+            description: Specifies the file containing the client private key.
+        required:
+          - format
+      eventConfiguration:
+        $ref: ./cfgEventPayload.yaml
+        description: Reference to the event configuration schema.
+required:
+  - operation
+  - configuration

@@ -1,0 +1,821 @@
+**ZEBRA TECHNOLOGIES**
+
+**RFD40 / RFD90 Handheld RFID Sled — IoT Connector (IOTC)**
+
+Developer Manual
+
+Information Architecture & Structural Blueprint
+
+_Document Type: Structural Plan (No Content Generation)_
+
+Version 1.1 | June 2026
+
+**CONFIDENTIAL**
+
+---
+
+## Table of Contents (of this blueprint)
+
+1. Executive Summary
+2. First Principles Thinking
+3. Audience Analysis & Developer Personas
+4. Content-Type Taxonomy (the 5-Quadrant Tagging System)
+5. Detailed Table of Contents (the Information Architecture)
+6. Information Design Principles
+7. Navigation Model & Cross-Reference Strategy
+8. Implementation Priorities
+9. Quality Evaluation Framework
+10. Appendix — Title → Source-Page Mapping
+
+---
+
+# 1. Executive Summary
+
+This document presents a from-scratch Information Architecture for the Zebra **Handheld** RFID IoT Connector developer manual — the RFD40 and RFD90 RFID sleds running on TC-series Android mobile computers. It uses the **Fixed Reader IOTC IA (FXR90)** as its structural benchmark and quality bar, analyzes the current handheld content inventory (120 pages), strips legacy organizing baggage, and re-derives the architecture from the irreducible needs of a *handheld* device.
+
+The result is **not** a re-skin of the fixed-reader manual. A fixed reader is a hardwired, continuously-powered, externally-triggered network node. A handheld sled is a **battery-powered Bluetooth peripheral of a moving host, brought to life out-of-band, activated by a human finger, that must give that human immediate physical feedback while hunting a single tag in a crowd.** Those differences are physical, not cosmetic, and they reorder the entire manual.
+
+### 1.1 Key design decisions
+
+- **A handheld-lifecycle spine, not a category tree.** The top-level structure is a 10-Part prerequisite chain that follows the operator/integrator's job-to-be-done: **Orient → Understand → Pair & Power Up → Connect & Secure → Configure the Read → Read & Find → Observe → Scale → Diagnose → Reference.** Each of the five handheld physical realities is *promoted* to the lifecycle stage where it first bites.
+- **The bootstrap/MDM-endpoint gate is a load-bearing prerequisite.** A sled out of the box has no region, no Wi-Fi credentials, and no broker target, and **none of these can be set over MQTT.** The reader is therefore not MQTT-reachable — it cannot be *started or verified* — until it is bootstrapped out-of-band via **123RFID Desktop** — which attaches to the sled over **Bluetooth or USB-C** and sets region + Wi-Fi and creates the **MDM endpoint** — and that **MDM endpoint is active.** The MDM endpoint is the *first* endpoint, and **every other endpoint (MGMT, MGMT_EVT, CTRL, DATA1, DATA2, and additional MDM or SOTI endpoints) is added remotely through it.** This chicken-and-egg reality anchors Parts 2–4 and the dependency map (§7.3).
+- **Diátaxis is a per-page badge, never the skeleton.** Per the task constraint, the five-quadrant classification (`[Tutorial]`, `[How-To Guide]`, `[Reference]`, `[Explanation]`, `[Diagnosis]`) is applied as metadata to every page for filtering and authoring discipline — it does **not** shape the folders or Parts. There are no `tutorials/`, `how-to/`, or `reference/` top-level buckets.
+- **A fifth content type — Diagnosis.** The fixed benchmark uses four content types. Handheld adds Diagnosis as a first-class type because a mobile, battery-bound, wirelessly-tethered device fails in symptom-entered ways a hardwired reader does not (roam dropouts, Bluetooth pairing loss, battery drain, a dead trigger, a silent good-read).
+- **Three things are explicitly out of scope: the RFD40 Standard variant, the host SDKs, and the SOTI-only commands.** This manual documents the native IOTC MGMT/CTRL/DATA wire surface only. (1) **RFD40 Standard is not IOTC-capable** — IOTC requires the IOTC-capable RFD40 (Premium-class) and RFD90. (2) **The host SDKs are out of scope** — IOTC supplies the data over MQTT (`dataEVT.peakRssi`/`accessResults`); turning it into an LED/beeper/haptic cue is done host-side via the Android RFID SDK / 123RFID Mobile, which this manual points to but does not document (there is no `set_beeper`/`set_led` on the wire). (3) **The SOTI-specialised commands `get_config`, `set_config`, and `alert_short` are excluded** — they exist only on the SOTI integration surface. All three exclusions are flagged wherever a reader might expect them (the interface-model concept, the misconceptions page, and the MDM/SOTI and constraints references).
+- **Titles are renamed for the new IA.** Page titles are authored fresh for the handheld-lifecycle narrative rather than carried over from the live `sidebar_label` values. To preserve IA→page traceability, **§10 maps every renamed title to its source page** (and marks net-new pages).
+- **A persona fast-lane layered on the spine, and three deliberate ordering exceptions** (orientation is job-ordered; diagnosis is symptom-first; reference is consulted-not-read and machinery-ordered).
+- **A triplicated "do-not-port" fence** so fixed-reader assumptions that silently fail on handheld are unmissable.
+
+### 1.2 Provenance & verification
+
+Every structural decision below is grounded in the actual 120-page inventory (`sidebars.ts`) and was validated by an adversarial fact-check of the handheld divergence hypotheses against the source pages. That pass **confirmed** the load-bearing claims (the out-of-band bootstrap + MDM-endpoint-first dependency; roam tears down the MQTT socket under `cleanSession:true`; `GPI_EVENT`/`ANTENNA_EVENT` are schema-present but not emitted; battery is the binding constraint) and **corrected** five overstatements that this blueprint now reflects (see §2.4) — including the claim that the handheld has no usable Ethernet (it does, via the comms cradle: `get_eth` + `alerts.ethStatus`; only network *failover* is absent).
+
+---
+
+# 2. First Principles Thinking
+
+> _This section is the reasoning that produced the architecture in §5. It strips the inherited 9-Part journey down to irreducible needs, contrasts those needs against the fixed reader, and derives the structure from the physics of a handheld device — not from the shape of the legacy docs._
+
+## 2.1 The irreducible question
+
+A documentation IA exists to get a specific reader from *what they have* to *what they want* with the least friction. So the first-principles question is not "what sections did the fixed reader have?" but **"what is physically true about a handheld sled, and what does each truth force a developer to do?"**
+
+A handheld RFID solution reduces to one sentence: **a human brings a battery-powered sled to life out-of-band, pairs it to an Android host, pulls a trigger, and needs to know — by sound, light, or vibration — that they found the one tag they were looking for.** Every irreducible need falls out of that sentence.
+
+## 2.2 The five physical realities (and why each is structural, not a footnote)
+
+| # | Physical reality | Irreducible developer need it forces | Fixed-reader assumption it invalidates |
+|---|---|---|---|
+| **1. Host-tethered, roaming, out-of-band-bootstrapped connectivity** | The sled's **primary link is the host's roaming Wi-Fi**; it also exposes **cradle Ethernet** via `get_eth` + `alerts.ethStatus` when docked in a comms cradle, but it has **no network-failover logic** (failover, not Ethernet, is the absent capability). It is a Bluetooth peripheral of a TC host whose **roaming Wi-Fi** carries the MQTT session. It is also **not MQTT-reachable out of the box**: region, Wi-Fi, and the broker target cannot be set over MQTT, so the reader must first be bootstrapped out-of-band with **123RFID Desktop** (which attaches to the sled over **Bluetooth or USB-C**), creating the **MDM endpoint** through which every other endpoint is later added. At runtime, a Wi-Fi AP handoff or DHCP-lease churn **tears down the MQTT TCP socket**; under the default `cleanSession:true` the broker does not replay in-flight reads on reconnect, so surviving a roam depends on the `reportFilter` aggregation window and app-side retry. Wi-Fi RSSI is **not** on the MQTT wire — only `mqttConnEVT` transitions, heartbeat gaps, and `NETWORK_EVENT` are. | Bootstrap out-of-band *before any MQTT*; treat the MDM endpoint as the first-light gate and the channel for all others; pair the sled to the host; treat the link as **intermittent by design**; build app-side reconnect + retry; monitor by *correlation*, not RSSI. | "Pick a transport once via the reader's own web console; the socket is permanent." A fixed reader bootstraps itself in-band, is hardwired, never pairs, never roams, and never depends on an MDM endpoint to come online. |
+| **2. Battery as the binding constraint** | An always-on inventory drains an RFD90 in **4–6 hours**. Every MQTT `PINGREQ` keep-alive wakes the **host Wi-Fi radio**, so keep-alive interval, heartbeat cadence, inventory duty cycle, and report-filter aggregation are all **power levers**. Firmware update is **battery-gated** (`set_os` error code 14). Charging state (`powerSource` DC/WALLCHARGER/USB/CRADLE, `powerMode` ACTIVE) is operationally significant. | Introduce the power model **at power-up**; tune the duty cycle; survive the firmware battery gate; manage long-term battery health. | "Power is free and continuous." The fixed IA has **zero** power content — correctly, because a PoE/AC reader has no battery, no duty cycle, no sleep/wake, no cradle. |
+| **3. Human activation via a physical trigger** | Behaviour is **composed** from `radioStartConditions.trigger` × `radioStopConditions.trigger` (IMMEDIATE/PRESSED/RELEASED) inside `set_operating_mode`, with self-stop thresholds (`tagCount`, `stopTimeout`, `inventoryCount`). A physical pull and an MQTT `control_operation` START are **equivalent, most-recent-wins** inputs. | Document trigger *composition*, not GPIO wiring; explain that a physical pull ≡ an MQTT START; debug operator-initiated vs threshold-driven starts. | "Activation is external hardware: GPI sensors, portal beams, conveyor loops." On handheld, `GPI_EVENT`/`ANTENNA_EVENT` exist in the schema but are **not emitted** — a fixed-reader vestige. |
+| **4. The operator needs local, multi-modal feedback** | A human holding the device needs **immediate LED / beeper / haptic confirmation** of a good read or an error. Critically, these cues are driven **app-side** on the host (Android RFID SDK / 123RFID Mobile) — there is **no `set_beeper` or `set_led` on the IOTC wire.** IOTC supplies the *data* (`dataEVT.peakRssi`, `accessResults`); the host app turns it into a signal. | An Explanation that draws the **IOTC-vs-host-SDK boundary loudly**, and a How-To for driving feedback from `dataEVT` in the host app. | "Outputs are machine-facing (GPO/LED to stack lights, gates, PLCs)." There is no on-site human in the fixed model, so there is no beeper/haptic concept anywhere in it. |
+| **5. Inverted data density: find ONE tag, not read all** | The operator hunts **one** specific tag in a dense population: short-range single-target isolation. This needs RF power scaled **DOWN** (`transmitPower`/`dynamicPower`), a pre-singulation Gen2 **SELECT** plus post-singulation filters to isolate the target EPC, and `peakRssi` as a **proximity proxy** in a "Geiger counter" loop. | An Explanation of the find-one-tag model + a How-To/Tutorial for the locate loop + a How-To to scale power **down**. | "Read everything crossing a zone at 500 tags/sec with 150k-event batching." The high-throughput portal/conveyor model is **inverted**, and `rssiFilter` (the fixed radio-side trick) **does not exist on RFD40/RFD90 at all** — locate must be built app-side. |
+
+## 2.3 Stripping the legacy organizing baggage
+
+The current handheld docs inherit a **9-Part reader journey** that is genuinely well-ordered, but it carries four pieces of baggage that a first-principles pass removes:
+
+1. **The bootstrap/MDM gate is treated as just another quick-start phase.** In reality it is the *precondition for the entire MQTT manual* — nothing in Parts 4–11 is reachable until it clears. **Fix:** the out-of-band bootstrap and the MDM-endpoint-first model are stated as a hard prerequisite at the top of Part 4, seeded in Part 2 (the endpoint-type concept), and drawn as the load-bearing edge in the dependency map.
+2. **Battery is filed under "Observe & monitor."** This is backwards: battery is a *binding constraint felt at power-up*, not a thing you passively watch later. **Fix:** the power model is introduced at **Part 3 (Pair & Power Up)**; deep duty-cycle engineering is *deferred* (not buried) to **Part 8 (Scale)** via explicit "when you are ready" pointers.
+3. **Connectivity is modeled as one-time setup.** That is a fixed-reader framing. **Fix:** Part 4 reframes the connection as **intermittent-by-design**, with roam-driven session resumption and a layered reliability model (QoS / persistent session / `reportFilter` aggregation window / app retry).
+4. **Bluetooth pairing, operator feedback, and find-one-tag are absent or scattered.** These are the three largest net-new gaps — the manual inherited the fixed reader's blind spots. **Fix:** each becomes a first-class cluster at the stage where it bites (pairing → Part 3; feedback + locate → Part 6).
+
+Everything else from the inventory is preserved and re-ordered, never invented or dropped.
+
+## 2.4 What the adversarial verification corrected
+
+First-principles rigor means not trusting the hypothesis. An adversarial pass over the source pages **corrected five claims**, and the architecture reflects the corrected versions:
+
+- **`stateOfHealth` is not a "quirky divergent scale" — it is two distinct semantic fields that share a name.** `get_status.batteryStatus.stateOfHealth` = long-term capacity (GOOD/AVERAGE/POOR); `heartbeatEVT.batteryAlert.stateOfHealth` = operational charge state (LOW/CRITICAL/CHARGING/FULL/HIGH). They must never be conflated. This earns a dedicated **"do-not-conflate" Reference** (Part 10) plus a glossary warning.
+- **`PINGREQ` wakes the *host Wi-Fi radio*, not the sled's RFID radio.** The battery cost is real, but the mechanism is host-side network activity. The power pages state the mechanism precisely.
+- **`rssiFilter` is not merely "FX9600-only" — it does not exist on RFD40/RFD90 in any form.** Radio-side RSSI filtering is impossible; RSSI thresholding is **application-side only.** The RF pages say so plainly.
+- **Operator feedback is a documentation *gap*, not a documented pattern.** The docs confirm the data exists (`peakRssi`, `accessResults`) and that 123RFID Mobile has a Locate feature, but they provide **no host-SDK integration guide.** This is why the feedback Explanation + How-To are net-new and load-bearing.
+- **"No Ethernet" was overstated — the handheld *does* expose Ethernet via the comms cradle.** `get_eth` (interface/link status, IPv4 config) and `alerts.ethStatus` are present in the handheld MQTT API and delivered when the sled is docked in a comms cradle. The original "no usable Ethernet / `get_eth` absent-by-design" framing was wrong; only the *network-failover* logic built on top of multiple interfaces is absent (there is no failover command). The connectivity pages therefore document host Wi-Fi as primary and cradle Ethernet via `get_eth` + `alerts.ethStatus`, and fence only failover as not-on-handheld.
+
+## 2.5 Why this structure (the derivation)
+
+Given the five realities and the corrected facts, the most friction-free organization is a **single prerequisite-chained lifecycle arc** in which:
+
+- nothing references a concept introduced in a later Part (strict prerequisite ordering, inherited from the benchmark);
+- the **bootstrap/MDM gate** sits exactly between "powered & paired" (P3) and "connected over MQTT" (P4), because it is literally the act that makes MQTT possible and the channel through which all other endpoints arrive;
+- each remaining physical reality is introduced exactly where it first constrains the reader (battery at power-up; roaming at connect; trigger/density at configure; density/feedback at read);
+- within each Part, leaves are ordered by **dependency and the reader's task sequence first** (a prerequisite, a decision aid you must consult, or an earlier step in the doing-order always precedes what needs it); the four content modes (**Explanation → Tutorial → How-To → Reference**) supply only the default tie-breaker when dependency and task-sequence do not already decide, so readers see a predictable shape wherever nothing forces otherwise;
+- Diátaxis rides as a per-page badge for filtering, **never** as the skeleton (the hard task constraint);
+- and three surfaces keep their non-linear nature: orientation (job-ordered), diagnosis (symptom-first), reference (consulted, machinery-ordered).
+
+This is the architecture detailed in §5.
+
+---
+
+# 3. Audience Analysis & Developer Personas
+
+The handheld IOTC developer is never working in the abstract. They are bringing up an RFD40 or RFD90 sled on a TC-series Android host, and the job-to-be-done they arrive with determines where on the lifecycle spine they enter. Four personas, adapted from the fixed-reader benchmark but re-derived for handheld realities, drive the Part-1 path-router. Each differs from its fixed-reader namesake precisely where the five physical realities bite: the Solution Builder is not wiring a PLC to a portal beam — they are building a *mobile worker app* with a physical trigger and operator feedback; the Returning Developer — arriving with fixed-reader IOTC or 123RFID Desktop experience — is not migrating hardware (fixed and handheld readers do complementary jobs) but reconciling fixed-reader assumptions (in-band bootstrap, GPIO, multi-antenna, REST) against a battery-bound Bluetooth peripheral and adopting the IOTC API for an existing deployment.
+
+| Persona | Description | Primary need | Entry point |
+|---|---|---|---|
+| **New Integrator** | First contact with handheld IOTC. Has a sled in a box and needs to reach a live read without prior MQTT or RFID depth. Does not yet know the sled must be bootstrapped out-of-band and is a Bluetooth peripheral of the host, not a network node. | A single uninterrupted onboarding path: understand the handheld frame → pair and power up → **bootstrap + bring the MDM endpoint up** → connect → configure → pull the trigger and see a tag. Must not be dragged through fleet, cloud, or duty-cycle tuning on the first read. | **Part 1 → walk the spine Parts 2 → 6**, seeded by the **Tutorials hub** (30-minute onboarding → first trigger pull → read your first tag → find-one-tag Geiger). |
+| **Solution Builder** | Building a production mobile-worker app on the host — picking/put-away, asset search, returns — that drives the trigger, consumes `dataEVT`, and closes the loop with LED/beeper/haptic feedback. The defining handheld persona: they own the trigger-to-feedback loop the fixed reader never had. | The trigger composition model, tag-data architecture and field handling, the find-one-tag Geiger workflow, and the loud IOTC-vs-host-SDK boundary (**no `set_beeper`/`set_led` on the wire**). Plus short-range RF-power-DOWN for single-target density. | **Part 1 → Parts 4 → 8**, with **Part 6 (Read & Find)** as the center of gravity. |
+| **API / Integration Consumer** | Writing integration code against the native MQTT interface — often server-side or middleware — who treats the docs as a lookup surface and skips guided learning. Must not be misled by OpenAPI framing: it is native MQTT, not REST. | Fast, dry, authoritative lookup: the MGMT/CTRL/DATA command reference, full event schemas, the trigger-composition matrix, the error-code table (incl. `set_os` code 14), and the **triple `stateOfHealth`** reference with the do-not-conflate callout. Needs the constraints fence and the explicit note on SOTI-only out-of-scope commands. | **Part 1 → jump straight to Part 10 Reference** (≤2 steps), entering out of order at any point. |
+| **Returning Developer** | Arrives with fixed-reader (FXR90-class) IOTC experience or a 123RFID Desktop–managed deployment, and is adopting the IOTC API for handheld. Fixed and handheld are complementary, not a hardware migration — the work is reconciling assumptions that silently fail on this firmware and moving an existing deployment to the API. | A hard **do-not-port reconciliation** (in-band region/bootstrap, GPIO/portal/conveyor, multi-antenna/per-port power, `rssiFilter`, on-reader apps, REST/WebSocket, `set_beeper`/`set_led` are all absent or fixed-only), the out-of-band region-set + MDM-endpoint-first reality, and how to carry 123RFID Desktop settings across. | **Part 1 → the do-not-port checklist (Part 2) and the IOTC-adoption cluster (Part 8)** (≤2 steps), reachable directly from the persona router. |
+
+## 3.1 Persona-to-Part mapping matrix
+
+Legend: **P** = Primary (this persona's home Part) · **R** = Read (load-bearing for the job) · **S** = Skim (helpful context, not required) · **–** = Skip.
+
+| Part | New Integrator | Solution Builder | API / Integration Consumer | Returning Developer |
+|---|:---:|:---:|:---:|:---:|
+| **1 — Orient** (router, Tutorials hub) | **P** | R | R | R |
+| **2 — Understand the handheld system** | **P** | R | S | R |
+| **3 — Pair & Power Up** (BT + battery) | **P** | R | – | S |
+| **4 — Connect & Secure** (bootstrap/MDM + roaming) | **P** | **P** | S | R |
+| **5 — Configure the Read** (trigger + density) | R | **P** | S | R |
+| **6 — Read & Find** (density + feedback) | **P** | **P** | R | R |
+| **7 — Observe & Monitor** | S | R | S | S |
+| **8 — Scale to a Fleet** (+ duty-cycle, IOTC adoption) | – | R | – | **P** |
+| **9 — Diagnose & Recover** (symptom-first) | R | R | R | R |
+| **10 — Reference Library** (MGMT/CTRL/DATA) | S | R | **P** | R |
+
+Two cells are deliberately near-universal. **Part 9 (Diagnose)** is reachable fast from anywhere and is never persona-gated. **Part 10 (Reference)** is consulted by all four but is *home* only to the API Consumer. The matrix encodes the spine's promise: a New Integrator's Primary cells form one contiguous walk (Parts 1 → 6), while the API Consumer (Part 10) and the Returning Developer (the Part 8 IOTC-adoption cluster) reach their primary home in ≤2 steps from the Part-1 router without re-slicing the spine.
+
+---
+
+# 4. Content-Type Taxonomy (the 5-Quadrant Tagging System)
+
+Every page carries **exactly one** content-type badge. The badge is metadata applied per page — it is **never the skeleton** of the documentation. The spine is the handheld lifecycle (Orient → … → Reference); Diátaxis rides on top as a filter, so a reader can ask the site to "show me every Tutorial" or "show me every Reference page" without the filesystem ever having been sliced by learning mode.
+
+The fixed-reader benchmark uses **four** types. This blueprint adds a **fifth — Diagnosis** — because incident response is a first-class handheld surface, not a footnote. A mobile reader fails in ways a hardwired fixed reader does not (Wi-Fi roam dropouts at aisle boundaries, Bluetooth pairing loss, battery drain, a trigger that does not fire, a successful read with no operator beep). These are symptom-entered, mid-incident, and structurally distinct from a goal-first How-To. Folding them into How-To would bury the symptom router under task recipes; promoting Diagnosis to its own type keeps it symptom-ordered.
+
+| Content type | Tag | The developer question it answers | Template pattern |
+|---|---|---|---|
+| **Tutorial** | `[Tutorial]` | *"Teach me by doing — walk me from nothing to a visible result."* | Promise of the end-state → numbered steps, each with a verifiable result → the complete worked artifact → recap → "Didn't work?" escape hatch. Handheld tutorials end at a **physical-world checkpoint** (a trigger pull that turns the radio ACTIVE; a `peakRssi` that climbs as you walk toward the tag), not just a payload on a console. |
+| **How-To Guide** | `[How-To Guide]` | *"I have a specific real-world task and the context to do it — give me the steps."* | Goal statement → prerequisites → ordered steps with exact payloads → verify → response/error codes. Handheld how-tos surface the **power cost** of the task where one exists, and the **app-side boundary** where IOTC stops (e.g. driving feedback from `dataEVT` in the host SDK). |
+| **Reference** | `[Reference]` | *"Tell me the exact field, enum, payload, or code — I am consulting, not reading."* | Dry, exhaustive, machine-ordered; field tables, enum lists, conditional matrices, worked payloads. The handheld reference owns the **triple `stateOfHealth` do-not-conflate callout**, the **trigger-composition matrix**, and the **constraints fence (including the SOTI-only out-of-scope commands)**. |
+| **Explanation** | `[Explanation]` | *"Help me understand what this is, why it works this way, and the trade-offs."* | Concept framing → mechanism → trade-offs → "what this implies for the rest of the docs." Handheld explanations introduce each **physical reality at the lifecycle stage where it first bites.** |
+| **Diagnosis** *(5th type)* | `[Diagnosis]` | *"Something is broken right now — route me from the symptom to the fix."* | Symptom statement → fast triage / fault-isolation → ranked likely causes → fix steps → success check. Entered symptom-first, never concept-first. Owns the net-new failure modes: **roam dropouts, BT pairing failures, battery drain/degradation, trigger-not-firing, no-operator-feedback.** |
+
+**Design principle: one page, one content type.** The discipline is load-bearing for handheld for two reasons. First, **it keeps the IOTC-vs-host-SDK boundary honest**: the operator-feedback *model* is an Explanation, the *drive-feedback-from-dataEVT* recipe is a How-To, and the *no-beep-fired* failure is a Diagnosis — separating them prevents the most common handheld confusion (hunting for a `set_beeper` that does not exist). Second, **it makes the Tutorials-vs-Reference promise enforceable**: guided onboarding (the Part-1 Tutorials hub) is a distinct surface from the consulted command reference (Part 10), so a New Integrator is never dropped into a field table and an API Consumer is never forced through a lesson.
+
+---
+# 5. Detailed Table of Contents (the Information Architecture)
+
+> **Reading this TOC.** The 10 Parts are the structure (a handheld-lifecycle prerequisite chain). The bracketed `[Quadrant]` on every leaf is the Diátaxis badge — tagging only, never the skeleton. **All page titles are renamed for this IA** (the live `sidebar_label` is not carried over); §10 maps every title back to its source page. Lists never exceed **two bullet levels** (Part → cluster → leaf); there are no sub-clusters. In Part 10 the command reference is **four sibling clusters** — an overview/index plus MGMT, CTRL, and Data/events — each holding its command leaves directly. `[NET-NEW]` marks pages with no current inventory equivalent; `[REFRAMED]` marks an existing page whose framing changes for handheld. Within each Part, leaves are sequenced by **dependency and the reader's task order first** — a prerequisite, a decision aid (decision matrix or enum/event catalog) you must consult to choose, or an earlier step in the doing-sequence always precedes what depends on it — and the Diátaxis mode-order (Explanation → Tutorial → How-To → Reference) is only the **default tie-breaker** when those do not decide; so a How-To can precede a Tutorial (install certificates before turning TLS on) and a Reference can precede a How-To (read the catalog before you choose). Two hard gates and three ordering exceptions govern the spine: the **bootstrap/MDM-endpoint gate** (Part 4) blocks all MQTT; **Part 1 is job-ordered, Part 9 is symptom-first, Part 10 is consulted-not-read.**
+
+
+
+## Part 1 — Orient: what this is, who it is for, and where to go
+
+*Orientation surface — sequenced first and deliberately JOB-ordered (exception #1). Carries the load-bearing scope promise (IOTC is a native-MQTT data/control plane; a sled is a battery-powered Bluetooth peripheral brought up out-of-band, not a small fixed reader) and the Tutorials-vs-Reference doc-set promise.*
+
+- **Start here: what this is and how to navigate**
+  - `[Explanation]` Start here: what handheld IOTC lets you build
+  - `[Explanation]` How this manual is organized
+  - `[Explanation]` Which reading path fits you
+
+- **Five-minute primers**
+  - `[Explanation]` MQTT in five minutes
+  - `[Explanation]` RFID in five minutes
+
+- **How the docs and the API Reference fit together**
+  - `[Explanation]` This manual and the MQTT API Reference
+  - `[Explanation]` The OpenAPI illusion: it's native MQTT, not REST
+
+- **Conventions and support**
+  - `[Reference]` Documentation conventions and code-example standards *[NET-NEW]* (payload-JSON style, language bindings, reconnect-on-roam error handling, `{sled_serial}` placeholders, Reference/Tutorial/How-To page templates)
+  - `[Reference]` Related documents and support *[NET-NEW]* (RFD40/90 datasheets, the 123RFID Desktop guide, Android TC SDK, where to escalate a pairing/bootstrap failure)
+
+- **The guided-learning path**
+  - `[Explanation]` The Tutorials hub — your onboarding sequence at a glance (forward-points into Parts 3, 4, 6, 8)
+
+## Part 2 — Understand the handheld system
+
+*Build the conceptual model before any task — Foundations-shaped for cross-product parity. Concept precedes every hands-on Part. Foundational theory (the radio, MQTT) is taught before the system architecture; introduces the seven endpoint types (with MDM as the bootstrap default and the SOTI-only commands marked out of scope), and closes with the five physical realities that dictate every Part that follows.*
+
+- **What IOTC is**
+  - `[Explanation]` What the IoT Connector does
+  - `[Explanation]` What's new in IOTC V1.1
+
+- **How the radio reads, and how tags are structured**
+  - `[Explanation]` How the radio reads a tag (the UHF air interface and singulation)
+  - `[Explanation]` Tag memory and the Gen2 model — Reserved/EPC/TID/USER banks, sessions (0–3), inventoried flags (A/B) *[NET-NEW]*
+
+- **MQTT protocol theory**
+  - `[Explanation]` Topic structure: tenant / topic / serial
+  - `[Explanation]` QoS levels and delivery guarantees
+  - `[Explanation]` Authentication and authorization over MQTT
+
+- **How the system fits together — actors, flow, and endpoints**
+  - `[Explanation]` The three actors: reader, broker, application
+  - `[Explanation]` How commands, responses, and events flow
+  - `[Explanation]` The interface model and the seven endpoint types (MDM, MGMT, MGMT_EVT, CTRL, DATA1, DATA2, SOTI)
+  - `[Explanation]` End-to-end: from a trigger pull to your application
+
+- **Your hardware and its first-light tool**
+  - `[Explanation]` Your sled and host hardware (RFD40 / RFD90 on TC-series) — scope note: IOTC/MQTT requires the IOTC-capable RFD40 (Premium-class) and RFD90; the RFD40 Standard variant is NOT IOTC-capable and is out of scope for this manual
+  - `[Explanation]` Why out-of-band bootstrap is required (123RFID Desktop sets region, Wi-Fi, and the MDM endpoint over Bluetooth or USB-C)
+  - `[Explanation]` 123RFID Mobile: the Android companion app
+
+- **The handheld difference**
+  - `[Explanation]` The five physical realities of a handheld sled
+  - `[Reference]` Do-not-port checklist *[NET-NEW; fence copy #1]* — in-band bootstrap/region, GPIO/portal/conveyor, multi-antenna/per-port power, `rssiFilter`, on-reader apps, REST/WebSocket transports, `set_beeper`/`set_led`
+
+## Part 3 — Pair and power up the sled *[Physical realities: BT host-tether + battery]*
+
+*The first gate-blocking handheld tasks the fixed benchmark has no equivalent for. Nothing happens until the sled is paired to its host over Bluetooth and has charge — so prerequisites open the Part, and the power model is introduced HERE, at power-up, not buried under Observe. Deep duty-cycle engineering is deferred to Part 8 via a "when you are ready" pointer.*
+
+- **Prerequisites for first light**
+  - `[Reference]` Hardware and software you need
+  - `[How-To Guide]` Get your IOTC credentials and tenant ID
+
+- **Your first 30 minutes: a guided run to a live read**
+  - `[Tutorial]` Reaching your first live read *(guided onboarding spanning pair → power → bootstrap → read; also surfaced from the Part-1 Tutorials hub)*
+
+- **Pair over the Bluetooth host link**
+  - `[Explanation]` The Bluetooth host link — a transport separate from the Wi-Fi/MQTT path *[NET-NEW]* (Tap/Scan/Barcode/manual modes, ~10 m, auto-reconnect)
+  - `[How-To Guide]` Pair, re-pair, and confirm the host link *[NET-NEW]*
+
+- **Power and battery**
+  - `[Explanation]` The handheld power model — battery, duty cycle, and sleep/wake *[NET-NEW]* (`powerSource` DC/WALLCHARGER/USB/CRADLE, `powerMode` ACTIVE; every `PINGREQ` wakes the host Wi-Fi radio; PoE is not a handheld option)
+  - `[How-To Guide]` Charge the sled and clear the battery gate *[NET-NEW]* (USB/WALLCHARGER/CRADLE; the `set_os` error code 14 low-battery gate workaround)
+  - `[How-To Guide]` Make the battery last a shift *[NET-NEW]* (OPTIMAL_BATTERY, stop-between-scans; "when you are ready" pointer to Part 8 duty-cycle engineering)
+  - `[How-To Guide]` Monitor battery charge and long-term health *[relocated from Observe — `stateOfHealth` GOOD/AVERAGE/POOR and `chargePercentage`, at the device where battery first bites]*
+
+## Part 4 — Connect and secure the mobile link *[Physical realities: out-of-band bootstrap/MDM gate + roaming Wi-Fi/MQTT]*
+
+> **⛔ Hard prerequisite (the bootstrap/MDM gate).** The reader is **not MQTT-reachable** until it is bootstrapped with **123RFID Desktop** — which attaches to the sled over **Bluetooth or USB-C** and sets the regulatory region and Wi-Fi and creates the **MDM endpoint** — and that MDM endpoint is **active**. You cannot *start or verify* the IOTC connection before this clears, because region, Wi-Fi, and the broker target cannot be set over MQTT. The MDM endpoint is the **first** endpoint; **every other endpoint (MGMT, MGMT_EVT, CTRL, DATA1, DATA2, and additional MDM or SOTI endpoints) is added remotely through it.** This whole Part assumes the gate is cleared in its first cluster.
+*Get the powered, paired sled onto the network and keep the MQTT session usable on a device that moves. After bootstrap, connectivity is intermittent-BY-DESIGN — Wi-Fi roam and DHCP churn tear down the TCP socket; under `cleanSession:true` the broker does not replay in-flight reads on reconnect, so surviving a roam depends on the `reportFilter` aggregation window and app-side retry. Order follows dependency and task-sequence first, with mode-order (Explanation → Tutorial → How-To) only as the tie-breaker: in particular the hard certificate-before-TLS dependency wins, so the install-certificates How-To precedes the enable-TLS Tutorial.*
+
+- **Reach first light: bootstrap, bring up the MDM channel, and operate it**
+  - `[Tutorial]` Preparing your network and broker
+  - `[Tutorial]` Bootstrapping the sled and creating the MDM endpoint *(123RFID Desktop, over Bluetooth or USB-C, sets region + Wi-Fi and creates the MDM endpoint — the first-light gate)*
+  - `[Explanation]` Device state and health *[moved to precede verification — device state is what verify queries]*
+  - `[Tutorial]` Verifying the MDM connection is live (`get_version` over the MDM channel)
+  - `[How-To Guide]` Update firmware and reboot the reader *(absorbs the merged-in `quick-start/phase-7` "reboot when needed" step)*
+
+- **Get and stay on the network via the host**
+  - `[Explanation]` How the reader gets on the network — host Wi-Fi (primary) and cradle Ethernet (`get_eth` + `alerts.ethStatus`)
+  - `[How-To Guide]` Configure Wi-Fi profiles (over MQTT, after bootstrap)
+  - `[How-To Guide]` Check Ethernet/cradle interface status
+  - `[How-To Guide]` Open the right ports — firewall, proxy, and captive-portal guidance (1883/8883) *[NET-NEW]*
+  - `[Diagnosis]` When the reader won't get on the network
+
+- **Endpoints: from the hybrid MDM bootstrap to a production split**
+  - `[Explanation]` The MDM endpoint and endpoint types — bootstrap, hybrid design, and dependency chain *[REFRAMED]*
+  - `[Explanation]` From hybrid MDM endpoint to dedicated channels (MGMT / CTRL / DATA) *[REFRAMED]*
+  - `[Tutorial]` Inspecting the endpoints the MDM channel created (`get_endpoint_config`)
+  - `[Tutorial]` Adding dedicated endpoints through the MDM channel (`config_endpoint`)
+  - `[How-To Guide]` Configure MQTT endpoints
+  - `[How-To Guide]` View the active endpoint configuration
+
+- **Keep the MQTT session alive as the reader moves** *(intermittent-by-design on a moving reader)*
+  - `[Explanation]` The MQTT session on a moving reader — keep-alive, Last Will, and roam teardown *[REFRAMED]*
+  - `[Explanation]` The reliability model for connection drops (QoS / persistent session / `reportFilter` aggregation window / app retry) *[REFRAMED + relocated from Scale]* (incl. `cleanSession` behaviour and the `reportFilter` duration window)
+  - `[How-To Guide]` Keep reading across Wi-Fi roams *[NET-NEW]* (static IP vs DHCP, keepAlive tuning for marginal signal, reconnect latency budgets)
+
+- **Secure the connection** *(certificate install precedes turning TLS on, per the hard dependency)*
+  - `[Explanation]` The TLS and certificate security model
+  - `[How-To Guide]` Install and manage TLS certificates
+  - `[How-To Guide]` Turn on TLS for an endpoint
+  - `[Tutorial]` Securing the connection with TLS
+  - `[How-To Guide]` Set and rotate MQTT credentials, and pin certificates *[NET-NEW]* (`mqttParams` username/password; mutual-TLS VERIFY_HOST_PEER vs server-only; out-of-band first-set via 123RFID Desktop)
+  - `[How-To Guide]` Rotate certificates across the fleet
+
+## Part 5 — Configure how the reader reads *[Physical realities: manual trigger + single-target density]*
+
+*Before pulling the trigger, decide how the radio behaves. Foregrounds the manual-trigger reality (`GPI_EVENT` does NOT fire on this firmware) and prepares for inverted single-target density (RF-power-DOWN, SELECT/post-filters). Concept-first; targeting (the Gen2 SELECT), post-read filtering, and RF tuning are unified into one single-target prep cluster that sits last as the advanced end.*
+
+- **Choosing how to read**
+  - `[Explanation]` How operating modes shape the read (operating-mode profiles) — incl. DENSE_READERS as the mobile interference-mitigation profile
+  - `[Reference]` Operating-mode decision matrix *[NET-NEW]* (CYCLE_COUNT / DENSE_READERS / OPTIMAL_BATTERY / BALANCED_PERFORMANCE / ADVANCED; FAST_READ is schema-present but NOT supported; DENSE_READERS is the dense/high-interference profile)
+  - `[How-To Guide]` Configure the operating mode
+
+- **The trigger**
+  - `[Explanation]` How the trigger starts and stops the radio (`radioStartConditions` × `radioStopConditions` IMMEDIATE/PRESSED/RELEASED; physical pull ≡ MQTT START; `GPI_EVENT`/`ANTENNA_EVENT` not emitted)
+  - `[Explanation]` Power strategies for trigger-based inventory *[NET-NEW]* (on-demand vs always-on draw; heartbeat-interval trade-offs; `reportFilter` duration; `stopTimeout`/`tagCount` thresholds as duty-cycle levers)
+  - `[How-To Guide]` Compose trigger start and stop conditions *[NET-NEW]* (turn the two trigger Explanations above into one recipe — choose a start × stop enum pairing and the self-stop thresholds)
+
+- **Targeting tags: filtering and RF power** *(advanced end — the inverted-density single-target reality)*
+  - `[Explanation]` How Gen2 SELECT and Query work — EPC masking, sessions, SL flag, tagPopulation *[NET-NEW]*
+  - `[Explanation]` Tag filtering before vs after the read
+  - `[Explanation]` How RF power tunes range, rate, and density (`transmitPower`/`dynamicPower`; within regional limits; `rssiFilter` does not exist on RFD40/RFD90)
+  - `[How-To Guide]` Configure post-singulation filters
+  - `[How-To Guide]` Scale RF power down to isolate one tag *[NET-NEW]* (cross-links the per-region `transmitPower` ceiling in Part 10 regulatory)
+
+## Part 6 — Read and find tags *[Physical realities: single-target density + operator feedback]*
+
+*The core operator job: pull the trigger, get tag data, and find the ONE tag in a crowd with immediate light/sound/haptic feedback. Carries the LOUD IOTC-vs-host-SDK boundary: there is NO `set_beeper`/`set_led`/haptic API on the wire — IOTC supplies the data (`dataEVT.peakRssi`, `accessResults`); the host app drives the cues via the Android SDK / 123RFID Mobile (the host-side cue implementation is out of scope in this manual). Order follows dependency and task-sequence first; here that leaves the mode-order tie-breaker (Explanation → Tutorial → How-To → Reference) free to apply within each cluster, and locate/feedback are the advanced end.*
+
+- **Read your first tag**
+  - `[Explanation]` How a trigger-driven inventory loop works *[NET-NEW]* (trigger → START → radio IDLE→READY→ACTIVE → `dataEVT` stream → stop condition — the model the tutorial then walks)
+  - `[Tutorial]` Read your first tag
+  - `[Tutorial]` Walking through a trigger-driven inventory loop *[NET-NEW]* (guided walk through pulling the trigger and observing the radio state transitions and event stream)
+  - `[How-To Guide]` Start and stop reads with the trigger *(consolidates the merged-in `quick-start/phase-6` start/stop step into the read flow)*
+
+- **Barcode scanning** *(the SCANNER modality — distinct from RFID inventory)*
+  - `[How-To Guide]` Scan a barcode with the sled (the SCANNER control type — `control_operation` with `controlType: SCANNER` and `operation: START`/`STOP`; the decoded value arrives in `dataEVT.data.barcodeData[]`, with `symbology` enumerating only `CODE_39` and the required `decodedBarcode` string)
+
+- **Working with tag data**
+  - `[Explanation]` How tag-data events are produced
+  - `[Explanation]` Two data channels (the DATA1 / DATA2 endpoints, each carrying `dataEVT`)
+  - `[How-To Guide]` Interpret the fields in a tag read
+  - `[How-To Guide]` Process tag data in your application
+  - `[Reference]` The `dataEVT` tag-read payload
+
+- **Write and lock tags**
+  - `[Tutorial]` Write and lock your first tag *[NET-NEW]*
+  - `[How-To Guide]` Write, lock, and kill tags safely *[NET-NEW]* (passwords; `lockAction` PERMANENT_LOCK is irreversible; KILL is permanent; read outcomes from `dataEVT.accessResults[]`)
+
+- **Find one tag in a crowd** *(advanced end — the inverted-density reality)*
+  - `[Explanation]` The proximity (Geiger) locate model for finding one tag *[NET-NEW]* — `peakRssi` as a proximity proxy (not exact distance), SELECT to a target EPC, no native locate; geofencing/proximity-zone triggering is NOT an IOTC feature
+  - `[Tutorial]` Building a find-one-tag locate loop *[NET-NEW]* (SELECT pre-filter + reduced `transmitPower` + app-side RSSI threshold per `dataEVT`, ending at the physical-world checkpoint of `peakRssi` climbing as you approach; the cue implementation itself is host-SDK, out of scope; also surfaced from the Part-1 Tutorials hub)
+  - `[Tutorial]` Isolating a target tag with SELECT and post-filters *[NET-NEW]*
+  - `[How-To Guide]` Drive the locate loop from live RSSI *[NET-NEW]* (poll `peakRssi` on a closed loop, adjust `transmitPower`/post-filters dynamically; surface proximity to the host app — driving the cue itself is host-SDK, out of scope)
+
+- **Operator feedback** *(advanced end — the net-new feedback reality and the host-SDK boundary)*
+  - `[Explanation]` The IOTC data path and where it stops (the host-SDK boundary) *[NET-NEW]* — IOTC supplies `dataEVT.peakRssi`/`accessResults`; there is no `set_beeper`/`set_led` on the wire; turning that data into an LED/beeper/haptic cue is host-app-side (Android RFID SDK / 123RFID Mobile) and out of scope here.
+  - `[How-To Guide]` Consume `dataEVT` to drive operator feedback *[NET-NEW]* — subscribe to the DATA topic, parse `peakRssi`/`accessResults`, and build the threshold/decision your host app acts on (the cue implementation itself is host-SDK — see the boundary explanation above).
+
+## Part 7 — Observe and monitor
+
+*Proactive watching once the reader is reading — distinct from mid-incident troubleshooting (Part 9) and from reading tags (Part 6). On a mobile reader, observability is about correlating roam/heartbeat/`NETWORK_EVENT` signals because Wi-Fi RSSI is not on the MQTT surface. Order follows dependency first, with mode-order (Explanation → How-To → Reference) only as the tie-breaker and concept→recipe pairs kept together: because the event-types catalog is a Reference you must consult to choose, it precedes the "choose which events the reader emits" How-To it informs. Mirrors the benchmark's Observe Part (recognizable name for parity), minus battery (→ Part 3) and tag data (→ Part 6).*
+
+- **The event model**
+  - `[Explanation]` The IOTC event model
+  - `[Reference]` Event types catalog
+  - `[How-To Guide]` Choose which events the reader emits
+
+- **Liveness and connection signals**
+  - `[Explanation]` Heartbeats: the reader's pulse
+  - `[Explanation]` Alerts: when the reader interrupts you
+  - `[Explanation]` Connection state and events (`mqttConnEVT`)
+  - `[Explanation]` Connection quality on a moving device *[NET-NEW]* (roaming, keepAlive, flapping; correlate `mqttConnEVT` transitions, heartbeat gaps, and `NETWORK_EVENT` IP/DHCP churn since Wi-Fi RSSI is not on the wire)
+
+- **Monitoring recipes**
+  - `[How-To Guide]` Check device status and health (incl. `get_status.ntp` offset/reach; NTP server is host-supplied/out-of-band, not remotely settable over MQTT)
+  - `[How-To Guide]` Monitor reader health — CPU, RAM, flash, temperature, and exceptions *[NET-NEW]* (`config_events` cpuThreshold/ramThreshold/flashThreshold/temperatureThreshold; `exceptionEVT` is enabled via `config_events.exceptions` but its payload schema is not in this docset)
+  - `[How-To Guide]` Monitor connection quality
+  - `[How-To Guide]` Build a fleet health dashboard
+
+## Part 8 — Scale to a fleet
+
+*Turn one working reader into a managed fleet — an operational discipline that follows single-device mastery. Also the home of the deep battery duty-cycle engineering deferred from Part 3, so onboarding is never burdened with tuning. Order follows dependency and task-sequence first; here that leaves the mode-order tie-breaker (Explanation → Tutorial → How-To) free to apply. Recognizable "Scale" name for parity.*
+
+- **Provision a fleet**
+  - `[Explanation]` From one reader to a managed fleet (provisioning models)
+  - `[Tutorial]` Provisioning a three-reader fleet
+  - `[How-To Guide]` Bulk-provision with 123RFID Desktop
+  - `[How-To Guide]` Zero-touch provision with SOTI Connect
+  - `[How-To Guide]` Automate provisioning workflows
+
+- **Keep a fleet in sync**
+  - `[Explanation]` How fleet configuration stays in sync
+  - `[How-To Guide]` Detect and fix configuration drift
+
+- **Adopt IOTC for an existing deployment** *(move a 123RFID Desktop–managed fleet to the IOTC API)*
+  - `[Explanation]` What carries over to IOTC *[NET-NEW]* — which 123RFID Desktop settings transfer, and the out-of-band reality that region, Wi-Fi, and the first MDM endpoint are set in 123RFID Desktop, never over MQTT
+  - `[How-To Guide]` Plan the move to IOTC
+  - `[How-To Guide]` Execute a phased rollout to IOTC
+  - `[How-To Guide]` Carry 123RFID Desktop settings into IOTC — including the out-of-band reality that region, Wi-Fi, and the first MDM endpoint are set via 123RFID Desktop at bootstrap, never over MQTT
+  - `[How-To Guide]` Verify the IOTC rollout succeeded
+
+- **Battery and duty-cycle engineering at scale** *(deferred from Part 3)*
+  - `[How-To Guide]` Tune fleet duty cycle for battery life *[NET-NEW]* (measure actual drain; compute duty cycle from heartbeat interval + `transmitPower` + profile; set bounded scan windows)
+  - `[How-To Guide]` Roll out firmware across a battery-limited fleet *[NET-NEW]* (pre-flight battery checks; managing mixed-charge cohorts past the `set_os` code 14 gate)
+  - `[How-To Guide]` Manage battery aging and replacement *[NET-NEW]* (GOOD→AVERAGE→POOR replacement thresholds; physical replacement; fleet-scale logistics)
+
+- **Capacity and dense deployments**
+  - `[How-To Guide]` Plan bandwidth and message capacity for a fleet *[NET-NEW]* (`dataEVT` + `heartbeatEVT` + alerts volume; broker connection limits; Wi-Fi budget)
+  - `[How-To Guide]` Deploy multiple sleds in overlapping zones — RF co-location *[NET-NEW]* (DENSE_READERS tuning, EPC `set_post_filter`, RSSI thresholding, app-side dedup)
+
+- **Cloud integration**
+  - `[Explanation]` Cloud integration architecture patterns
+  - `[How-To Guide]` Prepare for cloud integration
+  - `[How-To Guide]` Connect to AWS IoT Core
+  - `[How-To Guide]` Connect to Azure IoT Hub
+  - `[How-To Guide]` Connect to Google Cloud IoT
+  - `[How-To Guide]` Connect to a custom MQTT broker
+
+## Part 9 — Diagnose and recover
+
+*The reactive, symptom-first surface entered mid-incident — SYMPTOM-ordered, not concept-ordered (exception #2), and not persona-gated so it is reachable fast from anywhere. Sequenced near the end because diagnosis presupposes you know what "working" looks like from every prior stage.*
+
+- **Triage and fault isolation**
+  - `[Diagnosis]` Something's broken? Start here (the top-level symptom router)
+  - `[Diagnosis]` Handheld-only failures: roam, pairing, battery, trigger, feedback *[NET-NEW]* — a symptom router for Wi-Fi roaming dropouts; Bluetooth pairing failures; battery drain & GOOD→AVERAGE→POOR degradation; a trigger that won't fire; a good read with no operator feedback (the won't-port diagnosis is in this Part's misconceptions cluster)
+  - `[Explanation]` Where things fail — the fault-isolation model (Wi-Fi link vs MQTT/broker session vs application)
+
+- **Failure modes and recovery**
+  - `[Diagnosis]` Failure modes catalog
+  - `[How-To Guide]` Get back online with recovery playbooks
+  - `[How-To Guide]` Recover from a failed firmware update *[NET-NEW]* (`set_os` codes 8/13/14; rollback, battery-gate, version-mismatch)
+
+- **Application errors and misconceptions**
+  - `[Explanation]` Things people get wrong about IOTC *[REFRAMED]* — no `set_beeper`/`set_led`; `GPI_EVENT`/`ANTENNA_EVENT` not emitted; "proximity" is RSSI-as-distance-proxy only; SOTI-only config commands are not on the native surface — with a do-not-port reminder cross-linking the Part 2 do-not-port checklist *[fence copy #2]*
+  - `[Diagnosis]` Diagnosing a fixed-reader assumption that won't port *[NET-NEW]* — single-antenna/battery/feedback mismatches; operator-initiated vs threshold-driven START in logs
+  - `[How-To Guide]` Handle command errors in your code
+
+## Part 10 — Reference library
+
+*The terminal lookup surface — CONSULTED, not read linearly (exception #3) — reachable directly from the Part-1 persona router by an API Consumer who skips every other Part. The command reference is flattened to **four sibling clusters** — overview/index, MGMT, CTRL, and Data/events — mirroring the machinery while keeping lists to two bullet levels. Placed last because reference is destination, not journey.*
+
+- **MQTT API command reference**
+  - `[Reference]` MQTT API reference index
+
+- **Management (MGMT) commands**
+  - `[Reference]` Device status commands (MGMT)
+  - `[Reference]` Network configuration commands (MGMT)
+  - `[Reference]` Endpoint configuration commands (MGMT)
+  - `[Reference]` Certificate commands (MGMT)
+  - `[Reference]` System operations commands (MGMT)
+  - `[Reference]` Event configuration commands (MGMT)
+
+- **Control (CTRL) commands**
+  - `[Reference]` Operating-mode command (CTRL)
+  - `[Reference]` Tag-filtering commands (CTRL)
+  - `[Reference]` Inventory-control command (CTRL)
+  - `[Reference]` Access commands: read, write, lock, kill (CTRL) *[NET-NEW]* (`accessOperations` operationType/memoryBank/offset/length/data/password/lockMemBank/lockAction; outcomes in `dataEVT.accessResults[]`)
+
+- **Data and events**
+  - `[Reference]` Data interface: `dataEVT`
+  - `[Reference]` Full event schemas
+  - `[Reference]` Tag-metadata configuration (`tagMetaDataToEnable`) *[NET-NEW]* (RSSI/PHASE/SEENCOUNT/CHANNEL/PC/EPC/TID/USER/MAC/HOSTNAME)
+
+- **Handheld field and matrix references** *(handheld-specific lookups supplementing the command reference)*
+  - `[Reference]` MDM and SOTI interfaces (SOTI-only commands out of scope) (`get_config`, `set_config`, `alert_short` live only on the SOTI surface and are out of scope) *[moved here from the Command-reference cluster — it is an interface-type/scope reference, not a machinery-ordered command page]*
+  - `[Reference]` Power and battery field reference *[NET-NEW]* — the THREE distinct same-named surfaces with a "do not conflate" callout: `get_status.batteryStatus.stateOfHealth` = GOOD/AVERAGE/POOR (long-term capacity); `batteryAlert.status` = LOW/CRITICAL/CHARGING/FULL/HIGH (operational charge); `batteryAlert.stateOfHealth` = same operational scale (NOT capacity); plus `powerEvent` (`powerSource`/`powerMode` — note: `powerEvent` appears only in the alerts schema example, NOT in a response-schema field table, and only `ACTIVE` is defined for `powerMode`), `chargePercentage`, BATTERY/POWER alert ids
+  - `[Reference]` Trigger-composition matrix *[NET-NEW]* — each `radioStartConditions` × `radioStopConditions` × threshold → behaviour name and exact `set_operating_mode` payload
+  - `[Reference]` Health events and thresholds *[NET-NEW]* (`config_events` cpuUsage/ramUsage/flashUsage/temperature flags + cpuThreshold/ramThreshold/flashThreshold/temperatureThreshold; `exceptionEVT` enabled via `config_events.exceptions` — payload schema not in this docset)
+  - `[Reference]` QoS-per-topic quick table *[NET-NEW]* (consolidates QoS across MGMT/CTRL/DATA topics)
+  - `[Reference]` Handheld constraints and not-supported features *[NET-NEW; fence copy #3 — the single consultable checklist]* — `GPI_EVENT`/`ANTENNA_EVENT` not emitted, no `rssiFilter`, no `set_region`/`set_ntp`, single antenna, no on-reader apps, MQTT-only transport, no `set_beeper`/`set_led`, **RFD40 Standard is not IOTC-capable (out of scope)**, **the host SDKs are out of scope (host-side cue implementation)**, **and the SOTI-only `get_config`/`set_config`/`alert_short` (out of scope here)** — and why
+
+- **Error codes and handling**
+  - `[Reference]` Error response format
+  - `[Reference]` Command error codes (incl. `set_os` code 14)
+
+- **Appendices and lookups**
+  - `[Reference]` Glossary, limits, and cheat sheets — canonical `stateOfHealth` do-not-conflate warning
+  - `[Reference]` MQTT topic quick reference
+  - `[Reference]` AsyncAPI specification — the machine-readable MQTT contract *[NET-NEW]* (AsyncAPI replaces the REST-only OpenAPI for the native MQTT API)
+  - `[Reference]` Tag memory map and access-command reference *[NET-NEW]* (the four banks + access semantics; pairs with the Part 2 Gen2 explanation)
+  - `[Reference]` Regulatory and regional reference — per-region `transmitPower` ceiling (`get_current_region` is READ-ONLY; region is set out-of-band via 123RFID Desktop at bootstrap, not over MQTT)
+  - `[Reference]` Supported tag types and standards
+  - `[Reference]` Hardware specifications quick reference *[NET-NEW]* (battery capacity, thermal range, Bluetooth/USB-C, antenna gain, FCC/ETSI/IC approvals; scope note: IOTC requires the IOTC-capable RFD40 Premium-class or RFD90 — the RFD40 Standard variant is not IOTC-capable and is out of scope)
+  - `[Reference]` Firmware version history
+  - `[Reference]` Manual changelog *[NET-NEW]* (documentation version history, co-located with firmware history)
+
+- **FAQs**
+  - `[Reference]` FAQ: general
+  - `[Reference]` FAQ: connectivity and network
+  - `[Reference]` FAQ: compatibility
+  - `[Reference]` FAQ: RFID operations
+  - `[Reference]` FAQ: fleet management
+
+### 5.1 Completeness ledger
+
+All **120** pages from the current inventory (`sidebars.ts`) are accounted for: **118 are placed as discrete leaves above, and 2 are deliberately merged** with named sinks —
+
+- **`quick-start/phase-6`** (the legacy "Start and stop inventory" step) → merged into Part 6 → *Start, stop, and the physical trigger.*
+- **`quick-start/phase-7`** (the legacy "Reboot when needed" step) → merged into Part 4 → *Update firmware and reboot the reader.*
+
+No inventory page is invented or silently dropped. **49 net-new pages** (`[NET-NEW]`) are added where the first-principles analysis demands them — concentrated in the largest handheld gaps (Bluetooth pairing, power/battery, operator feedback, find-one-tag) plus the trigger-recipe, loop-concept, and migration-framing pages that smooth cluster flow — **plus one net-new navigation section** (the *Choose your path* persona router), which is layered on the existing *Find your way around this manual* page (`foundations/documentation-guide`) rather than being a discrete page. **The 22 schema-confirmed gap pages identified in the Fixed-vs-Handheld gap analysis are included in this net-new count** — tag write/lock/kill access commands, Gen2 protocol fundamentals and the tag-memory map, reader-health monitoring, the host-app `dataEVT` feedback path, the operating-mode decision matrix, SELECT/Query construction, firewall/port and MQTT-credential guidance, fleet bandwidth/capacity and RF co-location planning, firmware-update recovery, and the developer-hygiene references (conventions/code-example standards, related-docs/support, hardware specs, AsyncAPI, QoS-per-topic table, and the manual changelog). That is why §10 lists `foundations/documentation-guide` on two rows and shows 50 `[NET-NEW]`-labelled rows (49 pages + 1 section). **Three SOTI-only commands (`get_config`, `set_config`, `alert_short`) are explicitly excluded** as out-of-scope and are documented only as named exclusions on the interface-model concept, the MDM/SOTI reference, the misconceptions page, and the constraints reference. Lists never exceed two bullet levels (Part → cluster → leaf), with no sub-clusters; the Part 10 command reference is four sibling clusters (overview, MGMT, CTRL, Data/events). Every renamed title maps to its source page in **§10**.
+
+---
+
+# 6. Information Design Principles
+
+Five principles govern every page — the benchmark's, re-instrumented for the fact that the reader is holding a battery-powered Bluetooth peripheral, brought up out-of-band, not administering a rack-mounted network node.
+
+**Modularity.** Each page is a self-contained unit addressing one job at one Diátaxis altitude, reachable directly and safe to land on cold from search or a deep link. A page never assumes the reader arrived via the page before it; it states its own prerequisites and links forward/back rather than embedding dependencies inline. Handheld implication: the BT-pairing concept, the pairing recipe, and the pairing-failure diagnosis are three separate modules so an API Consumer can deep-link the constraints fence without inheriting the onboarding narrative.
+
+**Progressive disclosure.** The first read never carries the reader through depth they have not earned. This is enforced with explicit **"when you are ready" forward-pointers**: the binding example is **battery** — the power model is introduced at Part 3 (Pair & Power Up) only as far as a first shift needs (OPTIMAL_BATTERY, stop-between-scans), while deep **duty-cycle engineering, scan-window optimization, and battery-aware firmware rollout are deferred to Part 8 (Scale).** Onboarding is never blocked by tuning; tuning is never orphaned from the stage that needs it.
+
+**Visual hierarchy.** A predictable per-page shape (badge + audience + read-time strip → H2 sections → tables for enums/fields → fenced payload examples → "Related" box) lets readers scan to the fragment they need. Four handheld-specific callout boxes carry semantic weight:
+
+- A **⛔ Prerequisite/gate callout** marks the bootstrap/MDM-endpoint gate wherever a step assumes the reader is already MQTT-reachable ("this requires an active MDM endpoint created at bootstrap").
+- A **⚡ Power/Battery callout** flags any action with a battery cost (every `PINGREQ` wakes the host Wi-Fi radio; an always-running profile drains an RFD90 in 4–6 hours), so the reader sees the duty-cycle trade-off at the point of action.
+- A **🔌 IOTC-vs-host-SDK boundary box** appears wherever the wire stops and the host app begins — most loudly on operator feedback ("there is no `set_beeper`/`set_led` on the IOTC wire; IOTC supplies `dataEVT`, the host app drives the cue").
+- A **🚫 Not-on-handheld / out-of-scope callout** marks fixed-reader vestiges that are inert (`GPI_EVENT`/`ANTENNA_EVENT` not emitted; `rssiFilter` absent) and the **SOTI-only commands excluded from this manual** (`get_config`/`set_config`/`alert_short`).
+
+**Task orientation.** Pages are titled and structured around what the reader is trying to *do*, in their language — *"Find one tag in a crowd," "Keep reading across Wi-Fi roams," "Pair, re-pair, and confirm the sled is connected."* The single deliberate exception is the Part-11 command reference, organized by the **machinery** (MGMT/CTRL/DATA) precisely because reference is consulted against the API's own shape, not read as a task.
+
+**Consistency.** Parallel Parts take the same shape so readers can predict it: within each Part, leaves are ordered by **dependency and task sequence first** (a prerequisite, a must-consult decision aid, or an earlier doing-step always precedes what needs it), and the **Explanation → Tutorial → How-To → Reference** mode-order is the **default tie-breaker** applied only where dependency and task-sequence leave a free choice — so the same shape shows wherever nothing forces otherwise, while a How-To rightly precedes a Tutorial (install certificates before enabling TLS) or a Reference precedes a How-To (consult the catalog before choosing). Locate/feedback/advanced material sits at the end of its Part. Terminology is pinned to one canonical form per concept (the operator-initiated START is always distinguished from the inert threshold-driven START; "proximity" always means RSSI-as-distance-*proxy*, never exact distance). The recognizable benchmark Part **names** are preserved for cross-product parity — *Understand* keeps the Foundations shape, and *Observe*, *Scale*, *Diagnose*, *Reference* are named so an FXR90-doc reader finds the same silhouette.
+
+**Format specifications & code-example standards.** Every page is authored against one of three committed templates matching its Diátaxis badge — the **Reference template** (badge/audience strip → field/enum tables → conditional matrices → worked payloads → "Related" box), the **Tutorial template** (end-state promise → numbered steps each with a verifiable result, ending at a physical-world checkpoint → complete worked artifact → recap → "Didn't work?" escape hatch), and the **How-To template** (goal → prerequisites → ordered steps with exact payloads → verify → response/error codes). Code examples follow a single house style so they never drift across Parts 4–8: because the interface is native MQTT, **cURL is not applicable** — every wire example is shown as an **MQTT payload in canonical JSON style** (2-space indent, lower-camelCase fields matching the schema) over the named topic, never as a REST call. Server-side/middleware integration against the MQTT interface may be shown in **Python**; host-app on-device feedback/cue code (Android/Java/Kotlin against the Zebra RFID host SDK, `Vibrator`/`AudioManager`, etc.) is **out of scope** and is referred to the Android RFID SDK / 123RFID Mobile docs — and every **multi-step example includes a reconnect-on-roam error-handling pattern** (catch the socket teardown a Wi-Fi handoff causes under `cleanSession:true`, reconnect, and resubscribe — under `cleanSession:true` there is no broker-side replay, so the host app resumes from the live `dataEVT` stream) so no example silently assumes a permanent socket. All examples use the canonical **placeholder convention — `{sled_serial}`, `{tenant_id}`** (and `{broker_host}`, `{endpoint_name}` where needed) — never live values. Finally, **every MQTT example shows all three of: the topic it publishes/subscribes to, the request payload, and the expected response payload or error code** (e.g. the `set_os` code 14 battery gate), so a reader can verify the round trip without leaving the page.
+
+---
+
+# 7. Navigation Model & Cross-Reference Strategy
+
+## 7.1 Navigation mechanisms
+
+- **The lifecycle spine** is the default walkable path: the 10 Parts are a strict prerequisite chain (nothing references a concept introduced in a later Part), so a New Integrator who goes top-to-bottom is always standing on earned ground.
+- **The Part-1 persona path-router** is a navigation device layered *on* the spine, not a re-slicing of it. It gets non-linear readers to their entry Part in ≤2 steps: New Integrator → walk 2→6; Solution Builder → 4→8; API Consumer → Part 10 Reference; Returning Dev → the Part 8 IOTC-adoption cluster.
+- **The Tutorials hub** (Part 1) is the consolidated guided-learning landing, sequencing the onboarding spine: 30-minute onboarding → first trigger pull → read your first tag → find-one-tag Geiger → provision a fleet — one walkable sequence regardless of which Parts the tutorials physically live in.
+- **Per-page furniture:** breadcrumbs (Part > Page), a right-rail table of contents, a badge/audience/read-time strip, and a **"Related" box** that links complementary-quadrant pages (a concept links to its recipe and its diagnosis; a recipe links to its reference).
+- **Search** accepts both command/field names (`set_operating_mode`, `peakRssi`, `set_os`, `config_endpoint`) and natural-language symptoms ("reads stop when I walk between aisles", "can't connect after unboxing").
+
+## 7.2 Cross-reference patterns
+
+- **Concept → recipe → reference triads.** Each Explanation links forward to the How-To that applies it and the Reference that pins its fields. Example: *trigger composition* (Explanation, Part 5) → *configure the operating mode* (How-To, Part 5) → *trigger-composition matrix* (Reference, Part 10).
+- **"When you are ready" forward-pointers** carry deferred depth across Parts without dragging it forward — Part 3's battery basics point to Part 8's duty-cycle engineering; Part 5's RF-power-DOWN points to Part 10's per-region `transmitPower` ceiling.
+- **Defense-in-depth fencing (three copies).** The do-not-port / not-on-handheld / out-of-scope fence is stated in three reachable places so no persona misses it: the **Part 10 constraints checklist** (for the API Consumer who skips everything), the **Part 2 do-not-port checklist** (for the Returning Developer building the handheld-difference model), and the **Part 9 misconceptions page + won't-port diagnosis** (for the Incident Responder). Each cross-links the others, and each carries the SOTI-only-commands exclusion.
+- **Footgun co-location.** The triple-`stateOfHealth` collision is pinned in Part 10's power/battery field reference *and* echoed in the glossary's canonical do-not-conflate warning; the no-`set_beeper`/`set_led` boundary appears on the feedback model, the no-feedback diagnosis, and the misconceptions page.
+
+## 7.3 Content dependency map (handheld lifecycle)
+
+Arrows are *prerequisite* edges — the tail concept must be understood before the head makes sense. The **bootstrap/MDM gate** is the single most load-bearing edge: everything in Parts 4–11 is unreachable until it clears.
+
+```
+Orient (P1)
+  └─▶ Understand the handheld system (P2): the five physical realities + the seven endpoint types
+        └─▶ Pair & Power Up (P3)  ── BT host-tether + battery FIRST BITE
+              │  (no network path exists until the sled is paired & charged)
+              └─▶ ⛔ BOOTSTRAP / MDM-ENDPOINT GATE ⛔
+                    │  123RFID Desktop (over Bluetooth or USB-C) sets region + Wi-Fi + creates the MDM endpoint.
+                    │  region/Wi-Fi/broker CANNOT be set over MQTT → the reader is not
+                    │  MQTT-reachable, and cannot be started or verified, until this clears.
+                    └─▶ Connect & Secure (P4)  ── roaming Wi-Fi/MQTT FIRST BITE
+                          │  (verify via the MDM channel ──▶ add MGMT/CTRL/DATA THROUGH the MDM endpoint;
+                          │   certificate-install ──▶ TLS-enable : hard cert-before-TLS edge)
+                          └─▶ Configure the Read (P5)  ── manual trigger + density FIRST BITE
+                                │  (operating-mode + trigger composition + RF-power-DOWN)
+                                └─▶ Read & Find (P6)  ── density + operator feedback FIRST BITE
+                                      │  (dataEVT.peakRssi ──▶ Geiger locate loop ──▶ app-side cues)
+                                      ├─▶ Observe & Monitor (P7)
+                                      │      (event model ──▶ configure-events; mqttConnEVT +
+                                      │       heartbeat-gap + NETWORK_EVENT correlation, since
+                                      │       Wi-Fi RSSI is NOT on the wire)
+                                      └─▶ Scale to a Fleet (P8)
+                                             (provisioning models ──▶ provision-fleet tutorial;
+                                              deep battery duty-cycle engineering lands HERE)
+
+  Diagnose (P9) ── SYMPTOM-FIRST, reachable from anywhere, not gated;
+                    presupposes you know what "working" looks like (so sequenced late)
+  Reference (P10) ── CONSULTED not read; entered out of order at any point;
+                     the command reference is four sibling clusters: overview ▸ MGMT ▸ CTRL ▸ Data/events
+```
+
+Three dependency edges are load-bearing because they are the handheld inversions of the benchmark: **(a) the bootstrap/MDM-endpoint gate (P3→P4)** — the fixed reader bootstraps itself in-band from its own web console and so never blocks on an out-of-band tool or an MDM endpoint; **(b) pair-the-sled (P3) precedes everything network** — a fixed reader is hardwired and never blocks on Bluetooth; and **(c) power management depends on the event model** — you cannot monitor or tune battery until you understand `heartbeatEVT`, `batteryAlert`, and `powerEvent`, which is why the *deep* battery engineering is deferred to Part 8 even though the *basic* power model is introduced at power-up in P3.
+
+---
+
+# 8. Implementation Priorities
+
+Three phases, sequenced so the first shippable artifact is the smallest set that takes a real New Integrator from a boxed sled to a found tag — the handheld minimum viable documentation (MVD) — and so the highest-risk net-new handheld content (the pages with no fixed-reader equivalent) is not deferred to last.
+
+## 8.1 Phase 1 — Minimum Viable Documentation (the walkable first-read spine)
+
+Goal: a New Integrator clears the bootstrap/MDM gate and reaches a live, found tag with the correct mental model, and the load-bearing handheld footguns are already fenced. This is the contiguous Parts 1 → 6 happy path plus the must-have safety rails.
+
+- **Part 1 — Orient:** Start here & find your way around; the persona router; MQTT/RFID five-minute primers; the OpenAPI illusion; the Tutorials hub.
+- **Part 2 — Understand:** What IOTC is; identify your sled/host; **why a sled needs out-of-band bootstrap**; actors & message flow; the interface model + **seven endpoint types (MDM default; SOTI-only commands out of scope)**; how the radio reads; **the five physical realities page**.
+- **Part 3 — Pair & Power Up** *(net-new):* the Bluetooth host link; pair/re-pair/confirm; the handheld power model; make the battery last a shift; hardware/software requirements; credentials & tenant ID; the *30-minute* tutorial.
+- **Part 4 — Connect & Secure:** **the bootstrap/MDM-endpoint gate (prepare → bootstrap → verify)**; firmware/reboot; Wi-Fi via the host; **the MDM endpoint + the additive MGMT/CTRL/DATA split (inspect the created endpoints → add dedicated endpoints)**; the roam-driven session-resumption reframe; the layered reliability model; secure the connection (certificate-install **before** TLS-enable).
+- **Part 5 — Configure the Read:** choosing an operating mode; trigger composition (physical pull ≡ MQTT START; `GPI_EVENT` not emitted); configure the operating mode; *(net-new)* compose trigger start/stop conditions; pre/post-singulation filtering + configure post-filters; *(net-new)* scale RF power DOWN.
+- **Part 6 — Read & Find:** run your first inventory & read your first tag; *(net-new)* how the trigger-driven loop works; start/stop & the physical trigger; tag-data architecture and `dataEVT` field handling; *(net-new)* the find-one-tag Geiger model + build-the-locate-loop; *(net-new)* the operator-feedback boundary + consuming `dataEVT` for feedback (cue-driving is host-SDK, out of scope).
+- **Safety rails shipped in Phase 1 (all three fence copies):** Part 2 do-not-port checklist; Part 9 misconceptions page; Part 10 constraints fence + the triple-`stateOfHealth` field reference. *(These ship early despite living in later Parts, because they prevent silent failure for any reader who deep-links — including the SOTI-only-command exclusion.)*
+
+## 8.2 Phase 2 — Full Coverage (production, fleet, observability, migration, diagnosis)
+
+Goal: complete every persona's primary path and every lifecycle stage to steady state.
+
+- **Part 7 — Observe & Monitor:** event model & types catalog; heartbeat & liveness; `mqttConnEVT` + alert surface; *(net-new)* mobile-connection-quality correlation; configure-events; device-health, connection-quality, and fleet-dashboard recipes.
+- **Part 8 — Scale to a Fleet:** provisioning models → provision-a-three-reader-fleet tutorial; drift detection/remediation; bulk (123RFID Desktop) and zero-touch (SOTI Connect) provisioning; *(net-new)* deep battery duty-cycle engineering; **the IOTC-adoption cluster (what carries over from 123RFID Desktop + plan/rollout/carry-settings/verify)**; cloud integration (AWS / Azure / GCP / custom broker).
+- **Part 9 — Diagnose (complete):** the symptom router & fault-isolation model; failure-modes catalog & recovery playbooks; *(net-new)* the handheld-only failures index (roam dropouts, BT pairing failures, battery drain/degradation, trigger-not-firing, no-operator-feedback); error handling in app code.
+
+## 8.3 Phase 3 — Advanced & Polish (reference depth and the long tail)
+
+Goal: round out the consulted surfaces and the cross-cutting lookup the API Consumer lives in.
+
+- **Part 10 — Reference Library (full):** the complete MGMT/CTRL/DATA command reference (now four sibling clusters: overview, MGMT, CTRL, Data/events); full event schemas; *(net-new)* the trigger-composition matrix; *(net-new)* the power/battery field reference pinning the triple `stateOfHealth` collision; error-code reference (incl. `set_os` code 14); **the MDM/SOTI interfaces page with the SOTI-only `get_config`/`set_config`/`alert_short` marked out of scope**.
+- **Appendices & lookups:** glossary/limits; regulatory & per-region `transmitPower` ceiling; tag standards; firmware history; topic quick reference; FAQs.
+- **Polish:** advanced multi-endpoint topologies; certificate rotation at scale; automate-provisioning workflows; a cross-reference and "Related"-box completeness pass across all 10 Parts.
+
+---
+
+# 9. Quality Evaluation Framework
+
+Six dimensions. Each carries a handheld-aware measurement method — generic doc-quality checks would miss the failures unique to a battery-bound Bluetooth peripheral, brought up out-of-band, with a human in the loop.
+
+| Dimension | What it asks | Handheld-aware measurement method |
+|---|---|---|
+| **Accuracy** | Does every claim, payload, field, and enum match the actual RFD40/RFD90 firmware behaviour — not the FX-series schema or the SOTI surface? | Validate each payload example against the captured MQTT schema; assert the **handheld scope line** holds wherever touched: Ethernet is present via the comms cradle (`get_eth` + `alerts.ethStatus`) and only network *failover* is absent, no `set_beeper`/`set_led`, `rssiFilter` not on RFD40/90, `GPI_EVENT`/`ANTENNA_EVENT` present-but-not-emitted, no native locate, no geofencing. Confirm the **bootstrap/MDM dependency** is stated correctly (region/Wi-Fi/broker not settable over MQTT; MDM endpoint created at bootstrap; other endpoints added through it). Confirm the **SOTI-only commands `get_config`/`set_config`/`alert_short` never appear as in-scope native commands** — only as named exclusions. The **triple `stateOfHealth`** must never be conflated. |
+| **Completeness** | Is every inventory page and every net-new surface present, and does each of the five physical realities land at the stage where it bites? | Reconcile against the page inventory (every legacy page placed exactly once; the 2 documented merges named) plus the net-new manifest (BT pairing, power model, trigger composition, find-one-tag Geiger, operator-feedback, the three fence copies, the triple-`stateOfHealth` reference). Each reality is introduced in Parts 3/4/5/6, not buried in an appendix. The bootstrap/MDM gate is present in Parts 2 and 4 and the dependency map. |
+| **Clarity** | Can a reader at the page's stated audience level act without external help, and are the gate and the IOTC-vs-host-SDK boundary unmistakable? | Read-time and reading-level check against the badge/audience strip; verify every feedback/locate/barcode page carries the **🔌 boundary box**, every battery-costing action carries the **⚡ power callout**, and every step that assumes MQTT reachability carries the **⛔ gate callout**. A clarity failure is any page that could lead a reader to (a) send a command that does not exist (the `set_beeper`/SOTI-command trap) or (b) attempt an MQTT operation before the MDM endpoint is up. |
+| **Findability** | Can each persona reach their content in ≤2 steps, and can an incident responder route from a symptom to a fix fast? | Trace each of the four persona router paths (≤2 steps to the entry Part). Confirm the Tutorials hub presents one walkable onboarding sequence. Symptom-routing test: each handheld failure mode is reachable by natural-language search ("reads stop between aisles," "no beep on a good read," "can't connect after unboxing"). Confirm the fence is reachable from all three copies. **Renamed titles must still be findable:** every §10 mapping row resolves to a real source page. |
+| **Currency** | Does the content track current firmware, V1.1 features, and the live MQTT schema, with no stale fixed-reader carryover? | Pin every version-sensitive claim to the firmware-history reference and the V1.1 features page; flag any page asserting behaviour the current schema contradicts; specifically audit for **fixed-reader vestiges** copied in error (in-band bootstrap, portal/conveyor/GPIO/multi-antenna, REST/WebSocket) that must be fenced as not-on-handheld, not documented as live. |
+| **Consistency** | Do parallel Parts share one shape, is terminology pinned, and are the benchmark Part names + renamed titles coherent? | Verify within-Part order obeys **dependency and task-sequence first** (no leaf depends on a concept, command, credential, or step introduced later in the Part; must-consult decision aids precede the choices they inform), with the **Explanation → Tutorial → How-To → Reference** mode-order applied only as the default tie-breaker — so confirm the principled mode-order inversions are intact (install-certificate How-To before the enable-TLS Tutorial; an enum/catalog Reference before its "choose…" How-To; hardware/prerequisite Reference before the tutorial that consumes it); verify the three named ordering exceptions are intact (Orient = job-ordered, Diagnose = symptom-first, Reference = consulted/machinery-ordered); confirm lists never exceed two bullet levels (Part → cluster → leaf) with no sub-clusters, and that the Part 10 command reference is four sibling clusters (overview/MGMT/CTRL/Data/events); lint the renamed titles for one consistent voice (sentence-case, outcome/concept-scented) and the preserved Part names. |
+
+---
+
+# 10. Appendix — Title → Source-Page Mapping
+
+Because titles are renamed for this IA (per the chosen titling convention), this table preserves traceability: each renamed leaf maps to its source page id (under `docs/…`), or is marked **NET-NEW** / **merged**. Rows are grouped by Part in §5 Part order, and within each Part rows are in the same order as the §5 leaves. Counts: **120** inventory pages (118 placed as discrete rows + 2 merged), **49** net-new pages, and **1** net-new navigation *section* (the persona router) hosted on an existing page — so `foundations/documentation-guide` legitimately appears on two rows, and there are 50 `[NET-NEW]`-labelled rows (49 pages + 1 section).
+
+### Part 1 — Orient
+| New title | Source page | Tag |
+|---|---|---|
+| Start here: what handheld IOTC lets you build | `foundations/start` | Explanation |
+| How this manual is organized | `foundations/documentation-guide` | Explanation |
+| Which reading path fits you | *(NET-NEW section on `foundations/documentation-guide`)* | Explanation |
+| MQTT in five minutes | `foundations/mqtt-primer` | Explanation |
+| RFID in five minutes | `foundations/rfid-primer` | Explanation |
+| This manual and the MQTT API Reference | `foundations/docs-and-api-reference` | Explanation |
+| The OpenAPI illusion: it's native MQTT, not REST | `foundations/native-mqtt-vs-openapi` | Explanation |
+| Documentation conventions and code-example standards | *(NET-NEW)* | Reference |
+| Related documents and support | *(NET-NEW)* | Reference |
+| The Tutorials hub | `tutorials` | Explanation |
+
+### Part 2 — Understand
+| New title | Source page | Tag |
+|---|---|---|
+| What the IoT Connector does | `foundations/about-iotc` | Explanation |
+| What's new in IOTC V1.1 | `foundations/v1-1-features` | Explanation |
+| How the radio reads a tag | `foundations/rfid-air-interface` | Explanation |
+| Tag memory and the Gen2 model | *(NET-NEW)* | Explanation |
+| Topic structure: tenant / topic / serial | `foundations/mqtt/topic-hierarchy` | Explanation |
+| QoS levels and delivery guarantees | `foundations/mqtt/qos` | Explanation |
+| Authentication and authorization over MQTT | `foundations/mqtt/auth-model` | Explanation |
+| The three actors: reader, broker, application | `foundations/actors` | Explanation |
+| How commands, responses, and events flow | `foundations/communication-flow` | Explanation |
+| The interface model and the seven endpoint types | `foundations/architecture/interface-model` | Explanation |
+| End-to-end: from a trigger pull to your application | `foundations/architecture/end-to-end` | Explanation |
+| Your sled and host hardware | `foundations/hardware-tiers` | Explanation |
+| Why out-of-band bootstrap is required | `foundations/bootstrap-tools` | Explanation |
+| 123RFID Mobile: the Android companion app | `foundations/mobile-app` | Explanation |
+| The five physical realities of a handheld sled | `foundations/architecture/handheld-considerations` | Explanation |
+| Do-not-port checklist | *(NET-NEW)* | Reference |
+
+### Part 3 — Pair and power up
+| New title | Source page | Tag |
+|---|---|---|
+| Hardware and software you need | `quick-start/prerequisites/requirements` | Reference |
+| Get your IOTC credentials and tenant ID | `quick-start/prerequisites/credentials` | How-To Guide |
+| Reaching your first live read | `quick-start/overview` | Tutorial |
+| The Bluetooth host link | *(NET-NEW)* | Explanation |
+| Pair, re-pair, and confirm the host link | *(NET-NEW)* | How-To Guide |
+| The handheld power model | *(NET-NEW)* | Explanation |
+| Charge the sled and clear the battery gate | *(NET-NEW)* | How-To Guide |
+| Make the battery last a shift | *(NET-NEW)* | How-To Guide |
+| Monitor battery charge and long-term health | `observability/monitoring/battery` | How-To Guide |
+
+### Part 4 — Connect and secure
+| New title | Source page | Tag |
+|---|---|---|
+| Preparing your network and broker | `quick-start/phase-1` | Tutorial |
+| Bootstrapping the sled and creating the MDM endpoint | `quick-start/phase-2` | Tutorial |
+| Device state and health | `infrastructure/device-state` | Explanation |
+| Verifying the MDM connection is live | `quick-start/phase-3` | Tutorial |
+| Update firmware and reboot the reader | `infrastructure/system-operations` (+ merged `quick-start/phase-7`) | How-To Guide |
+| How the reader gets on the network | `infrastructure/network/architecture` | Explanation |
+| Configure Wi-Fi profiles | `infrastructure/network/wifi` | How-To Guide |
+| Check Ethernet/cradle interface status | `infrastructure/network/ethernet` | How-To Guide |
+| Open the right ports | *(NET-NEW)* | How-To Guide |
+| When the reader won't get on the network | `infrastructure/network/troubleshooting` | Diagnosis |
+| The MDM endpoint and endpoint types | `infrastructure/mqtt-endpoints` | Explanation |
+| From hybrid MDM endpoint to dedicated channels | `infrastructure/multi-endpoint` | Explanation |
+| Inspecting the endpoints the MDM channel created | `quick-start/phase-4` | Tutorial |
+| Adding dedicated endpoints through the MDM channel | `quick-start/phase-5` | Tutorial |
+| Configure MQTT endpoints | `infrastructure/configure-endpoints` | How-To Guide |
+| View the active endpoint configuration | `infrastructure/view-endpoints` | How-To Guide |
+| The MQTT session on a moving reader | `foundations/mqtt/connection-lifecycle` | Explanation |
+| The reliability model for connection drops | `fleet/retention-and-retry` | Explanation |
+| Keep reading across Wi-Fi roams | *(NET-NEW)* | How-To Guide |
+| The TLS and certificate security model | `infrastructure/tls-and-certificates` | Explanation |
+| Install and manage TLS certificates | `infrastructure/certificate-management` | How-To Guide |
+| Turn on TLS for an endpoint | `infrastructure/tls-setup` | How-To Guide |
+| Securing the connection with TLS | `quick-start/phase-8` | Tutorial |
+| Set and rotate MQTT credentials, and pin certificates | *(NET-NEW)* | How-To Guide |
+| Rotate certificates across the fleet | `infrastructure/certificate-rotation` | How-To Guide |
+
+### Part 5 — Configure how it reads
+| New title | Source page | Tag |
+|---|---|---|
+| How operating modes shape the read | `rfid/operating-mode-profiles` | Explanation |
+| Operating-mode decision matrix | *(NET-NEW)* | Reference |
+| Configure the operating mode | `rfid/operating-mode/configure` | How-To Guide |
+| How the trigger starts and stops the radio | `rfid/operating-mode/trigger-composition` | Explanation |
+| Power strategies for trigger-based inventory | *(NET-NEW)* | Explanation |
+| Compose trigger start and stop conditions | *(NET-NEW)* | How-To Guide |
+| How Gen2 SELECT and Query work | *(NET-NEW)* | Explanation |
+| Tag filtering before vs after the read | `rfid/post-filters` | Explanation |
+| How RF power tunes range, rate, and density | `rfid/performance-tuning` | Explanation |
+| Configure post-singulation filters | `rfid/operating-mode/post-filters-configure` | How-To Guide |
+| Scale RF power down to isolate one tag | *(NET-NEW)* | How-To Guide |
+
+### Part 6 — Read and find
+| New title | Source page | Tag |
+|---|---|---|
+| How a trigger-driven inventory loop works | *(NET-NEW)* | Explanation |
+| Read your first tag | `tutorials/read-your-first-tag` | Tutorial |
+| Walking through a trigger-driven inventory loop | *(NET-NEW)* | Tutorial |
+| Start and stop reads with the trigger | `rfid/start-stop-inventory` (+ merged `quick-start/phase-6`) | How-To Guide |
+| Scan a barcode with the sled | `rfid/barcode` | How-To Guide |
+| How tag-data events are produced | `rfid/tag-data/architecture` | Explanation |
+| Two data channels | `rfid/tag-data/dual-channels` | Explanation |
+| Interpret the fields in a tag read | `rfid/tag-data/interpret` | How-To Guide |
+| Process tag data in your application | `rfid/tag-data/process` | How-To Guide |
+| The `dataEVT` tag-read payload | `rfid/dataevt-schema` | Reference |
+| Write and lock your first tag | *(NET-NEW)* | Tutorial |
+| Write, lock, and kill tags safely | *(NET-NEW)* | How-To Guide |
+| The proximity | *(NET-NEW)* | Explanation |
+| Building a find-one-tag locate loop | *(NET-NEW)* | Tutorial |
+| Isolating a target tag with SELECT and post-filters | *(NET-NEW)* | Tutorial |
+| Drive the locate loop from live RSSI | *(NET-NEW)* | How-To Guide |
+| The IOTC data path and where it stops | *(NET-NEW)* | Explanation |
+| Consume `dataEVT` to drive operator feedback | *(NET-NEW)* | How-To Guide |
+
+### Part 7 — Observe and monitor
+| New title | Source page | Tag |
+|---|---|---|
+| The IOTC event model | `observability/events/model` | Explanation |
+| Event types catalog | `observability/events/catalog` | Reference |
+| Choose which events the reader emits | `observability/configure-events` | How-To Guide |
+| Heartbeats: the reader's pulse | `observability/heartbeat` | Explanation |
+| Alerts: when the reader interrupts you | `observability/alerts` | Explanation |
+| Connection state and events | `observability/mqtt-connection` | Explanation |
+| Connection quality on a moving device | *(NET-NEW)* | Explanation |
+| Check device status and health | `observability/monitoring/device-health` | How-To Guide |
+| Monitor reader health | *(NET-NEW)* | How-To Guide |
+| Monitor connection quality | `observability/monitoring/connection-quality` | How-To Guide |
+| Build a fleet health dashboard | `observability/monitoring/fleet-dashboard` | How-To Guide |
+
+### Part 8 — Scale to a fleet
+| New title | Source page | Tag |
+|---|---|---|
+| From one reader to a managed fleet | `fleet/provisioning-models` | Explanation |
+| Provisioning a three-reader fleet | `fleet/provision-fleet` | Tutorial |
+| Bulk-provision with 123RFID Desktop | `fleet/provisioning/bulk-123rfid` | How-To Guide |
+| Zero-touch provision with SOTI Connect | `fleet/provisioning/soti-connect` | How-To Guide |
+| Automate provisioning workflows | `fleet/provisioning/automation` | How-To Guide |
+| How fleet configuration stays in sync | `fleet/bulk-management` | Explanation |
+| Detect and fix configuration drift | `fleet/management/drift` | How-To Guide |
+| What carries over to IOTC | *(NET-NEW)* | Explanation |
+| Plan the move to IOTC | `fleet/migration/plan` | How-To Guide |
+| Execute a phased rollout to IOTC | `fleet/migration/execute` | How-To Guide |
+| Carry 123RFID Desktop settings into IOTC | `fleet/migration/from-123rfid-desktop` | How-To Guide |
+| Verify the IOTC rollout succeeded | `fleet/migration/verify` | How-To Guide |
+| Tune fleet duty cycle for battery life | *(NET-NEW)* | How-To Guide |
+| Roll out firmware across a battery-limited fleet | *(NET-NEW)* | How-To Guide |
+| Manage battery aging and replacement | *(NET-NEW)* | How-To Guide |
+| Plan bandwidth and message capacity for a fleet | *(NET-NEW)* | How-To Guide |
+| Deploy multiple sleds in overlapping zones | *(NET-NEW)* | How-To Guide |
+| Cloud integration architecture patterns | `fleet/cloud-integration/patterns` | Explanation |
+| Prepare for cloud integration | `fleet/cloud-integration/prerequisites` | How-To Guide |
+| Connect to AWS IoT Core | `fleet/cloud-integration/aws` | How-To Guide |
+| Connect to Azure IoT Hub | `fleet/cloud-integration/azure` | How-To Guide |
+| Connect to Google Cloud IoT | `fleet/cloud-integration/gcp` | How-To Guide |
+| Connect to a custom MQTT broker | `fleet/cloud-integration/custom-broker` | How-To Guide |
+
+### Part 9 — Diagnose and recover
+| New title | Source page | Tag |
+|---|---|---|
+| Something's broken? Start here | `diagnose/symptoms` | Diagnosis |
+| Handheld-only failures: roam, pairing, battery, trigger, feedback | *(NET-NEW)* | Diagnosis |
+| Where things fail | `diagnose/where-things-fail` | Explanation |
+| Failure modes catalog | `diagnose/failure-modes` | Diagnosis |
+| Get back online with recovery playbooks | `diagnose/recovery-playbooks` | How-To Guide |
+| Recover from a failed firmware update | *(NET-NEW)* | How-To Guide |
+| Things people get wrong about IOTC | `diagnose/misconceptions` | Explanation |
+| Diagnosing a fixed-reader assumption that won't port | *(NET-NEW)* | Diagnosis |
+| Handle command errors in your code | `diagnose/handle-errors` | How-To Guide |
+
+### Part 10 — Reference library
+| New title | Source page | Tag |
+|---|---|---|
+| MQTT API reference index | `reference/api-overview` | Reference |
+| Device status commands | `reference/mgmt/device-status` | Reference |
+| Network configuration commands | `reference/mgmt/network` | Reference |
+| Endpoint configuration commands | `reference/mgmt/endpoint` | Reference |
+| Certificate commands | `reference/mgmt/certificates` | Reference |
+| System operations commands | `reference/mgmt/system-operations` | Reference |
+| Event configuration commands | `reference/mgmt/event-configuration` | Reference |
+| Operating-mode command | `reference/ctrl/operating-mode` | Reference |
+| Tag-filtering commands | `reference/ctrl/tag-filtering` | Reference |
+| Inventory-control command | `reference/ctrl/inventory-control` | Reference |
+| Access commands: read, write, lock, kill | *(NET-NEW)* | Reference |
+| Data interface: `dataEVT` | `reference/data/tag-data-event` | Reference |
+| Full event schemas | `reference/events/all-events` | Reference |
+| Tag-metadata configuration | *(NET-NEW)* | Reference |
+| MDM and SOTI interfaces | `reference/mdm/about` | Reference |
+| Power and battery field reference | *(NET-NEW)* | Reference |
+| Trigger-composition matrix | *(NET-NEW)* | Reference |
+| Health events and thresholds | *(NET-NEW)* | Reference |
+| QoS-per-topic quick table | *(NET-NEW)* | Reference |
+| Handheld constraints and not-supported features | *(NET-NEW)* | Reference |
+| Error response format | `reference/errors/format` | Reference |
+| Command error codes | `reference/errors/codes` | Reference |
+| Glossary, limits, and cheat sheets | `reference/glossary` | Reference |
+| MQTT topic quick reference | `reference/appendices/topic-quick-reference` | Reference |
+| AsyncAPI specification | *(NET-NEW)* | Reference |
+| Tag memory map and access-command reference | *(NET-NEW)* | Reference |
+| Regulatory and regional reference | `reference/appendices/regulatory` | Reference |
+| Supported tag types and standards | `reference/appendices/tag-standards` | Reference |
+| Hardware specifications quick reference | *(NET-NEW)* | Reference |
+| Firmware version history | `reference/appendices/firmware-history` | Reference |
+| Manual changelog | *(NET-NEW)* | Reference |
+| FAQ: general | `reference/faq/general` | Reference |
+| FAQ: connectivity and network | `reference/faq/connectivity` | Reference |
+| FAQ: compatibility | `reference/faq/compatibility` | Reference |
+| FAQ: RFID operations | `reference/faq/rfid` | Reference |
+| FAQ: fleet management | `reference/faq/fleet` | Reference |

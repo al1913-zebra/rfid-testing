@@ -1,0 +1,12 @@
+# RFD40 / RFD90 API Reference — Python Dependencies
+# Install: pip install -r requirements.txt
+# OpenAI SDK — Assistants API, file upload, streaming
+openai>=1.30.0
+# Environment variables — reads .env file
+python-dotenv>=1.0.0
+# YAML support — for schema files with .yaml/.yml extension
+pyyaml>=6.0.1
+# PowerPoint generation for documentation presentations
+python-pptx>=1.0.2
+# Windows cert store bridge — fixes SSL verify issues behind corporate TLS inspection
+python-certifi-win32>=1.6.1

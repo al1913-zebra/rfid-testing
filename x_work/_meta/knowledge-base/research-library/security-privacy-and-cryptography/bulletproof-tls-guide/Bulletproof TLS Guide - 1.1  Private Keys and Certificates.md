@@ -1,0 +1,3 @@
+## 1.1 Private Keys and Certificates
+
+Private keys are the cornerstone of TLS security, but also one of the easier things to get right. These days, CAs aren’t allowed to issue certificates against weak keys, so that’s one less thing to worry about. But despite frequent focus on key sizes, the weakest link is usually key management, or the job of keeping the private keys private. We’ll touch upon that in this section. Equally important are certificates, which build upon the keys with important metadata, such as the permission to associate a certificate with a particular domain name.

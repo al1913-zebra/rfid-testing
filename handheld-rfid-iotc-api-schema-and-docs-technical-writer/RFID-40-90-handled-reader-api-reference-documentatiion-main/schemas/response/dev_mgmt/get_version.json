@@ -1,0 +1,65 @@
+{
+  "title": "get_version",
+  "x-stoplight": {
+    "id": "zmsjigwcxuj38"
+  },
+  "type": "object",
+  "examples": [
+    {
+      "command": "get_version",
+      "requestId": "abc123",
+      "apiVersion": "V1.21",
+      "readerVersion": {
+        "firmwareVersion": "PAAFKS00-013-N05",
+        "model": "RFD40",
+        "serialNumber": "211545201D0034",
+        "sku": "RFD4031-G10B700-US",
+        "companyName": "Zebra Technologies",
+        "manufacturerName": "Zebra Technologies",
+        "detailedVersions": {
+          "scannerFirmware": "PAAEOC20-003-R01",
+          "radioFirmware": "2.0.53.0",
+          "iotcVersion": "V1.21"
+        }
+      },
+      "response": {
+        "code": 0,
+        "description": "Success"
+      }
+  }
+  ],
+  "description": "command to get the reader version details",
+  "properties": {
+    "command": {
+      "type": "string",
+      "default": "get_version",
+      "description": "The command that was executed to retrieve the reader version details."
+    },
+    "requestId": {
+      "type": "string",
+      "example": "abcd123",
+      "description": "The unique identifier of the original request."
+    },
+    "apiVersion": {
+      "type": "string",
+      "enum": [
+        "V1.1",
+        "V1.2",
+        "V1.21"
+      ],
+      "example": "V1.1"
+    },
+    "readerVersion": {
+      "$ref": "../../refrence/response/readerVersionResponse.yaml"
+    },
+    "response": {
+      "$ref": "../../refrence/response/response.yaml"
+    }
+  },
+  "required": [
+    "command",
+    "requestId",
+    "apiVersion",
+    "response"
+  ]
+}

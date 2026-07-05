@@ -1,0 +1,26 @@
+title: read
+type: object
+description: Defines the read command payload used to read data from a specific memory bank of an RFID tag.
+properties:
+  config:
+    type: object
+    description: Read operation parameters specifying the target memory bank, offset, and length.
+    properties:
+      memoryBank:
+        type: string
+        enum:
+          - EPC
+          - TID
+          - USER
+          - RESERVED
+        description: Membank Field (see EPC Gen2 Spec)
+      offset:
+        type: integer
+        description: Memory bank offset Field in words (see EPC Gen2 Spec)
+      length:
+        type: integer
+        description: Tag pattern length Field in words(see EPC Gen2 Spec)
+    required:
+      - memoryBank
+      - offset
+      - length
