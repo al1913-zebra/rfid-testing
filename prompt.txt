@@ -1,0 +1,20 @@
+claude --effort ultracode
+
+Create the mqttConnEVT event using the same template whilst following the instructions below:
+
+First, thoroughly analyze and understand the following:
+- handheld-rfid-iotc-api-schema-and-docs-zebra-official\openapi.json is the schema and has external dependencies (other files) and also the single source of truth, though not entirely error free
+- handheld-rfid-iotc-api-schema-and-docs-zebra-official is from the API developer and contains the single source of truth although it isn't 100% error free.
+- handheld-rfid-iotc-api-schema-and-docs-zebra-official\error_codes.json contains error codes for each of the commands and events
+- handheld-rfid-iotc-api-schema-and-docs-zebra-official\example_description.json contains example descriptions
+- The latest audit of the schema (handheld-rfid-iotc-api-schema-and-docs-zebra-official\openapi.json) is this: x_work\live_testing\rfid_iotc_api_divergence_report_2026-06-29_pass_1.xlsx
+In this, the "STATUS" is where the API developer has entered their comments, the "AUDIT" is where I and the AI Agent have entered our comments. "FIX" is what is needed to fix it, if anything.
+- The live testing of the all the commands and events is in the folder live_testing which is under x_work 
+Please note that the live testing may not be 100% accurate>
+- The repo lies in the iotc-docs
+- A tech writer has added descriptions for the schema which lies in tw_adds 
+Please note that these were added to the old version. Wherever these are inconsistent with the latest schema or the audit file (x_work\live_testing\rfid_iotc_api_divergence_report_2026-06-29_pass_1.xlsx), then ignore those
+
+Based on all of the above, craft an exceptionally comprehensive and accurate mqttConnEVT event API reference.
+
+Commit and push.
